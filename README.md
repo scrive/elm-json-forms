@@ -4,7 +4,7 @@
 
 Generate validating forms from JSON schemas.
 
-    elm package install niho/json-schema-form
+    elm package install scrive/json-schema-form
 
 ## Features
 
@@ -21,7 +21,7 @@ Generate validating forms from JSON schemas.
 
 ## Example usage
 
-See the [example project](https://github.com/niho/json-schema-form/tree/master/example) for examples of all the supported field types.
+See the [example project](https://github.com/scrive/json-schema-form/tree/master/example) for examples of all the supported field types.
 
 ```elm
 module Main exposing (main)
