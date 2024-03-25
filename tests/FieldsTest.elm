@@ -6,14 +6,29 @@ import Form as F
 import Form.Validate
 import Html.Attributes
 import Json.Encode
-import Json.Schema.Builder exposing (..)
-import Json.Schema.Definitions exposing (..)
+import Json.Schema.Builder
+    exposing
+        ( SchemaBuilder
+        , boolSchema
+        , buildSchema
+        , toSchema
+        , withAnyOf
+        , withConst
+        , withDescription
+        , withItem
+        , withItems
+        , withOneOf
+        , withProperties
+        , withTitle
+        , withType
+        , withUnionType
+        )
 import Json.Schema.Form.Fields exposing (Options, schemaView)
 import Json.Schema.Form.Value exposing (Value(..))
-import Test exposing (..)
+import Test exposing (Test, describe, test)
 import Test.Html.Event as Event
 import Test.Html.Query as Query
-import Test.Html.Selector exposing (..)
+import Test.Html.Selector exposing (attribute, checked, class, classes, selected, tag, text)
 
 
 options : Options
@@ -280,6 +295,7 @@ singleTypes =
     ]
 
 
+isField : SchemaBuilder -> Expectation
 isField schema =
     schema
         |> view
@@ -290,6 +306,7 @@ isField schema =
             )
 
 
+hasFieldTitle : SchemaBuilder -> Expectation
 hasFieldTitle schema =
     schema
         |> withTitle "Test"
@@ -300,6 +317,7 @@ hasFieldTitle schema =
             )
 
 
+hasFieldDescription : SchemaBuilder -> Expectation
 hasFieldDescription schema =
     schema
         |> withDescription "Lorem ipsum."
@@ -311,6 +329,7 @@ hasFieldDescription schema =
             )
 
 
+isCheckbox : SchemaBuilder -> Expectation
 isCheckbox schema =
     schema
         |> withTitle "Test"
@@ -337,6 +356,7 @@ isCheckbox schema =
             ]
 
 
+isTextField : SchemaBuilder -> Expectation
 isTextField =
     Expect.all
         [ isField
@@ -357,6 +377,7 @@ isTextField =
         ]
 
 
+isFieldset : SchemaBuilder -> Expectation
 isFieldset schema =
     schema
         |> withTitle "Test"
@@ -374,6 +395,7 @@ isFieldset schema =
             )
 
 
+isList : SchemaBuilder -> Expectation
 isList schema =
     schema
         |> withTitle "Test"
@@ -401,6 +423,7 @@ isList schema =
             )
 
 
+isTuple : SchemaBuilder -> Expectation
 isTuple schema =
     schema
         |> Expect.all
@@ -416,12 +439,11 @@ isTuple schema =
             ]
 
 
+isSwitch : SchemaBuilder -> Expectation
 isSwitch schema =
     schema
         |> Expect.all
-            [ --isField
-              --, hasFieldDescription
-              view
+            [ view
                 (Expect.all
                     [ Query.has [ tag "div", class "form-group" ]
                     , Query.find [ class "switch" ]
@@ -474,6 +496,7 @@ isSwitch schema =
             ]
 
 
+isSelect : SchemaBuilder -> Expectation
 isSelect schema =
     schema
         |> withAnyOf
@@ -515,6 +538,7 @@ isSelect schema =
             ]
 
 
+isNumberSelect : SchemaBuilder -> Expectation
 isNumberSelect schema =
     schema
         |> withAnyOf

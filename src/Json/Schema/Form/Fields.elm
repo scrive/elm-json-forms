@@ -1,13 +1,25 @@
-module Json.Schema.Form.Fields exposing (Options, schemaView, set)
+module Json.Schema.Form.Fields exposing (Options, schemaView)
 
 import Dict exposing (Dict)
 import Form as F
-import Form.Error exposing (ErrorValue(..))
 import Form.Input as Input
-import Form.Validate exposing (..)
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Form.Validate
+import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
+import Html.Attributes
+    exposing
+        ( attribute
+        , autocomplete
+        , class
+        , classList
+        , for
+        , id
+        , placeholder
+        , rows
+        , style
+        , tabindex
+        , type_
+        )
+import Html.Events exposing (preventDefaultOn)
 import Html.Keyed
 import Json.Decode
 import Json.Schema.Definitions
@@ -21,7 +33,7 @@ import Json.Schema.Definitions
         )
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
-import Json.Schema.Form.Value exposing (Value(..))
+import Json.Schema.Form.Value exposing (Value)
 
 
 type alias Options =
@@ -43,7 +55,7 @@ schemaView options path schema form =
     case schema of
         BooleanSchema value ->
             div []
-                [ if value == True then
+                [ if value then
                     text "True"
 
                   else
@@ -103,6 +115,7 @@ fieldView options path schema type_ form =
 
         ArrayType ->
             let
+                f : F.FieldState ErrorValue String
                 f =
                     getFieldAsString path form
             in
@@ -133,6 +146,7 @@ fieldView options path schema type_ form =
 txt : Options -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
 txt options schema f =
     let
+        format : Format
         format =
             schema.format
                 |> Maybe.andThen (getFormat options.formats)
@@ -147,6 +161,7 @@ txt options schema f =
                     , validation = Form.Validate.succeed
                     }
 
+        classes : List ( String, Bool )
         classes =
             [ ( "form-control", True )
             , ( "is-invalid", f.liveError /= Nothing )
@@ -158,6 +173,7 @@ txt options schema f =
                     ( "", False )
             ]
 
+        attributes : List (Attribute msg)
         attributes =
             [ classList classes
             , id f.path
@@ -176,44 +192,7 @@ txt options schema f =
                     autocomplete True
             ]
 
-        inputType =
-            case schema.format of
-                Just "email" ->
-                    "email"
-
-                Just "idn-email" ->
-                    "email"
-
-                Just "date" ->
-                    "date"
-
-                Just "time" ->
-                    "time"
-
-                Just "date-time" ->
-                    "datetime-local"
-
-                Just "month" ->
-                    "month"
-
-                Just "week" ->
-                    "week"
-
-                Just "hostname" ->
-                    "url"
-
-                Just "idn-hostname" ->
-                    "url"
-
-                Just "uri" ->
-                    "url"
-
-                Just "iri" ->
-                    "url"
-
-                _ ->
-                    "text"
-
+        textInput : Html F.Msg
         textInput =
             inputGroup
                 format.prefix
@@ -227,6 +206,46 @@ txt options schema f =
                             html f attributes
 
                         Nothing ->
+                            let
+                                inputType : String
+                                inputType =
+                                    case schema.format of
+                                        Just "email" ->
+                                            "email"
+
+                                        Just "idn-email" ->
+                                            "email"
+
+                                        Just "date" ->
+                                            "date"
+
+                                        Just "time" ->
+                                            "time"
+
+                                        Just "date-time" ->
+                                            "datetime-local"
+
+                                        Just "month" ->
+                                            "month"
+
+                                        Just "week" ->
+                                            "week"
+
+                                        Just "hostname" ->
+                                            "url"
+
+                                        Just "idn-hostname" ->
+                                            "url"
+
+                                        Just "uri" ->
+                                            "url"
+
+                                        Just "iri" ->
+                                            "url"
+
+                                        _ ->
+                                            "text"
+                            in
                             Input.textInput f
                                 (attributes
                                     ++ [ type_
@@ -248,6 +267,7 @@ txt options schema f =
 checkbox : Options -> SubSchema -> F.FieldState ErrorValue Bool -> Html F.Msg
 checkbox options schema f =
     let
+        content : List (Html F.Msg)
         content =
             [ div [ class "checkbox" ]
                 [ Input.checkboxInput f
@@ -261,10 +281,12 @@ checkbox options schema f =
                 ]
             ]
 
+        meta : List (Html F.Msg)
         meta =
             [ fieldDescription schema ]
                 |> List.filterMap identity
 
+        feedback : List (Html F.Msg)
         feedback =
             [ liveError options.errors f ]
                 |> List.filterMap identity
@@ -291,12 +313,14 @@ checkbox options schema f =
 select : Options -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
 select options schema f =
     let
+        schemata : List Schema
         schemata =
             List.concat
                 [ schema.oneOf |> Maybe.withDefault []
                 , schema.anyOf |> Maybe.withDefault []
                 ]
 
+        items : List ( String, String )
         items =
             schemata
                 |> List.map (option constAsString)
@@ -309,6 +333,7 @@ select options schema f =
                         )
                     )
 
+        descriptions : List ( String, Html F.Msg )
         descriptions =
             schemata
                 |> List.map (option constAsString)
@@ -350,31 +375,6 @@ option attr schema =
             )
 
 
-set :
-    Options
-    -> Path
-    -> Form
-    -> List Schema
-    -> List (Html F.Msg)
-set options path form items =
-    let
-        itemPath schema_ =
-            case schema_ of
-                ObjectSchema s ->
-                    path
-                        ++ [ constAsString s
-                                |> Maybe.withDefault ""
-                           ]
-
-                _ ->
-                    path
-
-        itemView schema_ =
-            schemaView options (itemPath schema_) schema_ form
-    in
-    List.map itemView items
-
-
 list :
     Options
     -> Path
@@ -383,12 +383,15 @@ list :
     -> List (Html F.Msg)
 list options path form ( title, schema ) =
     let
+        indexes : List Int
         indexes =
             getListIndexes path form
 
+        itemPath : Int -> Path
         itemPath idx =
             path ++ [ String.fromInt idx ]
 
+        itemView : Int -> Html F.Msg
         itemView idx =
             li
                 [ class "list-group-item" ]
@@ -418,9 +421,11 @@ tuple :
     -> List (Html F.Msg)
 tuple options path form ( title, schemata ) =
     let
+        itemPath : Int -> Path
         itemPath idx =
             path ++ [ "tuple" ++ String.fromInt idx ]
 
+        itemView : Int -> Schema -> Html F.Msg
         itemView idx itemSchema =
             div
                 [ class "col" ]
@@ -451,23 +456,28 @@ radio fieldState ( value, title ) =
 switch : Options -> Path -> SubSchema -> Form -> Html F.Msg
 switch options path schema form =
     let
+        f : F.FieldState ErrorValue String
         f =
             getFieldAsString (path ++ [ "switch" ]) form
 
+        schemata : List Schema
         schemata =
             List.concat
                 [ schema.oneOf |> Maybe.withDefault []
                 , schema.anyOf |> Maybe.withDefault []
                 ]
 
+        items : List ( String, Maybe SubSchema )
         items =
             schemata
                 |> List.map (option .title)
 
+        itemId : Int -> String
         itemId idx =
             "option" ++ String.fromInt idx
 
-        itemButton idx ( title, schema_ ) =
+        itemButton : Int -> ( String, b ) -> Html F.Msg
+        itemButton idx ( title, _ ) =
             div
                 [ classList
                     [ ( "form-check", True )
@@ -476,7 +486,8 @@ switch options path schema form =
                 ]
                 [ radio f ( itemId idx, title ) ]
 
-        itemFields idx ( title, schema_ ) =
+        itemFields : Int -> ( String, Maybe SubSchema ) -> ( String, Html F.Msg )
+        itemFields idx ( _, schema_ ) =
             case schema_ of
                 Just s ->
                     ( itemId idx
@@ -502,10 +513,12 @@ switch options path schema form =
 field : Options -> SubSchema -> F.FieldState ErrorValue String -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
+        meta : List (Html F.Msg)
         meta =
             [ fieldDescription schema ]
                 |> List.filterMap identity
 
+        feedback : List (Html F.Msg)
         feedback =
             [ liveError options.errors f ]
                 |> List.filterMap identity
@@ -532,12 +545,15 @@ field options schema f content =
 group : Options -> Path -> SubSchema -> Form -> Html F.Msg
 group options path schema form =
     let
+        f : F.FieldState ErrorValue String
         f =
             getFieldAsString path form
 
+        schemataItem : ( String, Schema ) -> Html F.Msg
         schemataItem ( name, subSchema ) =
             schemaView options (path ++ [ name ]) subSchema form
 
+        fields : List (Html F.Msg)
         fields =
             case schema.properties of
                 Nothing ->
@@ -546,11 +562,13 @@ group options path schema form =
                 Just (Json.Schema.Definitions.Schemata schemata) ->
                     List.map schemataItem schemata
 
+        meta : List (Html msg)
         meta =
             [ Maybe.map (\str -> p [] [ text str ]) schema.description
             ]
                 |> List.filterMap identity
 
+        feedback : List (Html F.Msg)
         feedback =
             [ liveError options.errors f
             ]
@@ -594,6 +612,7 @@ liveError func f =
 inputGroup : Maybe String -> Maybe String -> List (Html F.Msg) -> Html F.Msg
 inputGroup prefix suffix content =
     let
+        prepend : List (Html msg)
         prepend =
             case prefix of
                 Just string ->
@@ -608,6 +627,7 @@ inputGroup prefix suffix content =
                 Nothing ->
                     []
 
+        append : List (Html msg)
         append =
             case suffix of
                 Just string ->
@@ -630,6 +650,7 @@ inputGroup prefix suffix content =
 fieldset : SubSchema -> List (Html F.Msg) -> Html F.Msg
 fieldset schema content =
     let
+        title : List (Html msg)
         title =
             case schema.title of
                 Just str ->
@@ -664,6 +685,7 @@ fieldPath =
 constAsString : SubSchema -> Maybe String
 constAsString schema =
     let
+        decoder : Json.Decode.Decoder String
         decoder =
             Json.Decode.oneOf
                 [ Json.Decode.string
@@ -679,9 +701,7 @@ constAsString schema =
 onClickPreventDefault : msg -> Attribute msg
 onClickPreventDefault msg =
     preventDefaultOn "click"
-        (Json.Decode.map alwaysPreventDefault
-            (Json.Decode.succeed msg)
-        )
+        (Json.Decode.succeed <| alwaysPreventDefault msg)
 
 
 alwaysPreventDefault : msg -> ( msg, Bool )
@@ -692,6 +712,7 @@ alwaysPreventDefault msg =
 conditional : String -> F.FieldState e String -> List ( String, Html F.Msg ) -> Html F.Msg
 conditional className f conditions =
     let
+        cond : ( String, b ) -> Maybe ( String, b )
         cond ( value, html ) =
             if f.value == Just value then
                 Just ( value, html )

@@ -2,39 +2,37 @@ module Json.Schema.Form.Encode exposing (encode)
 
 {-| Encode form values as JSON.
 
-
-# Encode
-
 @docs encode
 
 -}
 
-import Json.Encode exposing (..)
+import Json.Encode as Encode
 import Json.Schema.Form.Value exposing (Value(..))
 
 
 {-| Encode a form value (the output of a valid form) as JSON.
 -}
-encode : Value -> Json.Encode.Value
+encode : Value -> Encode.Value
 encode value =
     case value of
         IntValue intValue ->
-            int intValue
+            Encode.int intValue
 
         FloatValue floatValue ->
-            float floatValue
+            Encode.float floatValue
 
         StringValue stringValue ->
-            string stringValue
+            Encode.string stringValue
 
         BoolValue boolValue ->
-            bool boolValue
+            Encode.bool boolValue
 
         ListValue valueList ->
-            list encode valueList
+            Encode.list encode valueList
 
         ObjectValue objectValue ->
             let
+                item : ( String, Value ) -> Maybe ( String, Encode.Value )
                 item ( name, val ) =
                     if val == EmptyValue then
                         Nothing
@@ -42,13 +40,13 @@ encode value =
                     else
                         Just ( name, encode val )
             in
-            object (List.filterMap item objectValue)
+            Encode.object (List.filterMap item objectValue)
 
         NullValue ->
-            null
+            Encode.null
 
         EmptyValue ->
-            object []
+            Encode.object []
 
         JsonValue jsonValue ->
             jsonValue

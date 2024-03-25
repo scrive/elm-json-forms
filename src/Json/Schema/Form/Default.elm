@@ -1,6 +1,6 @@
 module Json.Schema.Form.Default exposing (default)
 
-import Form.Field exposing (..)
+import Form.Field exposing (Field, bool, group, list, string)
 import Json.Decode
 import Json.Schema.Definitions
     exposing
@@ -16,12 +16,8 @@ import Json.Schema.Definitions
 default : Schema -> List ( String, Field )
 default schema =
     case schema of
-        BooleanSchema bool ->
-            if bool then
-                []
-
-            else
-                []
+        BooleanSchema _ ->
+            []
 
         ObjectSchema objectSchema ->
             subSchema objectSchema
@@ -63,8 +59,7 @@ field ( name, schema ) =
                                 |> Maybe.withDefault []
 
                         UnionType types ->
-                            List.map (singleType schema_ value) types
-                                |> List.filterMap identity
+                            List.filterMap (singleType schema_ value) types
                                 |> List.map (\f -> ( name, f ))
 
                 Nothing ->
@@ -88,8 +83,7 @@ anyType value =
         |> Result.map (List.map string)
         |> Result.map list
     ]
-        |> List.map Result.toMaybe
-        |> List.filterMap identity
+        |> List.filterMap Result.toMaybe
         |> List.head
 
 
@@ -163,16 +157,8 @@ asString : Json.Decode.Decoder String
 asString =
     Json.Decode.oneOf
         [ Json.Decode.string
-        , Json.Decode.int
-            |> Json.Decode.andThen
-                (\a ->
-                    Json.Decode.succeed (String.fromInt a)
-                )
-        , Json.Decode.float
-            |> Json.Decode.andThen
-                (\a ->
-                    Json.Decode.succeed (String.fromFloat a)
-                )
+        , Json.Decode.int |> Json.Decode.map String.fromInt
+        , Json.Decode.float |> Json.Decode.map String.fromFloat
         ]
 
 

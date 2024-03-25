@@ -17,9 +17,6 @@ module Json.Schema.Form exposing
 
 @docs init, update
 
-
-# View
-
 @docs view, submit
 
 
@@ -30,8 +27,8 @@ module Json.Schema.Form exposing
 -}
 
 import Dict exposing (Dict)
-import Form as F exposing (Msg(..))
-import Html exposing (..)
+import Form as F exposing (Msg)
+import Html exposing (Html)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Default exposing (default)
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
@@ -81,6 +78,7 @@ init options schema =
 update : Msg -> State -> State
 update msg state =
     let
+        form : F.Form ErrorValue Value
         form =
             F.update
                 (validation state.options.formats state.schema)

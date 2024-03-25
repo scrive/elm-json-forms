@@ -2,13 +2,25 @@ module ValidationTest exposing (suite)
 
 import Dict
 import Expect exposing (Expectation)
-import Form.Field exposing (..)
+import Form.Field exposing (Field, bool, group, list, string)
 import Json.Encode
-import Json.Schema.Builder exposing (..)
-import Json.Schema.Definitions exposing (..)
+import Json.Schema.Builder
+    exposing
+        ( boolSchema
+        , buildSchema
+        , toSchema
+        , withConst
+        , withItem
+        , withNullableType
+        , withOneOf
+        , withProperties
+        , withType
+        , withUnionType
+        )
+import Json.Schema.Definitions exposing (Schema, blankSchema)
 import Json.Schema.Form.Validation exposing (validation)
 import Json.Schema.Form.Value exposing (Value(..))
-import Test exposing (..)
+import Test exposing (Test, describe, test)
 
 
 suite : Test
@@ -186,7 +198,9 @@ suite =
                                 , Result.andThen (validate (bool False))
                                     >> Expect.err
                                 ]
-                , skip <|
+
+                -- FIXME: fix this skipped test
+                , Test.skip <|
                     test "array" <|
                         \_ ->
                             buildSchema
@@ -200,7 +214,9 @@ suite =
                                     , Result.andThen (validate (list []))
                                         >> Expect.err
                                     ]
-                , skip <|
+
+                -- FIXME: fix this skipped test
+                , Test.skip <|
                     test "object" <|
                         \_ ->
                             buildSchema

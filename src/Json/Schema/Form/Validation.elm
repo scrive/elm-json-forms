@@ -3,8 +3,33 @@ module Json.Schema.Form.Validation exposing (validation)
 import Dict exposing (Dict)
 import Form.Error exposing (ErrorValue(..))
 import Form.Field
-import Form.Validate exposing (..)
-import Json.Decode
+import Form.Validate
+    exposing
+        ( Validation
+        , andThen
+        , bool
+        , customError
+        , emptyString
+        , fail
+        , field
+        , float
+        , format
+        , int
+        , list
+        , map
+        , maxFloat
+        , maxInt
+        , maxLength
+        , minFloat
+        , minInt
+        , minLength
+        , oneOf
+        , sequence
+        , string
+        , succeed
+        , withCustomError
+        )
+import Json.Decode exposing (Decoder)
 import Json.Encode
 import Json.Schema.Definitions
     exposing
@@ -16,7 +41,7 @@ import Json.Schema.Definitions
         , Type(..)
         , blankSchema
         )
-import Json.Schema.Form.Encode
+import Json.Schema.Form.Encode as Encode
 import Json.Schema.Form.Error exposing (ErrorValue(..))
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
@@ -157,12 +182,18 @@ singleType formats schema type_ =
 
         ObjectType ->
             let
+                required : List String
                 required =
                     schema.required |> Maybe.withDefault []
 
+                isSpecialType : Schema -> Bool
                 isSpecialType =
                     isType [ BooleanType, ArrayType, ObjectType ]
 
+                schemataItem :
+                    ( String, Schema )
+                    -> Form.Field.Field
+                    -> Result (Form.Error.Error ErrorValue) ( String, Value )
                 schemataItem ( name, schema_ ) =
                     if List.member name required || isSpecialType schema_ then
                         field name (validation formats schema_)
@@ -176,6 +207,7 @@ singleType formats schema type_ =
                                 |> andThen (\v -> succeed ( name, v ))
                             ]
 
+                fields : List (Form.Field.Field -> Result (Form.Error.Error ErrorValue) ( String, Value ))
                 fields =
                     case schema.properties of
                         Nothing ->
@@ -342,24 +374,26 @@ customFormat formats formatId value =
         format ->
             formats
                 |> Dict.get format
-                |> Maybe.map .validation
                 |> Maybe.map
-                    (\v ->
-                        v value
-                            |> withCustomError
-                                (InvalidCustomFormat format)
+                    (.validation
+                        >> (\v ->
+                                v value
+                                    |> withCustomError
+                                        (InvalidCustomFormat format)
+                           )
                     )
                 |> Maybe.withDefault (succeed value)
 
 
 uniqueItems : Bool -> List Value -> Validation ErrorValue (List Value)
 uniqueItems unique value =
-    let
-        items =
-            List.map Json.Schema.Form.Encode.encode value
-                |> List.map (Json.Encode.encode 0)
-    in
     if unique then
+        let
+            items : List String
+            items =
+                List.map Encode.encode value
+                    |> List.map (Json.Encode.encode 0)
+        in
         if Set.size (Set.fromList items) == List.length value then
             succeed value
 
@@ -391,6 +425,7 @@ maxItems count list =
 tuple : List (Validation ErrorValue a) -> Validation ErrorValue (List a)
 tuple validations =
     let
+        item : Int -> Validation e a -> Form.Field.Field -> Result (Form.Error.Error e) a
         item idx =
             field ("tuple" ++ String.fromInt idx)
     in
@@ -401,6 +436,7 @@ tuple validations =
 switch : Formats -> List Schema -> Validation ErrorValue Value
 switch formats schemata =
     let
+        validateValue : Schema -> Form.Field.Field -> Result (Form.Error.Error ErrorValue) Value
         validateValue schema =
             case schema of
                 BooleanSchema _ ->
@@ -435,6 +471,7 @@ switch formats schemata =
 constAsValue : Json.Decode.Value -> Value
 constAsValue const =
     let
+        decoder : Decoder Value
         decoder =
             Json.Decode.oneOf
                 [ Json.Decode.string |> Json.Decode.map StringValue
