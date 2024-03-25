@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
       - name: Compile Elm
-        run: elm make src/*.elm
+        run: elm make src/**/*.elm
       - name: Run elm-format
         run: npx elm-format --validate .
       - name: Run elm-tests
