@@ -1,0 +1,25 @@
+name: Elm CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jorelali/setup-elm@v5
+        with:
+          elm-version: 0.19.1
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NVMRC }}
+      - name: Compile Elm
+        run: elm make src/*.elm
+      - name: Run elm-format
+        run: npx elm-format --validate .
+      - name: Run elm-tests
+        run: npx elm-test

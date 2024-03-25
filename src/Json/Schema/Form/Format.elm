@@ -29,10 +29,8 @@ module Json.Schema.Form.Format exposing
 
 -}
 
-import Form exposing (Msg)
 import Form.Input exposing (Input)
 import Form.Validate exposing (Validation)
-import Html exposing (Html)
 import Json.Schema.Form.Error exposing (ErrorValue)
 
 

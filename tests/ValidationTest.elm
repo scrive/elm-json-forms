@@ -335,6 +335,7 @@ suite =
         ]
 
 
+singleTypes : List Test
 singleTypes =
     [ describe "integer"
         ((buildSchema
@@ -571,11 +572,16 @@ singleTypes =
     ]
 
 
+validate : Field -> Schema -> Result String Value
 validate field schema =
     validation Dict.empty schema field
         |> Result.mapError Debug.toString
 
 
+validateMultiple :
+    List ( String, Field, Result String Value -> Expectation )
+    -> Result String Schema
+    -> List Test
 validateMultiple fields schema =
     List.map
         (\( name, f, expect ) ->

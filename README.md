@@ -1,23 +1,23 @@
 # JSON Schema Form Generator
 
+[![Elm CI](https://github.com/scrive/json-schema-form/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/json-schema-form/actions)
+
 Generate validating forms from JSON schemas.
 
     elm package install niho/json-schema-form
 
 ## Features
 
-* Can handle almost all JSON Schema features (draft-04 and draft-06).
-* Generates all common types of input fields (`text`, `select`, etc.) with optional labels and descriptions.
-* Error messages can easily be customized as needed.
-* Supports custom string formats using validation functions (similar to Json decoders).
-
+- Can handle almost all JSON Schema features (draft-04 and draft-06).
+- Generates all common types of input fields (`text`, `select`, etc.) with optional labels and descriptions.
+- Error messages can easily be customized as needed.
+- Supports custom string formats using validation functions (similar to Json decoders).
 
 ## Warnings
 
 1. The way form fields are generated and presented is very opinionated and thus not always suitable for general case usage. This library is intended to be used for cases where you have control over how the schema is structured.
 2. The HTML that the library outputs is intended to be used together with [Bootstrap](https://getbootstrap.com/) to style the form. It can of course be used without Bootstrap but some field types might need some custom styling to look ok.
 3. There is currently no support for linked schemas using `$ref`.
-
 
 ## Example usage
 

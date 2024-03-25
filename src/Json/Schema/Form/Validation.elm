@@ -2,7 +2,7 @@ module Json.Schema.Form.Validation exposing (validation)
 
 import Dict exposing (Dict)
 import Form.Error exposing (ErrorValue(..))
-import Form.Field exposing (Field)
+import Form.Field
 import Form.Validate exposing (..)
 import Json.Decode
 import Json.Encode
@@ -11,7 +11,6 @@ import Json.Schema.Definitions
         ( ExclusiveBoundary(..)
         , Items(..)
         , Schema(..)
-        , Schemata
         , SingleType(..)
         , SubSchema
         , Type(..)
@@ -221,7 +220,7 @@ constString constValue value field =
             Ok str ->
                 succeed str field
 
-            Err error ->
+            Err _ ->
                 fail (Form.Error.value InvalidString) field
 
     else
@@ -404,7 +403,7 @@ switch formats schemata =
     let
         validateValue schema =
             case schema of
-                BooleanSchema boolSchema ->
+                BooleanSchema _ ->
                     field "value" (validation formats schema)
 
                 ObjectSchema objectSchema ->
@@ -491,8 +490,3 @@ isType types schema_ =
 lazy : (() -> Validation e o) -> Validation e o
 lazy thunk =
     andThen thunk (succeed ())
-
-
-getFormat : String -> Formats -> Maybe Format
-getFormat format =
-    Dict.get format

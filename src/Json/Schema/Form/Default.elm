@@ -131,14 +131,14 @@ singleType schema value type_ =
                         |> Maybe.map (List.map string)
                         |> Maybe.map list
 
-                ItemDefinition item ->
+                ItemDefinition _ ->
                     value
                         |> Json.Decode.decodeValue (Json.Decode.list asString)
                         |> Result.toMaybe
                         |> Maybe.map (List.map string)
                         |> Maybe.map list
 
-                ArrayOfItems items ->
+                ArrayOfItems _ ->
                     value
                         |> Json.Decode.decodeValue (Json.Decode.list asString)
                         |> Result.toMaybe

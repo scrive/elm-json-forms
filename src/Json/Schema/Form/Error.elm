@@ -6,7 +6,6 @@ module Json.Schema.Form.Error exposing (ErrorValue(..), Errors)
 
 -}
 
-import Form exposing (Form)
 import Form.Error
 
 

@@ -1,4 +1,4 @@
-module Json.Schema.Form.Fields exposing (schemaView)
+module Json.Schema.Form.Fields exposing (Options, schemaView, set)
 
 import Dict exposing (Dict)
 import Form as F
@@ -10,7 +10,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed
 import Json.Decode
-import Json.Schema
 import Json.Schema.Definitions
     exposing
         ( Items(..)
@@ -22,7 +21,6 @@ import Json.Schema.Definitions
         )
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
-import Json.Schema.Form.Validation exposing (validation)
 import Json.Schema.Form.Value exposing (Value(..))
 
 

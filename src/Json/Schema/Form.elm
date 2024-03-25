@@ -32,10 +32,8 @@ module Json.Schema.Form exposing
 import Dict exposing (Dict)
 import Form as F exposing (Msg(..))
 import Html exposing (..)
-import Html.Events
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Default exposing (default)
-import Json.Schema.Form.Encode
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Fields
 import Json.Schema.Form.Format exposing (Format)

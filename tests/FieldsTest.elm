@@ -4,12 +4,11 @@ import Dict
 import Expect exposing (Expectation)
 import Form as F
 import Form.Validate
-import Html
 import Html.Attributes
 import Json.Encode
 import Json.Schema.Builder exposing (..)
 import Json.Schema.Definitions exposing (..)
-import Json.Schema.Form.Fields exposing (schemaView)
+import Json.Schema.Form.Fields exposing (Options, schemaView)
 import Json.Schema.Form.Value exposing (Value(..))
 import Test exposing (..)
 import Test.Html.Event as Event
@@ -17,12 +16,14 @@ import Test.Html.Query as Query
 import Test.Html.Selector exposing (..)
 
 
+options : Options
 options =
     { errors = \_ _ -> ""
     , formats = Dict.empty
     }
 
 
+form : F.Form e Value
 form =
     F.initial [] (Form.Validate.succeed EmptyValue)
 
@@ -128,6 +129,7 @@ suite =
         ]
 
 
+singleTypes : List Test
 singleTypes =
     [ describe "integer"
         [ test "should be a text field" <|
