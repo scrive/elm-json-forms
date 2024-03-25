@@ -34,6 +34,9 @@ import Json.Schema.Definitions
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Value exposing (Value)
+import List.Extra as List
+import Maybe.Extra as Maybe
+import String.Case
 
 
 type alias Options =
@@ -91,24 +94,24 @@ fieldView options path schema type_ form =
     case type_ of
         IntegerType ->
             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                select options schema (getFieldAsString path form)
+                select options path schema (getFieldAsString path form)
 
             else
-                txt options schema (getFieldAsString path form)
+                txt options path schema (getFieldAsString path form)
 
         NumberType ->
             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                select options schema (getFieldAsString path form)
+                select options path schema (getFieldAsString path form)
 
             else
-                txt options schema (getFieldAsString path form)
+                txt options path schema (getFieldAsString path form)
 
         StringType ->
             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                select options schema (getFieldAsString path form)
+                select options path schema (getFieldAsString path form)
 
             else
-                txt options schema (getFieldAsString path form)
+                txt options path schema (getFieldAsString path form)
 
         BooleanType ->
             checkbox options schema (getFieldAsBool path form)
@@ -143,8 +146,8 @@ fieldView options path schema type_ form =
             div [] []
 
 
-txt : Options -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
-txt options schema f =
+txt : Options -> Path -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
+txt options path schema f =
     let
         format : Format
         format =
@@ -259,7 +262,7 @@ txt options schema f =
     field options
         schema
         f
-        [ fieldTitle schema |> Maybe.withDefault (text "")
+        [ fieldTitle schema path |> Maybe.withDefault (text "")
         , textInput
         ]
 
@@ -310,8 +313,8 @@ checkbox options schema f =
         ]
 
 
-select : Options -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
-select options schema f =
+select : Options -> Path -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
+select options path schema f =
     let
         schemata : List Schema
         schemata =
@@ -349,7 +352,7 @@ select options schema f =
     field options
         schema
         f
-        [ fieldTitle schema |> Maybe.withDefault (text "")
+        [ fieldTitle schema path |> Maybe.withDefault (text "")
         , Input.selectInput
             items
             f
@@ -503,7 +506,7 @@ switch options path schema form =
                     ( itemId idx, text "" )
     in
     field options schema f <|
-        [ fieldTitle schema |> Maybe.withDefault (text "")
+        [ fieldTitle schema path |> Maybe.withDefault (text "")
         , div [ class "switch", id f.path, tabindex -1 ]
             (List.indexedMap itemButton items)
         , conditional "switch-more" f (List.indexedMap itemFields items)
@@ -584,9 +587,11 @@ group options path schema form =
         (meta ++ fields ++ feedback)
 
 
-fieldTitle : SubSchema -> Maybe (Html F.Msg)
-fieldTitle schema =
+fieldTitle : SubSchema -> Path -> Maybe (Html F.Msg)
+fieldTitle schema path =
     schema.title
+        -- If it does not have a title, derive from property name, unCamelCasing it
+        |> Maybe.orElse (List.last path |> Maybe.map (String.Case.convertCase " " True True))
         |> Maybe.map (\str -> span [ class "label-text" ] [ text str ])
 
 
