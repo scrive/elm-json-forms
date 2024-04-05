@@ -17,6 +17,7 @@
         "elm/html": "1.0.0 <= v < 2.0.0",
         "elm/json": "1.1.2 <= v < 2.0.0",
         "elm/regex": "1.0.0 <= v < 2.0.0",
+        "elm-community/html-extra": "3.4.0 <= v < 4.0.0",
         "elmcraft/core-extra": "2.0.0 <= v < 3.0.0",
         "json-tools/json-schema": "1.0.2 <= v < 2.0.0",
         "kutyel/elm-form": "1.0.0 <= v < 2.0.0",

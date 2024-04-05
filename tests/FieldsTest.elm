@@ -151,7 +151,7 @@ singleTypes =
             \_ ->
                 buildSchema
                     |> withType "integer"
-                    |> isTextField
+                    |> isInputTypeNumber
         , describe "oneOf"
             [ test "should be a select" <|
                 \_ ->
@@ -172,7 +172,7 @@ singleTypes =
             \_ ->
                 buildSchema
                     |> withType "number"
-                    |> isTextField
+                    |> isInputTypeNumber
         , describe "oneOf"
             [ test "should be a select" <|
                 \_ ->
@@ -335,6 +335,7 @@ isCheckbox schema =
         |> withTitle "Test"
         |> Expect.all
             [ isField
+            , hasFieldTitle
             , hasFieldDescription
             , view
                 (Expect.all
@@ -370,6 +371,27 @@ isTextField =
                             (Html.Attributes.attribute
                                 "type"
                                 "text"
+                            )
+                        ]
+                ]
+            )
+        ]
+
+
+isInputTypeNumber : SchemaBuilder -> Expectation
+isInputTypeNumber =
+    Expect.all
+        [ isField
+        , hasFieldTitle
+        , hasFieldDescription
+        , view
+            (Expect.all
+                [ Query.find [ tag "input" ]
+                    >> Query.has
+                        [ attribute
+                            (Html.Attributes.attribute
+                                "type"
+                                "number"
                             )
                         ]
                 ]

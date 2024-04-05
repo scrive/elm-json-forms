@@ -19,6 +19,7 @@ import Html.Attributes
         , tabindex
         , type_
         )
+import Html.Attributes.Extra as Attr
 import Html.Events exposing (preventDefaultOn)
 import Html.Keyed
 import Json.Decode
@@ -97,24 +98,24 @@ fieldView options path schema type_ form =
                 select options path schema (getFieldAsString path form)
 
             else
-                txt options path schema (getFieldAsString path form)
+                txt options path schema (getFieldAsString path form) { isNumber = True }
 
         NumberType ->
             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
                 select options path schema (getFieldAsString path form)
 
             else
-                txt options path schema (getFieldAsString path form)
+                txt options path schema (getFieldAsString path form) { isNumber = True }
 
         StringType ->
             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
                 select options path schema (getFieldAsString path form)
 
             else
-                txt options path schema (getFieldAsString path form)
+                txt options path schema (getFieldAsString path form) { isNumber = False }
 
         BooleanType ->
-            checkbox options schema (getFieldAsBool path form)
+            checkbox options path schema (getFieldAsBool path form)
 
         ArrayType ->
             let
@@ -146,8 +147,8 @@ fieldView options path schema type_ form =
             div [] []
 
 
-txt : Options -> Path -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
-txt options path schema f =
+txt : Options -> Path -> SubSchema -> F.FieldState ErrorValue String -> { isNumber : Bool } -> Html F.Msg
+txt options path schema f { isNumber } =
     let
         format : Format
         format =
@@ -180,7 +181,8 @@ txt options path schema f =
         attributes =
             [ classList classes
             , id f.path
-            , placeholder (format.placeholder |> Maybe.withDefault "")
+            , Attr.attributeIf isNumber <| attribute "type" "number"
+            , Attr.attributeMaybe placeholder format.placeholder
             , case format.autocomplete of
                 Just "on" ->
                     autocomplete True
@@ -267,8 +269,8 @@ txt options path schema f =
         ]
 
 
-checkbox : Options -> SubSchema -> F.FieldState ErrorValue Bool -> Html F.Msg
-checkbox options schema f =
+checkbox : Options -> Path -> SubSchema -> F.FieldState ErrorValue Bool -> Html F.Msg
+checkbox options path schema f =
     let
         content : List (Html F.Msg)
         content =
@@ -280,7 +282,7 @@ checkbox options schema f =
                         ]
                     , id f.path
                     ]
-                , text (schema.title |> Maybe.withDefault "")
+                , fieldTitle schema path |> Maybe.withDefault (text "")
                 ]
             ]
 
