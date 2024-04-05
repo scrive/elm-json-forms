@@ -46,6 +46,7 @@ import Json.Schema.Form.Error exposing (ErrorValue(..))
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
 import Json.Schema.Form.Value exposing (Value(..))
+import Maybe.Extra as Maybe
 import Regex
 import Set
 
@@ -462,7 +463,7 @@ switch formats schemata =
                             else
                                 Nothing
                         )
-                    |> List.filterMap identity
+                    |> Maybe.values
                     |> List.head
                     |> Maybe.withDefault (fail (customError Invalid))
             )

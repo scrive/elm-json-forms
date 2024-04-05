@@ -21,6 +21,7 @@ import Html.Attributes
         )
 import Html.Attributes.Extra as Attr
 import Html.Events exposing (preventDefaultOn)
+import Html.Extra as Html
 import Html.Keyed
 import Json.Decode
 import Json.Schema.Definitions
@@ -288,13 +289,11 @@ checkbox options path schema f =
 
         meta : List (Html F.Msg)
         meta =
-            [ fieldDescription schema ]
-                |> List.filterMap identity
+            Maybe.values [ fieldDescription schema ]
 
         feedback : List (Html F.Msg)
         feedback =
-            [ liveError options.errors f ]
-                |> List.filterMap identity
+            Maybe.values [ liveError options.errors f ]
     in
     div
         [ classList
@@ -520,13 +519,11 @@ field options schema f content =
     let
         meta : List (Html F.Msg)
         meta =
-            [ fieldDescription schema ]
-                |> List.filterMap identity
+            Maybe.values [ fieldDescription schema ]
 
         feedback : List (Html F.Msg)
         feedback =
-            [ liveError options.errors f ]
-                |> List.filterMap identity
+            Maybe.values [ liveError options.errors f ]
     in
     div
         [ classList
@@ -569,15 +566,11 @@ group options path schema form =
 
         meta : List (Html msg)
         meta =
-            [ Maybe.map (\str -> p [] [ text str ]) schema.description
-            ]
-                |> List.filterMap identity
+            schema.description |> Html.viewMaybe (\str -> p [] [ text str ]) |> List.singleton
 
         feedback : List (Html F.Msg)
         feedback =
-            [ liveError options.errors f
-            ]
-                |> List.filterMap identity
+            Maybe.values [ liveError options.errors f ]
     in
     div
         [ classList
