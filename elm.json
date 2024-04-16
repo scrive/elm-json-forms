@@ -3,7 +3,7 @@
     "name": "scrive/json-schema-form",
     "summary": "Generate validating forms from JSON schemas.",
     "license": "MIT",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "exposed-modules": [
         "Json.Schema.Form",
         "Json.Schema.Form.Encode",
@@ -20,7 +20,7 @@
         "elm-community/html-extra": "3.4.0 <= v < 4.0.0",
         "elmcraft/core-extra": "2.0.0 <= v < 3.0.0",
         "json-tools/json-schema": "1.0.2 <= v < 2.0.0",
-        "kutyel/elm-form": "1.0.0 <= v < 2.0.0",
+        "scrive/elm-form": "1.0.0 <= v < 2.0.0",
         "the-sett/elm-string-case": "1.0.2 <= v < 2.0.0"
     },
     "test-dependencies": {
