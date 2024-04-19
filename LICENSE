@@ -1,6 +1,10 @@
 MIT License
 
-Copyright © 2024 Scrive
+Copyright © 2024 Scrive, 2019 Niklas Holmgren
+
+Copyright for portions of project json-schema-form are held by Niklas Holmgren,
+2019, as part of project json-schema-form. All other copyright for project
+json-schema-form are held by Scrive, 2024.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
