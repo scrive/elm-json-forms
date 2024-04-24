@@ -3,7 +3,7 @@
     "name": "scrive/json-schema-form",
     "summary": "Generate validating forms from JSON schemas.",
     "license": "MIT",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "exposed-modules": [
         "Json.Schema.Form",
         "Json.Schema.Form.Encode",
