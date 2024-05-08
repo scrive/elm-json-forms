@@ -8,22 +8,108 @@ import Form.Field exposing (FieldValue(..))
 import Form.Input exposing (Input)
 import Form.Validate
 import Html exposing (..)
-import Html.Attributes exposing (class, style)
+import Html.Attributes as Attrs exposing (class, style)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode exposing (bool, float, int, list, string)
-import Json.Schema
 import Json.Schema.Builder exposing (..)
 import Json.Schema.Definitions
 import Json.Schema.Form exposing (Msg, State)
 import Json.Schema.Form.Encode
 import Json.Schema.Form.Error exposing (ErrorValue(..), Errors)
 import Json.Schema.Form.Format exposing (Format)
+import Json.Schema.Form.Theme as Theme exposing (Theme)
 import Regex
 
 
 main : Program () State Msg
 main =
     Browser.sandbox { init = init, update = update, view = view }
+
+
+tailwind : Theme
+tailwind =
+    let
+        theme =
+            Theme.default
+
+        isInvalid =
+            "border-2 border-red-500"
+    in
+    { theme
+        | -- inputs
+          txt =
+            \{ withError, format } ->
+                Attrs.classList
+                    [ ( "block w-full rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", True )
+                    , ( "border-0", not withError )
+                    , ( isInvalid, withError )
+                    , case format of
+                        Just str ->
+                            ( "format-" ++ str, True )
+
+                        Nothing ->
+                            ( "", False )
+                    ]
+
+        -- checkbox
+        , checkboxWrapper = Attrs.class "flex h-6 items-center"
+        , checkboxInput =
+            \{ withError } ->
+                Attrs.classList
+                    [ ( "h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600", True )
+                    , ( isInvalid, withError )
+                    ]
+        , checkboxTitle = Attrs.class "ml-3 text-sm leading-6"
+
+        -- select
+        , select =
+            \{ withError } ->
+                Attrs.classList
+                    [ ( "block w-full mt-2 rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6", True )
+                    , ( "border-0", not withError )
+                    , ( isInvalid, withError )
+                    ]
+
+        -- list group
+        , listGroup = Attrs.class "mb-2"
+        , listGroupItem = Attrs.class "border border-gray-300 rounded-md px-4 py-2 mb-2 shadow-sm"
+        , listGroupAddItemButton = Attrs.class "rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+        , listGroupRemoveItemButton = Attrs.class "rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+
+        -- tuple
+        , formRow = Attrs.class "flex space-x-4"
+        , formRowItem = Attrs.class "max-w-full flex-grow"
+
+        -- radio
+        , radioWrapper = Attrs.class "flex items-center gap-x-3"
+        , radioInput = Attrs.class "h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+        , radioInputLabel = Attrs.class "block text-sm font-medium leading-6 text-gray-900"
+        , field =
+            \{ withError, withValue } ->
+                Attrs.classList
+                    [ ( "mb-6", True )
+                    , ( "text-red-500", withError )
+                    , ( "has-value", withValue )
+                    ]
+        , fieldLabel = Attrs.class "block"
+        , fieldInput = Attrs.class "field-input"
+        , fieldInputMeta = Attrs.class "field-meta"
+        , fieldTitle = Attrs.class "block text-sm font-medium leading-6 text-gray-900"
+        , fieldDescription = Attrs.class "mt-2 text-sm leading-6 text-gray-600"
+        , group =
+            \{ withError, withValue } ->
+                Attrs.classList
+                    [ ( "mb-4", True )
+                    , ( "text-red-500", withError )
+                    , ( "has-value", withValue )
+                    ]
+        , liveError = Attrs.class "text-red-500 text-xs my-2"
+        , inputGroupPrepend = Attrs.class "inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm"
+        , inputGroupPrependContent = Attrs.class "text-gray-500 sm:text-sm"
+        , inputGroupAppend = Attrs.class "inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm"
+        , inputGroupAppendContent = Attrs.class "text-gray-500 sm:text-sm"
+        , inputGroup = Attrs.class "mt-2 flex shadow-sm"
+    }
 
 
 init : State
@@ -33,6 +119,7 @@ init =
             Json.Schema.Form.init
                 { errors = errorString
                 , formats = Dict.fromList formats
+                , theme = tailwind
                 }
                 schema_
 
@@ -49,7 +136,7 @@ view : State -> Html Msg
 view state =
     form [ onSubmit Json.Schema.Form.submit ]
         [ Json.Schema.Form.view state
-        , button [ class "btn btn-primary" ] [ text "Submit" ]
+        , button [ class "btn btn-primary rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" ] [ text "Submit" ]
         , case Form.getOutput state.form of
             Just output ->
                 let
@@ -221,7 +308,7 @@ schema =
             , ( "numbers"
               , buildSchema
                     |> withType "array"
-                    |> withDefault (list float [ 6, 6.8 ])
+                    |> withDefault (list float [ 6, 7 ])
                     |> withItems
                         [ buildSchema
                             |> withType "integer"

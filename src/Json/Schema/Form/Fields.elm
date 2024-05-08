@@ -1,11 +1,11 @@
-module Json.Schema.Form.Fields exposing (Options, schemaView)
+module Json.Schema.Form.Fields exposing (schemaView)
 
 import Dict exposing (Dict)
 import Form as F
 import Form.Input as Input
 import Form.Validate
 import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
-import Html.Attributes
+import Html.Attributes as Attrs
     exposing
         ( attribute
         , autocomplete
@@ -35,16 +35,12 @@ import Json.Schema.Definitions
         )
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
+import Json.Schema.Form.Options exposing (Options)
+import Json.Schema.Form.Theme exposing (Theme)
 import Json.Schema.Form.Value exposing (Value)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import String.Case
-
-
-type alias Options =
-    { errors : Errors
-    , formats : Dict String Format
-    }
 
 
 type alias Form =
@@ -166,21 +162,13 @@ txt options path schema f { isNumber } =
                     , validation = Form.Validate.succeed
                     }
 
-        classes : List ( String, Bool )
-        classes =
-            [ ( "form-control", True )
-            , ( "is-invalid", f.liveError /= Nothing )
-            , case schema.format of
-                Just str ->
-                    ( "format-" ++ str, True )
-
-                Nothing ->
-                    ( "", False )
-            ]
-
         attributes : List (Attribute msg)
         attributes =
-            [ classList classes
+            [ Attrs.map never <|
+                options.theme.txt
+                    { withError = f.liveError /= Nothing
+                    , format = schema.format
+                    }
             , id f.path
             , Attr.attributeIf isNumber <| attribute "type" "number"
             , Attr.attributeMaybe placeholder format.placeholder
@@ -201,6 +189,7 @@ txt options path schema f { isNumber } =
         textInput : Html F.Msg
         textInput =
             inputGroup
+                options.theme
                 format.prefix
                 format.suffix
                 [ if format.lines > 1 then
@@ -265,7 +254,7 @@ txt options path schema f { isNumber } =
     field options
         schema
         f
-        [ fieldTitle schema path |> Maybe.withDefault (text "")
+        [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
         , textInput
         ]
 
@@ -275,25 +264,23 @@ checkbox options path schema f =
     let
         content : List (Html F.Msg)
         content =
-            [ div [ class "checkbox" ]
+            [ div [ Attrs.map never options.theme.checkboxWrapper ]
                 [ Input.checkboxInput f
-                    [ classList
-                        [ ( "form-check-input", True )
-                        , ( "is-invalid", f.liveError /= Nothing )
-                        ]
+                    [ Attrs.map never <| options.theme.checkboxInput { withError = f.liveError /= Nothing }
                     , id f.path
                     ]
-                , fieldTitle schema path |> Maybe.withDefault (text "")
+                , div [ Attrs.map never options.theme.checkboxTitle ]
+                    [ fieldTitle options.theme schema path |> Maybe.withDefault (text "") ]
                 ]
             ]
 
         meta : List (Html F.Msg)
         meta =
-            Maybe.values [ fieldDescription schema ]
+            Maybe.values [ fieldDescription options.theme schema ]
 
         feedback : List (Html F.Msg)
         feedback =
-            Maybe.values [ liveError options.errors f ]
+            Maybe.values [ liveError options.theme options.errors f ]
     in
     div
         [ classList
@@ -345,7 +332,7 @@ select options path schema f =
                     (\( name, schema_ ) ->
                         ( name
                         , schema_
-                            |> Maybe.andThen fieldDescription
+                            |> Maybe.andThen (fieldDescription options.theme)
                             |> Maybe.withDefault (text "")
                         )
                     )
@@ -353,14 +340,11 @@ select options path schema f =
     field options
         schema
         f
-        [ fieldTitle schema path |> Maybe.withDefault (text "")
+        [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
         , Input.selectInput
             items
             f
-            [ classList
-                [ ( "form-control custom-select", True )
-                , ( "is-invalid", f.liveError /= Nothing )
-                ]
+            [ Attrs.map never <| options.theme.select { withError = f.liveError /= Nothing }
             , id f.path
             ]
         , conditional "select-more" f descriptions
@@ -398,21 +382,21 @@ list options path form ( title, schema ) =
         itemView : Int -> Html F.Msg
         itemView idx =
             li
-                [ class "list-group-item" ]
+                [ Attrs.map never options.theme.listGroupItem ]
                 [ schemaView options (itemPath idx) schema form
                 , button
                     [ onClickPreventDefault (F.RemoveItem (fieldPath path) idx)
-                    , class "btn btn-outline-secondary btn-sm btn-remove"
+                    , Attrs.map never options.theme.listGroupRemoveItemButton
                     ]
-                    [ text "Remove" ]
+                    [ text options.theme.listGroupRemoveItemButtonTitle ]
                 ]
     in
-    [ ol [ class "list-group mb-2" ] (List.map itemView indexes)
+    [ ol [ Attrs.map never options.theme.listGroup ] (List.map itemView indexes)
     , button
-        [ class "btn btn-secondary btn-add"
-        , onClickPreventDefault (F.Append (fieldPath path))
+        [ onClickPreventDefault (F.Append (fieldPath path))
+        , Attrs.map never options.theme.listGroupAddItemButton
         ]
-        [ text (title |> Maybe.withDefault "Add")
+        [ text (title |> Maybe.withDefault options.theme.listGroupAddItemButtonDefaultTitle)
         ]
     ]
 
@@ -432,7 +416,7 @@ tuple options path form ( title, schemata ) =
         itemView : Int -> Schema -> Html F.Msg
         itemView idx itemSchema =
             div
-                [ class "col" ]
+                [ Attrs.map never options.theme.formRowItem ]
                 [ schemaView options (itemPath idx) itemSchema form ]
     in
     [ case title of
@@ -441,19 +425,27 @@ tuple options path form ( title, schemata ) =
 
         Nothing ->
             text ""
-    , div [ class "form-row" ] (List.indexedMap itemView schemata)
+    , div [ Attrs.map never options.theme.formRow ] (List.indexedMap itemView schemata)
     ]
 
 
-radio : F.FieldState ErrorValue String -> ( String, String ) -> Html F.Msg
-radio fieldState ( value, title ) =
-    label [ class "form-check-label" ]
+radio options fieldState ( value, title ) =
+    let
+        fieldId : String
+        fieldId =
+            fieldPath [ fieldState.path, value ]
+    in
+    div [ Attrs.map never options.theme.radioWrapper ]
         [ Input.radioInput value
             fieldState
-            [ class "form-check-input"
-            , id (fieldPath [ fieldState.path, value ])
+            [ Attrs.map never options.theme.radioInput
+            , id fieldId
             ]
-        , span [ class "label-text" ] [ text title ]
+        , label
+            [ Attrs.map never options.theme.radioInputLabel
+            , for fieldId
+            ]
+            [ text title ]
         ]
 
 
@@ -488,7 +480,7 @@ switch options path schema form =
                     , ( "form-check-inline", List.length items <= 2 )
                     ]
                 ]
-                [ radio f ( itemId idx, title ) ]
+                [ radio options f ( itemId idx, title ) ]
 
         itemFields : Int -> ( String, Maybe SubSchema ) -> ( String, Html F.Msg )
         itemFields idx ( _, schema_ ) =
@@ -507,7 +499,7 @@ switch options path schema form =
                     ( itemId idx, text "" )
     in
     field options schema f <|
-        [ fieldTitle schema path |> Maybe.withDefault (text "")
+        [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
         , div [ class "switch", id f.path, tabindex -1 ]
             (List.indexedMap itemButton items)
         , conditional "switch-more" f (List.indexedMap itemFields items)
@@ -519,27 +511,29 @@ field options schema f content =
     let
         meta : List (Html F.Msg)
         meta =
-            Maybe.values [ fieldDescription schema ]
+            Maybe.values [ fieldDescription options.theme schema ]
 
         feedback : List (Html F.Msg)
         feedback =
-            Maybe.values [ liveError options.errors f ]
+            Maybe.values [ liveError options.theme options.errors f ]
     in
     div
-        [ classList
-            [ ( "form-group", True )
-            , ( "is-invalid", f.liveError /= Nothing )
-            , ( "has-value", f.value /= Nothing && f.value /= Just "" )
-            ]
+        [ Attrs.map never <|
+            options.theme.field
+                { withError =
+                    f.liveError /= Nothing
+                , withValue =
+                    f.value /= Nothing && f.value /= Just ""
+                }
         ]
-        [ label [ for f.path, class "d-block" ]
-            [ div [ class "field-input" ] (content ++ feedback)
+        [ label [ for f.path, Attrs.map never options.theme.fieldLabel ]
+            [ div [ Attrs.map never options.theme.fieldInput ] (content ++ feedback)
             , case meta of
                 [] ->
                     text ""
 
                 html ->
-                    div [ class "field-meta" ] html
+                    div [ Attrs.map never options.theme.fieldInputMeta ] html
             ]
         ]
 
@@ -570,56 +564,56 @@ group options path schema form =
 
         feedback : List (Html F.Msg)
         feedback =
-            Maybe.values [ liveError options.errors f ]
+            Maybe.values [ liveError options.theme options.errors f ]
     in
     div
-        [ classList
-            [ ( "form-group", True )
-            , ( "is-invalid", f.liveError /= Nothing )
-            , ( "has-value", f.value /= Nothing && f.value /= Just "" )
-            ]
+        [ Attrs.map never <|
+            options.theme.group
+                { withError = f.liveError /= Nothing
+                , withValue = f.value /= Nothing && f.value /= Just ""
+                }
         ]
         (meta ++ fields ++ feedback)
 
 
-fieldTitle : SubSchema -> Path -> Maybe (Html F.Msg)
-fieldTitle schema path =
+fieldTitle : Theme -> SubSchema -> Path -> Maybe (Html F.Msg)
+fieldTitle theme schema path =
     schema.title
         -- If it does not have a title, derive from property name, unCamelCasing it
         |> Maybe.orElse (List.last path |> Maybe.map (String.Case.convertCase " " True True))
-        |> Maybe.map (\str -> span [ class "label-text" ] [ text str ])
+        |> Maybe.map (\str -> span [ Attrs.map never theme.fieldTitle ] [ text str ])
 
 
-fieldDescription : SubSchema -> Maybe (Html F.Msg)
-fieldDescription schema =
+fieldDescription : Theme -> SubSchema -> Maybe (Html F.Msg)
+fieldDescription theme schema =
     schema.description
-        |> Maybe.map (\str -> div [ class "form-text text-muted" ] [ text str ])
+        |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
 
 
-liveError : Errors -> F.FieldState ErrorValue a -> Maybe (Html F.Msg)
-liveError func f =
+liveError : Theme -> Errors -> F.FieldState ErrorValue a -> Maybe (Html F.Msg)
+liveError theme func f =
     f.liveError
         |> Maybe.map
             (\err ->
                 div
-                    [ class "invalid-feedback"
+                    [ Attrs.map never theme.liveError
                     , style "display" "block"
                     ]
                     [ text (func f.path err) ]
             )
 
 
-inputGroup : Maybe String -> Maybe String -> List (Html F.Msg) -> Html F.Msg
-inputGroup prefix suffix content =
+inputGroup : Theme -> Maybe String -> Maybe String -> List (Html F.Msg) -> Html F.Msg
+inputGroup theme prefix suffix content =
     let
         prepend : List (Html msg)
         prepend =
             case prefix of
                 Just string ->
                     [ div
-                        [ class "input-group-prepend" ]
-                        [ div
-                            [ class "input-group-text" ]
+                        [ Attrs.map never theme.inputGroupPrepend ]
+                        [ span
+                            [ Attrs.map never theme.inputGroupPrependContent ]
                             [ text string ]
                         ]
                     ]
@@ -632,9 +626,9 @@ inputGroup prefix suffix content =
             case suffix of
                 Just string ->
                     [ div
-                        [ class "input-group-append" ]
-                        [ div
-                            [ class "input-group-text" ]
+                        [ Attrs.map never theme.inputGroupAppend ]
+                        [ span
+                            [ Attrs.map never theme.inputGroupAppendContent ]
                             [ text string ]
                         ]
                     ]
@@ -643,7 +637,7 @@ inputGroup prefix suffix content =
                     []
     in
     div
-        [ class "input-group" ]
+        [ Attrs.map never theme.inputGroup ]
         (prepend ++ content ++ append)
 
 
@@ -654,7 +648,7 @@ fieldset schema content =
         title =
             case schema.title of
                 Just str ->
-                    [ legend [] [ text str ] ]
+                    [ legend [ class "text-2xl pb-2" ] [ text str ] ]
 
                 Nothing ->
                     []

@@ -23,7 +23,9 @@ import Json.Schema.Builder
         , withType
         , withUnionType
         )
-import Json.Schema.Form.Fields exposing (Options, schemaView)
+import Json.Schema.Form.Fields exposing (schemaView)
+import Json.Schema.Form.Options exposing (Options)
+import Json.Schema.Form.Theme as Theme
 import Json.Schema.Form.Value exposing (Value(..))
 import Test exposing (Test, describe, test)
 import Test.Html.Event as Event
@@ -35,6 +37,7 @@ options : Options
 options =
     { errors = \_ _ -> ""
     , formats = Dict.empty
+    , theme = Theme.default
     }
 
 
@@ -341,7 +344,7 @@ isCheckbox schema =
                 (Expect.all
                     [ Query.has [ tag "div", class "form-check" ]
                     , Query.find [ tag "label" ]
-                        >> Query.has [ class "form-check-label", text "Test" ]
+                        >> Query.has [ class "label-text", text "Test" ]
                     , Query.find [ tag "input" ]
                         >> Query.has
                             [ class "form-check-input"
@@ -427,11 +430,7 @@ isList schema =
                 [ Query.has [ tag "div", class "form-group" ]
                 , Query.find
                     [ tag "button"
-                    , classes
-                        [ "btn"
-                        , "btn-secondary"
-                        , "btn-add"
-                        ]
+                    , classes [ "btn", "btn-secondary", "btn-add" ]
                     ]
                     >> Query.has [ text "Test" ]
                 , Query.find [ tag "button", class "btn-add" ]
@@ -489,10 +488,10 @@ isSwitch schema =
                                         ]
                                 ]
                             )
-                    , Query.findAll [ class "form-check-label" ]
+                    , Query.findAll [ class "label-text" ]
                         >> Query.index 0
                         >> Query.has [ text "One" ]
-                    , Query.findAll [ class "form-check-label" ]
+                    , Query.findAll [ class "label-text" ]
                         >> Query.index 1
                         >> Query.has [ text "Two" ]
                     , Query.findAll [ class "form-check-input" ]

@@ -1,5 +1,5 @@
 module Json.Schema.Form exposing
-    ( Options, State, Msg
+    ( State, Msg
     , init, update
     , view, submit
     , getOutput
@@ -10,7 +10,7 @@ module Json.Schema.Form exposing
 
 # Types
 
-@docs Options, State, Msg
+@docs State, Msg
 
 
 # Init/update lifecycle
@@ -26,28 +26,15 @@ module Json.Schema.Form exposing
 
 -}
 
-import Dict exposing (Dict)
 import Form as F exposing (Msg)
 import Html exposing (Html)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Default exposing (default)
-import Json.Schema.Form.Error exposing (ErrorValue, Errors)
+import Json.Schema.Form.Error exposing (ErrorValue)
 import Json.Schema.Form.Fields
-import Json.Schema.Form.Format exposing (Format)
+import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Validation exposing (validation)
 import Json.Schema.Form.Value exposing (Value)
-
-
-{-| Customize the generated form.
-
-  - `errors` - A function that turns error values into user readable strings.
-  - `formats` - A list of custom formats (see `Json.Schema.Form.Format`).
-
--}
-type alias Options =
-    { errors : Errors
-    , formats : Dict String Format
-    }
 
 
 {-| The form state.
