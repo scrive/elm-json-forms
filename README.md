@@ -12,12 +12,12 @@ Generate validating forms from JSON schemas.
 - Generates all common types of input fields (`text`, `select`, etc.) with optional labels and descriptions.
 - Error messages can easily be customized as needed.
 - Supports custom string formats using validation functions (similar to Json decoders).
+- Comes with default Bootstrap and Tailwind CSS themes in the `Theme` object, that can also be customised.
 
 ## Warnings
 
 1. The way form fields are generated and presented is very opinionated and thus not always suitable for general case usage. This library is intended to be used for cases where you have control over how the schema is structured.
-2. The HTML that the library outputs is intended to be used together with [Tailwind CSS](https://tailwindcss.com/) to style the form. It can of course be used without Tailwind but some field types might need some custom styling to look ok.
-3. There is currently no support for linked schemas using `$ref`.
+2. There is currently no support for linked schemas using `$ref`.
 
 ## Example usage
 
@@ -32,6 +32,7 @@ import Html exposing (..)
 import Html.Events exposing (onSubmit)
 import Json.Schema
 import Json.Schema.Form exposing (Msg, State)
+import Json.Schema.Form.Theme as Theme
 
 
 main : Program () State Msg
@@ -61,6 +62,7 @@ init =
             Json.Schema.Form.init
                 { errors = \path error -> "Invalid field: " ++ path
                 , formats = Dict.empty
+                , theme = Theme.default
                 }
                 schema_
 
