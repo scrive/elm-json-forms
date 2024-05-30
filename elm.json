@@ -11,7 +11,9 @@
         "Json.Schema.Form.Format",
         "Json.Schema.Form.Value",
         "Json.Schema.Form.Options",
-        "Json.Schema.Form.Theme"
+        "Json.Schema.Form.Theme",
+        "Json.Schema.Form.UiSchema",
+        "Json.Schema.Form.Pointer"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

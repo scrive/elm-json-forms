@@ -33,6 +33,7 @@ import Json.Schema.Form.Default exposing (default)
 import Json.Schema.Form.Error exposing (ErrorValue)
 import Json.Schema.Form.Fields
 import Json.Schema.Form.Options exposing (Options)
+import Json.Schema.Form.UiSchema exposing (UiSchema, generateUiSchema)
 import Json.Schema.Form.Validation exposing (validation)
 import Json.Schema.Form.Value exposing (Value)
 
@@ -42,6 +43,7 @@ import Json.Schema.Form.Value exposing (Value)
 type alias State =
     { options : Options
     , schema : Schema
+    , uiSchema : UiSchema
     , form : F.Form ErrorValue Value
     }
 
@@ -54,9 +56,13 @@ type alias Msg =
 
 {-| Initialize a form state with options and a schema. Use [json-tools/json-schema](https://package.elm-lang.org/packages/json-tools/json-schema/1.0.2/) to parse or build a schema.
 -}
-init : Options -> Schema -> State
-init options schema =
-    State options schema <|
+init : Options -> Schema -> Maybe UiSchema -> State
+init options schema mUiSchema =
+    let
+        uiSchema =
+            Maybe.withDefault (generateUiSchema schema) mUiSchema
+    in
+    State options schema uiSchema <|
         F.initial (default schema) (validation options.formats schema)
 
 

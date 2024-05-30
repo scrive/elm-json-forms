@@ -8,9 +8,10 @@ import Form.Field exposing (FieldValue(..))
 import Form.Input exposing (Input)
 import Form.Validate
 import Html exposing (..)
-import Html.Attributes as Attrs exposing (class, style)
+import Html.Attributes as Attrs exposing (class, style, disabled)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode exposing (bool, float, int, list, string)
+import Json.Schema
 import Json.Schema.Builder exposing (..)
 import Json.Schema.Definitions
 import Json.Schema.Form exposing (Msg, State)
@@ -18,6 +19,7 @@ import Json.Schema.Form.Encode
 import Json.Schema.Form.Error exposing (ErrorValue(..), Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
+import Json.Schema.Form.UiSchema as UiSchema
 import Regex
 
 
@@ -28,7 +30,7 @@ main =
 
 init : State
 init =
-    case schema of
+    case schema_json of
         Ok schema_ ->
             Json.Schema.Form.init
                 { errors = errorString
@@ -36,6 +38,7 @@ init =
                 , theme = Theme.tailwind
                 }
                 schema_
+                Nothing
 
         Err error ->
             Debug.todo error
@@ -48,20 +51,27 @@ update msg state =
 
 view : State -> Html Msg
 view state =
-    form [ onSubmit Json.Schema.Form.submit ]
-        [ Json.Schema.Form.view state
-        , button [ class "btn btn-primary rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" ] [ text "Submit" ]
-        , case Form.getOutput state.form of
-            Just output ->
-                let
-                    json =
-                        Json.Encode.encode 4 (Json.Schema.Form.Encode.encode output)
-                in
-                pre [] [ text json ]
+    let
+        anyErrors = not <| List.isEmpty <| Form.getErrors state.form
+    in
+        form [ onSubmit Json.Schema.Form.submit ]
+            [ Json.Schema.Form.view state
+            , button
+                [ class "rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                , disabled anyErrors
+                , if anyErrors then class "opacity-50" else class "hover:bg-blue-500"
+                ] [ text "Submit" ]
+            , case Form.getOutput state.form of
+                Just output ->
+                    let
+                        json =
+                            Json.Encode.encode 4 (Json.Schema.Form.Encode.encode output)
+                    in
+                    pre [] [ text json ]
 
-            Nothing ->
-                text ""
-        ]
+                Nothing ->
+                    text ""
+            ]
 
 
 errorString : Errors
@@ -192,6 +202,76 @@ formats =
       )
     ]
 
+
+schema_json : Result String Json.Schema.Definitions.Schema
+schema_json = Json.Schema.fromString """
+{
+  "type": "object",
+  "required": [
+    "age"
+  ],
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 20
+    },
+    "lastName": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 15
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 18,
+      "maximum": 100
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female",
+        "Undisclosed"
+      ]
+    },
+    "height": {
+      "type": "number"
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "format": "date"
+    },
+    "rating": {
+      "type": "integer"
+    },
+    "committer": {
+      "type": "boolean"
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "streetnumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+    """
+
+ui_schema_json : Result String UiSchema.UiSchema
+ui_schema_json = UiSchema.fromString """
+{}
+"""
 
 schema : Result String Json.Schema.Definitions.Schema
 schema =

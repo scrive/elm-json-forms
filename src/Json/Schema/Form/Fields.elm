@@ -37,6 +37,7 @@ import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Theme exposing (Theme)
+import Json.Schema.Form.UiSchema exposing (UiSchema)
 import Json.Schema.Form.Value exposing (Value)
 import List.Extra as List
 import Maybe.Extra as Maybe
