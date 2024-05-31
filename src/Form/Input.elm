@@ -24,7 +24,7 @@ import Json.Decode as Json
 All input functions using this type alias are pre-wired with event handlers.
 -}
 type alias Input e =
-    FieldState e FieldValue -> List (Attribute Msg) -> Html Msg
+    FieldState e -> List (Attribute Msg) -> Html Msg
 
 
 {-| Untyped input, first param is `type` attribute.

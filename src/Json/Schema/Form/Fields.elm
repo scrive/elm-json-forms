@@ -211,7 +211,7 @@ schemaView options path schema form = Html.nothing
 --             div [] []
 
 
-txt : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue FieldValue -> { isNumber : Bool } -> Html F.Msg
+txt : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue -> { isNumber : Bool } -> Html F.Msg
 txt options path schema f { isNumber } =
     let
         format : Format
@@ -326,7 +326,7 @@ txt options path schema f { isNumber } =
         ]
 
 
-checkbox : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue FieldValue -> Html F.Msg
+checkbox : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue -> Html F.Msg
 checkbox options path schema f =
     let
         content : List (Html F.Msg)
@@ -369,7 +369,7 @@ checkbox options path schema f =
 
 
 -- TODO: add a None option
-select : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue FieldValue -> Html F.Msg
+select : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue -> Html F.Msg
 select options path schema f =
     let
         values : List String
@@ -547,7 +547,7 @@ radio options fieldState ( value, title ) =
 --         ]
 
 
-field : Options -> SubSchema -> F.FieldState ErrorValue FieldValue -> List (Html F.Msg) -> Html F.Msg
+field : Options -> SubSchema -> F.FieldState ErrorValue -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
         meta : List (Html F.Msg)
@@ -633,7 +633,7 @@ fieldDescription theme schema =
         |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
 
 
-liveError : Theme -> Errors -> F.FieldState ErrorValue a -> Maybe (Html F.Msg)
+liveError : Theme -> Errors -> F.FieldState ErrorValue -> Maybe (Html F.Msg)
 liveError theme func f =
     f.liveError
         |> Maybe.map
@@ -739,12 +739,12 @@ alwaysPreventDefault msg =
     ( msg, True )
 
 
-conditional : String -> F.FieldState e String -> List ( String, Html F.Msg ) -> Html F.Msg
+conditional : String -> F.FieldState e -> List ( String, Html F.Msg ) -> Html F.Msg
 conditional className f conditions =
     let
         cond : ( String, b ) -> Maybe ( String, b )
         cond ( value, html ) =
-            if f.value == Just value then
+            if Maybe.andThen Field.valueAsString f.value == Just value then
                 Just ( value, html )
 
             else

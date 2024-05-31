@@ -50,7 +50,16 @@ type alias Formats =
 
 validation : Formats -> Schema -> Validation ErrorValue Value
 validation formats schema = fail (customError Invalid)
+    -- case schema of
+    --     BooleanSchema bool ->
+    --         if bool then
+    --             validation formats blankSchema
 
+    --         else
+    --             fail (customError Invalid)
+
+    --     ObjectSchema objectSchema ->
+    --         subSchema formats objectSchema
 
 -- subSchema : Formats -> SubSchema -> Validation ErrorValue Value
 -- subSchema formats schema =
