@@ -1,4 +1,4 @@
-module Json.Schema.Form.Fields exposing (schemaView)
+module Json.Schema.Form.Fields exposing (schemaView, uiSchemaView)
 
 import Dict exposing (Dict)
 import Form as F
@@ -23,7 +23,7 @@ import Html.Attributes.Extra as Attr
 import Html.Events exposing (preventDefaultOn)
 import Html.Extra as Html
 import Html.Keyed
-import Json.Decode
+import Json.Decode as Decode
 import Json.Schema.Definitions
     exposing
         ( Items(..)
@@ -36,8 +36,9 @@ import Json.Schema.Definitions
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
+import Json.Schema.Form.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Form.Theme exposing (Theme)
-import Json.Schema.Form.UiSchema exposing (UiSchema)
+import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
 import Json.Schema.Form.Value exposing (Value)
 import List.Extra as List
 import Maybe.Extra as Maybe
@@ -48,11 +49,73 @@ type alias Form =
     F.Form ErrorValue Value
 
 
-type alias Path =
-    List String
+uiSchemaView : Options -> UiSchema -> Schema -> Form -> Html F.Msg
+uiSchemaView options uiSchema schema form =
+    case uiSchema of
+        UI.UiControl x ->
+            controlView options schema x form
+
+        UI.UiHorizontalLayout x ->
+            div [] [ text "unimplemented horizontal layout" ]
+
+        -- TODO: test
+        -- [ Attrs.map never <| options.theme.formRow
+        -- ] <| List.map (\us -> div
+        --     [ Attrs.map never <| options.theme.formRowItem
+        --     ] [uiSchemaView options us schema form]) x.elements
+        UI.UiVerticalLayout x ->
+            div
+                -- TODO: simplify options.theme.group
+                [ Attrs.map never <| options.theme.group { withError = False, withValue = False }
+                ]
+            <|
+                List.map (\us -> uiSchemaView options us schema form) x.elements
+
+        UI.UiGroup _ ->
+            div [] [ text "unimplemented group" ]
+
+        UI.UiCategorization _ ->
+            div [] [ text "unimplemented categorization" ]
 
 
-schemaView : Options -> Path -> Schema -> Form -> Html F.Msg
+controlView : Options -> Schema -> UI.Control -> Form -> Html F.Msg
+controlView options wholeSchema control form =
+    let
+        mControlSchema =
+            UI.pointToSchema wholeSchema control.scope
+
+        controlBody schema_ =
+            case schema_ of
+                BooleanSchema _ ->
+                    Html.nothing
+
+                ObjectSchema schema ->
+                    case schema.type_ of
+                        SingleType IntegerType ->
+                            if schema.enum /= Nothing then
+                                select options control.scope schema (getFieldAsString control.scope form)
+
+                            else
+                                txt options control.scope schema (getFieldAsString control.scope form) { isNumber = True }
+
+                        SingleType NumberType ->
+                            if schema.enum /= Nothing then
+                                select options control.scope schema (getFieldAsString control.scope form)
+
+                            else
+                                txt options control.scope schema (getFieldAsString control.scope form) { isNumber = True }
+
+                        _ ->
+                            Html.nothing
+    in
+    Html.viewMaybe
+        (\cs ->
+            div [ id (Pointer.toString control.scope) ] [ controlBody cs ]
+        )
+        mControlSchema
+
+
+schemaView : Options -> Pointer -> Schema -> Form -> Html F.Msg
 schemaView options path schema form =
     case schema of
         BooleanSchema value ->
@@ -68,7 +131,7 @@ schemaView options path schema form =
             objectView options path subSchema form
 
 
-objectView : Options -> Path -> SubSchema -> Form -> Html F.Msg
+objectView : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 objectView options path schema form =
     case schema.type_ of
         AnyType ->
@@ -88,7 +151,7 @@ objectView options path schema form =
             fieldView options path schema singleType form
 
 
-fieldView : Options -> Path -> SubSchema -> SingleType -> Form -> Html F.Msg
+fieldView : Options -> Pointer -> SubSchema -> SingleType -> Form -> Html F.Msg
 fieldView options path schema type_ form =
     case type_ of
         IntegerType ->
@@ -145,7 +208,7 @@ fieldView options path schema type_ form =
             div [] []
 
 
-txt : Options -> Path -> SubSchema -> F.FieldState ErrorValue String -> { isNumber : Bool } -> Html F.Msg
+txt : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue String -> { isNumber : Bool } -> Html F.Msg
 txt options path schema f { isNumber } =
     let
         format : Format
@@ -260,7 +323,7 @@ txt options path schema f { isNumber } =
         ]
 
 
-checkbox : Options -> Path -> SubSchema -> F.FieldState ErrorValue Bool -> Html F.Msg
+checkbox : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue Bool -> Html F.Msg
 checkbox options path schema f =
     let
         content : List (Html F.Msg)
@@ -301,42 +364,27 @@ checkbox options path schema f =
             ]
         ]
 
+-- TODO: intl
+decodeStringLike : Decode.Decoder String
+decodeStringLike = Decode.oneOf
+    [ Decode.string
+    , Decode.int |> Decode.map String.fromInt
+    , Decode.float |> Decode.map String.fromFloat
+    , Decode.bool |> Decode.map (\b -> if b then "True" else "False")
+    , Decode.null "null"
+    ]
 
-select : Options -> Path -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
+
+-- TODO: add a None option
+select : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
 select options path schema f =
     let
-        schemata : List Schema
-        schemata =
-            List.concat
-                [ schema.oneOf |> Maybe.withDefault []
-                , schema.anyOf |> Maybe.withDefault []
-                ]
+        values : List String
+        values = Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue decodeStringLike >> Result.withDefault "")
 
-        items : List ( String, String )
-        items =
-            schemata
-                |> List.map (option constAsString)
-                |> List.map
-                    (\( name, schema_ ) ->
-                        ( name
-                        , schema_
-                            |> Maybe.andThen .title
-                            |> Maybe.withDefault name
-                        )
-                    )
+        items : List (String, String)
+        items = List.map (\v -> (v, v)) values
 
-        descriptions : List ( String, Html F.Msg )
-        descriptions =
-            schemata
-                |> List.map (option constAsString)
-                |> List.map
-                    (\( name, schema_ ) ->
-                        ( name
-                        , schema_
-                            |> Maybe.andThen (fieldDescription options.theme)
-                            |> Maybe.withDefault (text "")
-                        )
-                    )
     in
     field options
         schema
@@ -346,9 +394,8 @@ select options path schema f =
             items
             f
             [ Attrs.map never <| options.theme.select { withError = f.liveError /= Nothing }
-            , id f.path
+            , id <| Pointer.toString path ++ "-input"
             ]
-        , conditional "select-more" f descriptions
         ]
 
 
@@ -366,7 +413,7 @@ option attr schema =
 
 list :
     Options
-    -> Path
+    -> Pointer
     -> Form
     -> ( Maybe String, Schema )
     -> List (Html F.Msg)
@@ -376,7 +423,7 @@ list options path form ( title, schema ) =
         indexes =
             getListIndexes path form
 
-        itemPath : Int -> Path
+        itemPath : Int -> Pointer
         itemPath idx =
             path ++ [ String.fromInt idx ]
 
@@ -404,13 +451,13 @@ list options path form ( title, schema ) =
 
 tuple :
     Options
-    -> Path
+    -> Pointer
     -> Form
     -> ( Maybe String, List Schema )
     -> List (Html F.Msg)
 tuple options path form ( title, schemata ) =
     let
-        itemPath : Int -> Path
+        itemPath : Int -> Pointer
         itemPath idx =
             path ++ [ "tuple" ++ String.fromInt idx ]
 
@@ -450,7 +497,7 @@ radio options fieldState ( value, title ) =
         ]
 
 
-switch : Options -> Path -> SubSchema -> Form -> Html F.Msg
+switch : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 switch options path schema form =
     let
         f : F.FieldState ErrorValue String
@@ -539,7 +586,7 @@ field options schema f content =
         ]
 
 
-group : Options -> Path -> SubSchema -> Form -> Html F.Msg
+group : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 group options path schema form =
     let
         f : F.FieldState ErrorValue String
@@ -577,7 +624,7 @@ group options path schema form =
         (meta ++ fields ++ feedback)
 
 
-fieldTitle : Theme -> SubSchema -> Path -> Maybe (Html F.Msg)
+fieldTitle : Theme -> SubSchema -> Pointer -> Maybe (Html F.Msg)
 fieldTitle theme schema path =
     schema.title
         -- If it does not have a title, derive from property name, unCamelCasing it
@@ -657,46 +704,39 @@ fieldset schema content =
     Html.fieldset [ tabindex -1 ] (title ++ content)
 
 
-getFieldAsBool : Path -> F.Form e o -> F.FieldState e Bool
+getFieldAsBool : Pointer -> F.Form e o -> F.FieldState e Bool
 getFieldAsBool path =
     F.getFieldAsBool (fieldPath path)
 
 
-getFieldAsString : Path -> F.Form e o -> F.FieldState e String
+getFieldAsString : Pointer -> F.Form e o -> F.FieldState e String
 getFieldAsString path =
     F.getFieldAsString (fieldPath path)
 
 
-getListIndexes : Path -> F.Form e o -> List Int
+getListIndexes : Pointer -> F.Form e o -> List Int
 getListIndexes path =
     F.getListIndexes (fieldPath path)
 
 
-fieldPath : Path -> String
+{-| Field path as understood by elm-form
+-}
+fieldPath : Pointer -> String
 fieldPath =
     String.join "."
 
 
 constAsString : SubSchema -> Maybe String
 constAsString schema =
-    let
-        decoder : Json.Decode.Decoder String
-        decoder =
-            Json.Decode.oneOf
-                [ Json.Decode.string
-                , Json.Decode.int |> Json.Decode.map String.fromInt
-                , Json.Decode.float |> Json.Decode.map String.fromFloat
-                ]
-    in
     schema.const
-        |> Maybe.map (Json.Decode.decodeValue decoder)
+        |> Maybe.map (Decode.decodeValue decodeStringLike)
         |> Maybe.andThen Result.toMaybe
 
 
 onClickPreventDefault : msg -> Attribute msg
 onClickPreventDefault msg =
     preventDefaultOn "click"
-        (Json.Decode.succeed <| alwaysPreventDefault msg)
+        (Decode.succeed <| alwaysPreventDefault msg)
 
 
 alwaysPreventDefault : msg -> ( msg, Bool )

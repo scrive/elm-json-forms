@@ -203,8 +203,8 @@ formats =
     ]
 
 
-schema_json : Result String Json.Schema.Definitions.Schema
-schema_json = Json.Schema.fromString """
+schema_json_complex : Result String Json.Schema.Definitions.Schema
+schema_json_complex = Json.Schema.fromString """
 {
   "type": "object",
   "required": [
@@ -242,7 +242,8 @@ schema_json = Json.Schema.fromString """
       "format": "date"
     },
     "rating": {
-      "type": "integer"
+      "type": "integer",
+      "enum": [1,2,3,4,5]
     },
     "committer": {
       "type": "boolean"
@@ -263,6 +264,31 @@ schema_json = Json.Schema.fromString """
           "type": "string"
         }
       }
+    }
+  }
+}
+    """
+
+
+schema_json : Result String Json.Schema.Definitions.Schema
+schema_json = Json.Schema.fromString """
+{
+  "type": "object",
+  "required": [
+    "age"
+  ],
+  "properties": {
+    "age": {
+      "type": "integer",
+      "minimum": 18,
+      "maximum": 100
+    },
+    "height": {
+      "type": "number"
+    },
+    "rating": {
+      "type": "integer",
+      "enum": [1,2,3,4,5]
     }
   }
 }

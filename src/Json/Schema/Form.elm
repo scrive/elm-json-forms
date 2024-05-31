@@ -63,7 +63,7 @@ init options schema mUiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
     in
     State options schema uiSchema <|
-        F.initial (default schema) (validation options.formats schema)
+        Debug.log "initial form" <| F.initial (default schema) (validation options.formats schema)
 
 
 {-| Update the form state.
@@ -75,17 +75,21 @@ update msg state =
         form =
             F.update
                 (validation state.options.formats state.schema)
-                msg
+                (Debug.log "message" msg)
                 state.form
     in
-    { state | form = form }
+    { state | form = Debug.log "form" form }
 
 
 {-| The form fields as HTML. Use together with `submit` to submit the form.
 -}
 view : State -> Html Msg
 view state =
-    Json.Schema.Form.Fields.schemaView state.options [] state.schema state.form
+    Json.Schema.Form.Fields.uiSchemaView state.options state.uiSchema state.schema state.form
+
+
+
+-- Json.Schema.Form.Fields.schemaView state.options [] state.schema state.form
 
 
 {-| Triggers the form to be submitted for validation.

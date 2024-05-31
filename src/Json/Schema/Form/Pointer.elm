@@ -2,6 +2,8 @@ module Json.Schema.Form.Pointer exposing
     ( Pointer
     , decode
     , encode
+    , fromString
+    , toString
     )
 
 -- This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
@@ -20,20 +22,26 @@ type alias Pointer =
 
 decode : Decode.Decoder Pointer
 decode =
-    Decode.string |> Decode.andThen pointerFromString
+    Decode.string
+        |> Decode.andThen
+            (\s ->
+                case fromString s of
+                    Ok x ->
+                        Decode.succeed x
+
+                    Err x ->
+                        Decode.fail x
+            )
 
 
-pointerFromString : String -> Decode.Decoder Pointer
-pointerFromString string =
+fromString : String -> Result String Pointer
+fromString string =
     case splitAndUnescape string of
-        [ "" ] ->
-            Decode.succeed []
-
-        "" :: pointer ->
-            Decode.succeed pointer
+        "#" :: pointer ->
+            Ok pointer
 
         _ ->
-            Decode.fail "A JSON Pointer must start with / or be empty"
+            Err "A JSON Pointer must start with #"
 
 
 splitAndUnescape : String -> List String
@@ -52,20 +60,12 @@ unescape string =
 
 encode : Pointer -> Encode.Value
 encode p =
-    Encode.string (pointerToString p)
+    Encode.string (toString p)
 
 
-pointerToString : Pointer -> String
-pointerToString pointer =
-    case pointer of
-        [] ->
-            ""
-
-        _ ->
-            pointer
-                |> List.map escape
-                |> String.join "/"
-                |> String.append "/"
+toString : Pointer -> String
+toString =
+    List.append [ "#" ] >> List.map escape >> String.join "/"
 
 
 escape : String -> String

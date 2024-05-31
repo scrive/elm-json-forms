@@ -1,7 +1,9 @@
 module Json.Schema.Form.UiSchema exposing
-    ( UiSchema
+    ( Control
+    , UiSchema(..)
     , fromString
     , generateUiSchema
+    , pointToSchema
     )
 
 import Json.Decode as Decode exposing (Decoder)
@@ -285,20 +287,21 @@ decodeDetail =
 
 generateUiSchema : Schema.Schema -> UiSchema
 generateUiSchema schema =
-    UiVerticalLayout
-        { elements =
-            generateControlPointers schema []
-                |> List.map
-                    (\p ->
-                        UiControl
-                            { scope = p
-                            , label = Nothing
-                            , options = Nothing
-                            , rule = Nothing
-                            }
-                    )
-        , rule = Nothing
-        }
+    Debug.log "UI Schema" <|
+        UiVerticalLayout
+            { elements =
+                generateControlPointers schema []
+                    |> List.map
+                        (\p ->
+                            UiControl
+                                { scope = p
+                                , label = Nothing
+                                , options = Nothing
+                                , rule = Nothing
+                                }
+                        )
+            , rule = Nothing
+            }
 
 
 generateControlPointers : Schema.Schema -> Pointer.Pointer -> List Pointer.Pointer
@@ -313,7 +316,7 @@ generateControlPointers s p =
                     case t of
                         Schema.ObjectType ->
                             List.concatMap
-                                (\( name, schema ) -> generateControlPointers schema (List.append [ name ] p))
+                                (\( name, schema ) -> generateControlPointers schema (List.append [ "properties", name ] p))
                             <|
                                 Maybe.withDefault [] <|
                                     Maybe.map unSchemata o.properties
@@ -331,3 +334,26 @@ generateControlPointers s p =
 unSchemata : Schema.Schemata -> List ( String, Schema.Schema )
 unSchemata (Schema.Schemata l) =
     l
+
+
+pointToSchema : Schema.Schema -> Pointer.Pointer -> Maybe Schema.Schema
+pointToSchema schema pointer =
+    case pointer of
+        [] ->
+            Just schema
+
+        "properties" :: x :: xs ->
+            case schema of
+                Schema.BooleanSchema _ ->
+                    Nothing
+
+                Schema.ObjectSchema os ->
+                    case os.properties of
+                        Nothing ->
+                            Nothing
+
+                        Just (Schema.Schemata props) ->
+                            Maybe.andThen (\( n, p ) -> pointToSchema p xs) <| List.head <| List.filter (\( n, p ) -> n == x) props
+
+        _ ->
+            Nothing
