@@ -150,7 +150,7 @@ personalNumber =
         Regex.fromString "^(19|20)[0-9]{6}-?[0-9]{4}$"
 
 
-customInput : Input ErrorValue String
+customInput : Input ErrorValue
 customInput f attrs =
     button
         ([ onClick
@@ -164,8 +164,11 @@ customInput f attrs =
             ++ attrs
         )
         [ case f.value of
-            Just str ->
+            Just (String str) ->
                 text str
+
+            Just (Bool bool) ->
+                text "(bool)"
 
             Nothing ->
                 text "Click me!"

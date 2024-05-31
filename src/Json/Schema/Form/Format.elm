@@ -30,6 +30,7 @@ module Json.Schema.Form.Format exposing
 -}
 
 import Form.Input exposing (Input)
+import Form.Field exposing (FieldValue)
 import Form.Validate exposing (Validation)
 import Json.Schema.Form.Error exposing (ErrorValue)
 
@@ -43,7 +44,7 @@ type alias Format =
     , autocomplete : Maybe String
     , inputType : Maybe String
     , lines : Int
-    , input : Maybe (Input ErrorValue String)
+    , input : Maybe (Input ErrorValue)
     , validation : String -> Validation ErrorValue String
     }
 
@@ -121,7 +122,7 @@ withLines lines format =
 
 {-| Customize the input field with your own HTML.
 -}
-withInput : Input ErrorValue String -> Format -> Format
+withInput : Input ErrorValue -> Format -> Format
 withInput input format =
     { format | input = Just input }
 

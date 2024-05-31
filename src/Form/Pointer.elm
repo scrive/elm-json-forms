@@ -1,4 +1,4 @@
-module Json.Schema.Form.Pointer exposing
+module Form.Pointer exposing
     ( Pointer
     , decode
     , encode

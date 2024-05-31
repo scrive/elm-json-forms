@@ -29,11 +29,10 @@ module Json.Schema.Form exposing
 import Form as F exposing (Msg)
 import Html exposing (Html)
 import Json.Schema.Definitions exposing (Schema)
-import Json.Schema.Form.Default exposing (default)
 import Json.Schema.Form.Error exposing (ErrorValue)
 import Json.Schema.Form.Fields
 import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.UiSchema exposing (UiSchema, generateUiSchema)
+import Json.Schema.Form.UiSchema exposing (UiSchema, generateUiSchema, defaultValues)
 import Json.Schema.Form.Validation exposing (validation)
 import Json.Schema.Form.Value exposing (Value)
 
@@ -63,7 +62,7 @@ init options schema mUiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
     in
     State options schema uiSchema <|
-        Debug.log "initial form" <| F.initial (default schema) (validation options.formats schema)
+        Debug.log "initial form" <| F.initial (defaultValues schema uiSchema) (validation options.formats schema)
 
 
 {-| Update the form state.
@@ -85,7 +84,7 @@ update msg state =
 -}
 view : State -> Html Msg
 view state =
-    Json.Schema.Form.Fields.uiSchemaView state.options state.uiSchema state.schema state.form
+    Json.Schema.Form.Fields.uiSchemaView state.options [] state.uiSchema state.schema state.form
 
 
 

@@ -588,8 +588,9 @@ singleTypes =
 
 validate : Field -> Schema -> Result String Value
 validate field schema =
-    validation Dict.empty schema field
-        |> Result.mapError Debug.toString
+    Err "unimplemented"
+    -- validation Dict.empty schema field
+    --     |> Result.mapError Debug.toString
 
 
 validateMultiple :

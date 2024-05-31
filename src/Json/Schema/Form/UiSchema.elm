@@ -4,11 +4,15 @@ module Json.Schema.Form.UiSchema exposing
     , fromString
     , generateUiSchema
     , pointToSchema
+    , decodeStringLike
+    , defaultValues
     )
 
 import Json.Decode as Decode exposing (Decoder)
-import Json.Schema.Definitions as Schema
-import Json.Schema.Form.Pointer as Pointer
+import Json.Schema.Definitions as Schema exposing (Schema)
+import Form.Pointer as Pointer exposing (Pointer)
+import Form.Field exposing (FieldValue(..))
+import Dict exposing (Dict)
 
 
 type UiSchema
@@ -20,7 +24,7 @@ type UiSchema
 
 
 type alias Control =
-    { scope : Pointer.Pointer
+    { scope : Pointer
     , label : Maybe ControlLabel
     , options : Maybe Options
     , rule : Maybe Rule
@@ -78,8 +82,8 @@ type Effect
 
 
 type alias Condition =
-    { scope : Pointer.Pointer
-    , schema : Schema.Schema
+    { scope : Pointer
+    , schema : Schema
     }
 
 
@@ -285,7 +289,7 @@ decodeDetail =
             )
 
 
-generateUiSchema : Schema.Schema -> UiSchema
+generateUiSchema : Schema -> UiSchema
 generateUiSchema schema =
     Debug.log "UI Schema" <|
         UiVerticalLayout
@@ -304,7 +308,7 @@ generateUiSchema schema =
             }
 
 
-generateControlPointers : Schema.Schema -> Pointer.Pointer -> List Pointer.Pointer
+generateControlPointers : Schema -> Pointer -> List Pointer
 generateControlPointers s p =
     case s of
         Schema.BooleanSchema _ ->
@@ -331,12 +335,12 @@ generateControlPointers s p =
                     []
 
 
-unSchemata : Schema.Schemata -> List ( String, Schema.Schema )
+unSchemata : Schema.Schemata -> List ( String, Schema )
 unSchemata (Schema.Schemata l) =
     l
 
 
-pointToSchema : Schema.Schema -> Pointer.Pointer -> Maybe Schema.Schema
+pointToSchema : Schema -> Pointer -> Maybe Schema
 pointToSchema schema pointer =
     case pointer of
         [] ->
@@ -357,3 +361,45 @@ pointToSchema schema pointer =
 
         _ ->
             Nothing
+
+allPointers : UiSchema -> List Pointer
+allPointers uiSchema = case uiSchema of
+    UiControl x -> [x.scope]
+    UiHorizontalLayout x -> List.concatMap allPointers x.elements
+    UiVerticalLayout x -> List.concatMap allPointers x.elements
+    UiGroup x -> List.concatMap allPointers x.elements
+    UiCategorization x -> List.concatMap allPointers
+        <| List.concatMap (.elements) x.elements
+
+
+decodeStringLike : Decode.Decoder String
+decodeStringLike = Decode.oneOf
+    [ Decode.string
+    , Decode.int |> Decode.map String.fromInt
+    , Decode.float |> Decode.map String.fromFloat
+    ]
+
+
+-- TODO: handle non-leaf defaults
+
+defaultValues : Schema -> UiSchema -> Dict String FieldValue
+defaultValues schema uiSchema =
+    let
+        getDefault : Decode.Value -> Maybe FieldValue
+        getDefault = Result.toMaybe << Decode.decodeValue (Decode.oneOf
+            [ Decode.map String decodeStringLike
+            , Decode.map Bool Decode.bool
+            ])
+
+        pointerDefault : Pointer -> Maybe FieldValue
+        pointerDefault pointer = case pointToSchema schema pointer of
+            Nothing -> Nothing
+            Just (Schema.BooleanSchema _) -> Nothing
+            Just (Schema.ObjectSchema os) -> Maybe.andThen getDefault os.default
+
+        pointerDefaultWithLabel : Pointer -> Maybe (String, FieldValue)
+        pointerDefaultWithLabel pointer = Maybe.map (\v -> (Pointer.toString pointer, v)) <| pointerDefault pointer
+    in
+        Dict.fromList <| List.filterMap
+            pointerDefaultWithLabel
+            (allPointers uiSchema)

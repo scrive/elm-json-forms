@@ -3,6 +3,7 @@ module Json.Schema.Form.Fields exposing (schemaView, uiSchemaView)
 import Dict exposing (Dict)
 import Form as F
 import Form.Input as Input
+import Form.Field  as Field exposing (FieldValue)
 import Form.Validate
 import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
 import Html.Attributes as Attrs
@@ -36,7 +37,7 @@ import Json.Schema.Definitions
 import Json.Schema.Form.Error exposing (ErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.Pointer as Pointer exposing (Pointer)
+import Form.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Form.Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
 import Json.Schema.Form.Value exposing (Value)
@@ -49,13 +50,13 @@ type alias Form =
     F.Form ErrorValue Value
 
 
-uiSchemaView : Options -> UiSchema -> Schema -> Form -> Html F.Msg
-uiSchemaView options uiSchema schema form =
+uiSchemaView : Options -> List String -> UiSchema -> Schema -> Form -> Html F.Msg
+uiSchemaView options uiPath uiSchema schema form =
     case uiSchema of
-        UI.UiControl x ->
-            controlView options schema x form
+        UI.UiControl c ->
+            controlView options uiPath schema c form
 
-        UI.UiHorizontalLayout x ->
+        UI.UiHorizontalLayout hl ->
             div [] [ text "unimplemented horizontal layout" ]
 
         -- TODO: test
@@ -63,26 +64,28 @@ uiSchemaView options uiSchema schema form =
         -- ] <| List.map (\us -> div
         --     [ Attrs.map never <| options.theme.formRowItem
         --     ] [uiSchemaView options us schema form]) x.elements
-        UI.UiVerticalLayout x ->
+        UI.UiVerticalLayout vl ->
             div
                 -- TODO: simplify options.theme.group
                 [ Attrs.map never <| options.theme.group { withError = False, withValue = False }
                 ]
             <|
-                List.map (\us -> uiSchemaView options us schema form) x.elements
+                List.map (\us -> uiSchemaView options uiPath us schema form) vl.elements
 
-        UI.UiGroup _ ->
+        UI.UiGroup g ->
             div [] [ text "unimplemented group" ]
 
-        UI.UiCategorization _ ->
+        UI.UiCategorization c ->
             div [] [ text "unimplemented categorization" ]
 
 
-controlView : Options -> Schema -> UI.Control -> Form -> Html F.Msg
-controlView options wholeSchema control form =
+controlView : Options -> List String -> Schema -> UI.Control -> Form -> Html F.Msg
+controlView options uiPath wholeSchema control form =
     let
         mControlSchema =
             UI.pointToSchema wholeSchema control.scope
+
+        fieldState = F.getField (Pointer.toString control.scope) form
 
         controlBody schema_ =
             case schema_ of
@@ -93,17 +96,17 @@ controlView options wholeSchema control form =
                     case schema.type_ of
                         SingleType IntegerType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema (getFieldAsString control.scope form)
+                                select options control.scope schema fieldState
 
                             else
-                                txt options control.scope schema (getFieldAsString control.scope form) { isNumber = True }
+                                txt options control.scope schema fieldState { isNumber = True }
 
                         SingleType NumberType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema (getFieldAsString control.scope form)
+                                select options control.scope schema fieldState
 
                             else
-                                txt options control.scope schema (getFieldAsString control.scope form) { isNumber = True }
+                                txt options control.scope schema fieldState { isNumber = True }
 
                         _ ->
                             Html.nothing
@@ -116,99 +119,99 @@ controlView options wholeSchema control form =
 
 
 schemaView : Options -> Pointer -> Schema -> Form -> Html F.Msg
-schemaView options path schema form =
-    case schema of
-        BooleanSchema value ->
-            div []
-                [ if value then
-                    text "True"
+schemaView options path schema form = Html.nothing
+--     case schema of
+--         BooleanSchema value ->
+--             div []
+--                 [ if value then
+--                     text "True"
 
-                  else
-                    text "False"
-                ]
+--                   else
+--                     text "False"
+--                 ]
 
-        ObjectSchema subSchema ->
-            objectView options path subSchema form
-
-
-objectView : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
-objectView options path schema form =
-    case schema.type_ of
-        AnyType ->
-            if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                switch options path schema form
-
-            else
-                fieldView options path schema BooleanType form
-
-        NullableType singleType ->
-            fieldView options path schema singleType form
-
-        UnionType _ ->
-            fieldView options path schema StringType form
-
-        SingleType singleType ->
-            fieldView options path schema singleType form
+--         ObjectSchema subSchema ->
+--             objectView options path subSchema form
 
 
-fieldView : Options -> Pointer -> SubSchema -> SingleType -> Form -> Html F.Msg
-fieldView options path schema type_ form =
-    case type_ of
-        IntegerType ->
-            if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                select options path schema (getFieldAsString path form)
+-- objectView : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
+-- objectView options path schema form =
+--     case schema.type_ of
+--         AnyType ->
+--             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
+--                 switch options path schema form
 
-            else
-                txt options path schema (getFieldAsString path form) { isNumber = True }
+--             else
+--                 fieldView options path schema BooleanType form
 
-        NumberType ->
-            if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                select options path schema (getFieldAsString path form)
+--         NullableType singleType ->
+--             fieldView options path schema singleType form
 
-            else
-                txt options path schema (getFieldAsString path form) { isNumber = True }
+--         UnionType _ ->
+--             fieldView options path schema StringType form
 
-        StringType ->
-            if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                select options path schema (getFieldAsString path form)
-
-            else
-                txt options path schema (getFieldAsString path form) { isNumber = False }
-
-        BooleanType ->
-            checkbox options path schema (getFieldAsBool path form)
-
-        ArrayType ->
-            let
-                f : F.FieldState ErrorValue String
-                f =
-                    getFieldAsString path form
-            in
-            case schema.items of
-                NoItems ->
-                    field options schema f <|
-                        list options path form ( schema.title, blankSchema )
-
-                ItemDefinition item ->
-                    field options schema f <|
-                        list options path form ( schema.title, item )
-
-                ArrayOfItems items ->
-                    field options schema f <|
-                        tuple options path form ( schema.title, items )
-
-        ObjectType ->
-            if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
-                switch options path schema form
-
-            else
-                fieldset schema [ group options path schema form ]
-
-        NullType ->
-            div [] []
+--         SingleType singleType ->
+--             fieldView options path schema singleType form
 
 
-txt : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue String -> { isNumber : Bool } -> Html F.Msg
+-- fieldView : Options -> Pointer -> SubSchema -> SingleType -> Form -> Html F.Msg
+-- fieldView options path schema type_ form =
+--     case type_ of
+--         IntegerType ->
+--             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
+--                 select options path schema (getFieldAsString path form)
+
+--             else
+--                 txt options path schema (getFieldAsString path form) { isNumber = True }
+
+--         NumberType ->
+--             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
+--                 select options path schema (getFieldAsString path form)
+
+--             else
+--                 txt options path schema (getFieldAsString path form) { isNumber = True }
+
+--         StringType ->
+--             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
+--                 select options path schema (getFieldAsString path form)
+
+--             else
+--                 txt options path schema (getFieldAsString path form) { isNumber = False }
+
+--         BooleanType ->
+--             checkbox options path schema (getFieldAsBool path form)
+
+--         ArrayType ->
+--             let
+--                 f : F.FieldState ErrorValue String
+--                 f =
+--                     getFieldAsString path form
+--             in
+--             case schema.items of
+--                 NoItems ->
+--                     field options schema f <|
+--                         list options path form ( schema.title, blankSchema )
+
+--                 ItemDefinition item ->
+--                     field options schema f <|
+--                         list options path form ( schema.title, item )
+
+--                 ArrayOfItems items ->
+--                     field options schema f <|
+--                         tuple options path form ( schema.title, items )
+
+--         ObjectType ->
+--             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
+--                 switch options path schema form
+
+--             else
+--                 fieldset schema [ group options path schema form ]
+
+--         NullType ->
+--             div [] []
+
+
+txt : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue FieldValue -> { isNumber : Bool } -> Html F.Msg
 txt options path schema f { isNumber } =
     let
         format : Format
@@ -323,7 +326,7 @@ txt options path schema f { isNumber } =
         ]
 
 
-checkbox : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue Bool -> Html F.Msg
+checkbox : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue FieldValue -> Html F.Msg
 checkbox options path schema f =
     let
         content : List (Html F.Msg)
@@ -364,23 +367,13 @@ checkbox options path schema f =
             ]
         ]
 
--- TODO: intl
-decodeStringLike : Decode.Decoder String
-decodeStringLike = Decode.oneOf
-    [ Decode.string
-    , Decode.int |> Decode.map String.fromInt
-    , Decode.float |> Decode.map String.fromFloat
-    , Decode.bool |> Decode.map (\b -> if b then "True" else "False")
-    , Decode.null "null"
-    ]
-
 
 -- TODO: add a None option
-select : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue String -> Html F.Msg
+select : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue FieldValue -> Html F.Msg
 select options path schema f =
     let
         values : List String
-        values = Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue decodeStringLike >> Result.withDefault "")
+        values = Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
 
         items : List (String, String)
         items = List.map (\v -> (v, v)) values
@@ -411,70 +404,70 @@ option attr schema =
             )
 
 
-list :
-    Options
-    -> Pointer
-    -> Form
-    -> ( Maybe String, Schema )
-    -> List (Html F.Msg)
-list options path form ( title, schema ) =
-    let
-        indexes : List Int
-        indexes =
-            getListIndexes path form
+-- list :
+--     Options
+--     -> Pointer
+--     -> Form
+--     -> ( Maybe String, Schema )
+--     -> List (Html F.Msg)
+-- list options path form ( title, schema ) =
+--     let
+--         indexes : List Int
+--         indexes =
+--             getListIndexes path form
 
-        itemPath : Int -> Pointer
-        itemPath idx =
-            path ++ [ String.fromInt idx ]
+--         itemPath : Int -> Pointer
+--         itemPath idx =
+--             path ++ [ String.fromInt idx ]
 
-        itemView : Int -> Html F.Msg
-        itemView idx =
-            li
-                [ Attrs.map never options.theme.listGroupItem ]
-                [ schemaView options (itemPath idx) schema form
-                , button
-                    [ onClickPreventDefault (F.RemoveItem (fieldPath path) idx)
-                    , Attrs.map never options.theme.listGroupRemoveItemButton
-                    ]
-                    [ text options.theme.listGroupRemoveItemButtonTitle ]
-                ]
-    in
-    [ ol [ Attrs.map never options.theme.listGroup ] (List.map itemView indexes)
-    , button
-        [ onClickPreventDefault (F.Append (fieldPath path))
-        , Attrs.map never options.theme.listGroupAddItemButton
-        ]
-        [ text (title |> Maybe.withDefault options.theme.listGroupAddItemButtonDefaultTitle)
-        ]
-    ]
+--         itemView : Int -> Html F.Msg
+--         itemView idx =
+--             li
+--                 [ Attrs.map never options.theme.listGroupItem ]
+--                 [ schemaView options (itemPath idx) schema form
+--                 , button
+--                     [ onClickPreventDefault (F.RemoveItem (fieldPath path) idx)
+--                     , Attrs.map never options.theme.listGroupRemoveItemButton
+--                     ]
+--                     [ text options.theme.listGroupRemoveItemButtonTitle ]
+--                 ]
+--     in
+--     [ ol [ Attrs.map never options.theme.listGroup ] (List.map itemView indexes)
+--     , button
+--         [ onClickPreventDefault (F.Append (fieldPath path))
+--         , Attrs.map never options.theme.listGroupAddItemButton
+--         ]
+--         [ text (title |> Maybe.withDefault options.theme.listGroupAddItemButtonDefaultTitle)
+--         ]
+--     ]
 
 
-tuple :
-    Options
-    -> Pointer
-    -> Form
-    -> ( Maybe String, List Schema )
-    -> List (Html F.Msg)
-tuple options path form ( title, schemata ) =
-    let
-        itemPath : Int -> Pointer
-        itemPath idx =
-            path ++ [ "tuple" ++ String.fromInt idx ]
+-- tuple :
+--     Options
+--     -> Pointer
+--     -> Form
+--     -> ( Maybe String, List Schema )
+--     -> List (Html F.Msg)
+-- tuple options path form ( title, schemata ) =
+--     let
+--         itemPath : Int -> Pointer
+--         itemPath idx =
+--             path ++ [ "tuple" ++ String.fromInt idx ]
 
-        itemView : Int -> Schema -> Html F.Msg
-        itemView idx itemSchema =
-            div
-                [ Attrs.map never options.theme.formRowItem ]
-                [ schemaView options (itemPath idx) itemSchema form ]
-    in
-    [ case title of
-        Just str ->
-            div [ class "field-title" ] [ text str ]
+--         itemView : Int -> Schema -> Html F.Msg
+--         itemView idx itemSchema =
+--             div
+--                 [ Attrs.map never options.theme.formRowItem ]
+--                 [ schemaView options (itemPath idx) itemSchema form ]
+--     in
+--     [ case title of
+--         Just str ->
+--             div [ class "field-title" ] [ text str ]
 
-        Nothing ->
-            text ""
-    , div [ Attrs.map never options.theme.formRow ] (List.indexedMap itemView schemata)
-    ]
+--         Nothing ->
+--             text ""
+--     , div [ Attrs.map never options.theme.formRow ] (List.indexedMap itemView schemata)
+--     ]
 
 
 radio options fieldState ( value, title ) =
@@ -497,64 +490,64 @@ radio options fieldState ( value, title ) =
         ]
 
 
-switch : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
-switch options path schema form =
-    let
-        f : F.FieldState ErrorValue String
-        f =
-            getFieldAsString (path ++ [ "switch" ]) form
+-- switch : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
+-- switch options path schema form =
+--     let
+--         f : F.FieldState ErrorValue String
+--         f =
+--             getFieldAsString (path ++ [ "switch" ]) form
 
-        schemata : List Schema
-        schemata =
-            List.concat
-                [ schema.oneOf |> Maybe.withDefault []
-                , schema.anyOf |> Maybe.withDefault []
-                ]
+--         schemata : List Schema
+--         schemata =
+--             List.concat
+--                 [ schema.oneOf |> Maybe.withDefault []
+--                 , schema.anyOf |> Maybe.withDefault []
+--                 ]
 
-        items : List ( String, Maybe SubSchema )
-        items =
-            schemata
-                |> List.map (option .title)
+--         items : List ( String, Maybe SubSchema )
+--         items =
+--             schemata
+--                 |> List.map (option .title)
 
-        itemId : Int -> String
-        itemId idx =
-            "option" ++ String.fromInt idx
+--         itemId : Int -> String
+--         itemId idx =
+--             "option" ++ String.fromInt idx
 
-        itemButton : Int -> ( String, b ) -> Html F.Msg
-        itemButton idx ( title, _ ) =
-            div
-                [ classList
-                    [ ( "form-check", True )
-                    , ( "form-check-inline", List.length items <= 2 )
-                    ]
-                ]
-                [ radio options f ( itemId idx, title ) ]
+--         itemButton : Int -> ( String, b ) -> Html F.Msg
+--         itemButton idx ( title, _ ) =
+--             div
+--                 [ classList
+--                     [ ( "form-check", True )
+--                     , ( "form-check-inline", List.length items <= 2 )
+--                     ]
+--                 ]
+--                 [ radio options f ( itemId idx, title ) ]
 
-        itemFields : Int -> ( String, Maybe SubSchema ) -> ( String, Html F.Msg )
-        itemFields idx ( _, schema_ ) =
-            case schema_ of
-                Just s ->
-                    ( itemId idx
-                    , case s.const of
-                        Just _ ->
-                            text ""
+--         itemFields : Int -> ( String, Maybe SubSchema ) -> ( String, Html F.Msg )
+--         itemFields idx ( _, schema_ ) =
+--             case schema_ of
+--                 Just s ->
+--                     ( itemId idx
+--                     , case s.const of
+--                         Just _ ->
+--                             text ""
 
-                        Nothing ->
-                            objectView options (path ++ [ "value" ]) s form
-                    )
+--                         Nothing ->
+--                             objectView options (path ++ [ "value" ]) s form
+--                     )
 
-                Nothing ->
-                    ( itemId idx, text "" )
-    in
-    field options schema f <|
-        [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
-        , div [ class "switch", id f.path, tabindex -1 ]
-            (List.indexedMap itemButton items)
-        , conditional "switch-more" f (List.indexedMap itemFields items)
-        ]
+--                 Nothing ->
+--                     ( itemId idx, text "" )
+--     in
+--     field options schema f <|
+--         [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
+--         , div [ class "switch", id f.path, tabindex -1 ]
+--             (List.indexedMap itemButton items)
+--         , conditional "switch-more" f (List.indexedMap itemFields items)
+--         ]
 
 
-field : Options -> SubSchema -> F.FieldState ErrorValue String -> List (Html F.Msg) -> Html F.Msg
+field : Options -> SubSchema -> F.FieldState ErrorValue FieldValue -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
         meta : List (Html F.Msg)
@@ -564,6 +557,8 @@ field options schema f content =
         feedback : List (Html F.Msg)
         feedback =
             Maybe.values [ liveError options.theme options.errors f ]
+
+        stringValue = Maybe.andThen Field.valueAsString f.value
     in
     div
         [ Attrs.map never <|
@@ -571,7 +566,7 @@ field options schema f content =
                 { withError =
                     f.liveError /= Nothing
                 , withValue =
-                    f.value /= Nothing && f.value /= Just ""
+                    stringValue /= Nothing && stringValue /= Just ""
                 }
         ]
         [ label [ for f.path, Attrs.map never options.theme.fieldLabel ]
@@ -586,42 +581,42 @@ field options schema f content =
         ]
 
 
-group : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
-group options path schema form =
-    let
-        f : F.FieldState ErrorValue String
-        f =
-            getFieldAsString path form
+-- group : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
+-- group options path schema form =
+--     let
+--         f : F.FieldState ErrorValue String
+--         f =
+--             getFieldAsString path form
 
-        schemataItem : ( String, Schema ) -> Html F.Msg
-        schemataItem ( name, subSchema ) =
-            schemaView options (path ++ [ name ]) subSchema form
+--         schemataItem : ( String, Schema ) -> Html F.Msg
+--         schemataItem ( name, subSchema ) =
+--             schemaView options (path ++ [ name ]) subSchema form
 
-        fields : List (Html F.Msg)
-        fields =
-            case schema.properties of
-                Nothing ->
-                    []
+--         fields : List (Html F.Msg)
+--         fields =
+--             case schema.properties of
+--                 Nothing ->
+--                     []
 
-                Just (Json.Schema.Definitions.Schemata schemata) ->
-                    List.map schemataItem schemata
+--                 Just (Json.Schema.Definitions.Schemata schemata) ->
+--                     List.map schemataItem schemata
 
-        meta : List (Html msg)
-        meta =
-            schema.description |> Html.viewMaybe (\str -> p [] [ text str ]) |> List.singleton
+--         meta : List (Html msg)
+--         meta =
+--             schema.description |> Html.viewMaybe (\str -> p [] [ text str ]) |> List.singleton
 
-        feedback : List (Html F.Msg)
-        feedback =
-            Maybe.values [ liveError options.theme options.errors f ]
-    in
-    div
-        [ Attrs.map never <|
-            options.theme.group
-                { withError = f.liveError /= Nothing
-                , withValue = f.value /= Nothing && f.value /= Just ""
-                }
-        ]
-        (meta ++ fields ++ feedback)
+--         feedback : List (Html F.Msg)
+--         feedback =
+--             Maybe.values [ liveError options.theme options.errors f ]
+--     in
+--     div
+--         [ Attrs.map never <|
+--             options.theme.group
+--                 { withError = f.liveError /= Nothing
+--                 , withValue = f.value /= Nothing && f.value /= Just ""
+--                 }
+--         ]
+--         (meta ++ fields ++ feedback)
 
 
 fieldTitle : Theme -> SubSchema -> Pointer -> Maybe (Html F.Msg)
@@ -704,19 +699,19 @@ fieldset schema content =
     Html.fieldset [ tabindex -1 ] (title ++ content)
 
 
-getFieldAsBool : Pointer -> F.Form e o -> F.FieldState e Bool
-getFieldAsBool path =
-    F.getFieldAsBool (fieldPath path)
+-- getFieldAsBool : Pointer -> F.Form e o -> F.FieldState e Bool
+-- getFieldAsBool path =
+--     F.getFieldAsBool (fieldPath path)
 
 
-getFieldAsString : Pointer -> F.Form e o -> F.FieldState e String
-getFieldAsString path =
-    F.getFieldAsString (fieldPath path)
+-- getFieldAsString : Pointer -> F.Form e o -> F.FieldState e String
+-- getFieldAsString path =
+--     F.getFieldAsString (fieldPath path)
 
 
-getListIndexes : Pointer -> F.Form e o -> List Int
-getListIndexes path =
-    F.getListIndexes (fieldPath path)
+-- getListIndexes : Pointer -> F.Form e o -> List Int
+-- getListIndexes path =
+--     F.getListIndexes (fieldPath path)
 
 
 {-| Field path as understood by elm-form
@@ -726,11 +721,11 @@ fieldPath =
     String.join "."
 
 
-constAsString : SubSchema -> Maybe String
-constAsString schema =
-    schema.const
-        |> Maybe.map (Decode.decodeValue decodeStringLike)
-        |> Maybe.andThen Result.toMaybe
+-- constAsString : SubSchema -> Maybe String
+-- constAsString schema =
+--     schema.const
+--         |> Maybe.map (Decode.decodeValue decodeStringLike)
+--         |> Maybe.andThen Result.toMaybe
 
 
 onClickPreventDefault : msg -> Attribute msg

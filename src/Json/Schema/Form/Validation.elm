@@ -7,15 +7,9 @@ import Form.Validate
     exposing
         ( Validation
         , andThen
-        , bool
         , customError
-        , emptyString
         , fail
-        , field
-        , float
         , format
-        , int
-        , list
         , map
         , maxFloat
         , maxInt
@@ -25,7 +19,6 @@ import Form.Validate
         , minLength
         , oneOf
         , sequence
-        , string
         , succeed
         , withCustomError
         )
@@ -56,173 +49,163 @@ type alias Formats =
 
 
 validation : Formats -> Schema -> Validation ErrorValue Value
-validation formats schema =
-    case schema of
-        BooleanSchema bool ->
-            if bool then
-                validation formats blankSchema
-
-            else
-                fail (customError Invalid)
-
-        ObjectSchema objectSchema ->
-            subSchema formats objectSchema
+validation formats schema = fail (customError Invalid)
 
 
-subSchema : Formats -> SubSchema -> Validation ErrorValue Value
-subSchema formats schema =
-    case schema.type_ of
-        AnyType ->
-            case schema.oneOf of
-                Just schemata ->
-                    switch formats schemata
+-- subSchema : Formats -> SubSchema -> Validation ErrorValue Value
+-- subSchema formats schema =
+--     case schema.type_ of
+--         AnyType ->
+--             case schema.oneOf of
+--                 Just schemata ->
+--                     switch formats schemata
 
-                Nothing ->
-                    oneOf
-                        [ singleType formats schema IntegerType
-                        , singleType formats schema NumberType
-                        , singleType formats schema StringType
-                        , singleType formats schema ObjectType
-                            |> andThen
-                                (\a ->
-                                    case a of
-                                        ObjectValue fields ->
-                                            if List.isEmpty fields then
-                                                fail (customError Invalid)
+--                 Nothing ->
+--                     oneOf
+--                         [ singleType formats schema IntegerType
+--                         , singleType formats schema NumberType
+--                         , singleType formats schema StringType
+--                         , singleType formats schema ObjectType
+--                             |> andThen
+--                                 (\a ->
+--                                     case a of
+--                                         ObjectValue fields ->
+--                                             if List.isEmpty fields then
+--                                                 fail (customError Invalid)
 
-                                            else
-                                                succeed a
+--                                             else
+--                                                 succeed a
 
-                                        _ ->
-                                            fail (customError Invalid)
-                                )
-                        , singleType formats schema ArrayType
-                            |> andThen
-                                (\a ->
-                                    case a of
-                                        ListValue items ->
-                                            if List.isEmpty items then
-                                                fail (customError Invalid)
+--                                         _ ->
+--                                             fail (customError Invalid)
+--                                 )
+--                         , singleType formats schema ArrayType
+--                             |> andThen
+--                                 (\a ->
+--                                     case a of
+--                                         ListValue items ->
+--                                             if List.isEmpty items then
+--                                                 fail (customError Invalid)
 
-                                            else
-                                                succeed a
+--                                             else
+--                                                 succeed a
 
-                                        _ ->
-                                            fail (customError Invalid)
-                                )
-                        , singleType formats schema BooleanType
-                        ]
+--                                         _ ->
+--                                             fail (customError Invalid)
+--                                 )
+--                         , singleType formats schema BooleanType
+--                         ]
 
-        NullableType type_ ->
-            oneOf
-                [ singleType formats schema type_
-                , emptyString |> andThen (\_ -> succeed NullValue)
-                ]
+--         NullableType type_ ->
+--             oneOf
+--                 [ singleType formats schema type_
+--                 , emptyString |> andThen (\_ -> succeed NullValue)
+--                 ]
 
-        UnionType types ->
-            oneOf (List.map (singleType formats schema) types)
+--         UnionType types ->
+--             oneOf (List.map (singleType formats schema) types)
 
-        SingleType type_ ->
-            singleType formats schema type_
+--         SingleType type_ ->
+--             singleType formats schema type_
 
 
-singleType : Formats -> SubSchema -> SingleType -> Validation ErrorValue Value
-singleType formats schema type_ =
-    case type_ of
-        IntegerType ->
-            int
-                |> andMaybe constInt schema.const
-                |> andMaybe multipleOf (Maybe.map round schema.multipleOf)
-                |> andMaybe minInt (Maybe.map round (minimum schema))
-                |> andMaybe maxInt (Maybe.map round (maximum schema))
-                |> andMaybe enumInt schema.enum
-                |> map IntValue
+-- singleType : Formats -> SubSchema -> SingleType -> Validation ErrorValue Value
+-- singleType formats schema type_ =
+--     case type_ of
+--         IntegerType ->
+--             int
+--                 |> andMaybe constInt schema.const
+--                 |> andMaybe multipleOf (Maybe.map round schema.multipleOf)
+--                 |> andMaybe minInt (Maybe.map round (minimum schema))
+--                 |> andMaybe maxInt (Maybe.map round (maximum schema))
+--                 |> andMaybe enumInt schema.enum
+--                 |> map IntValue
 
-        NumberType ->
-            float
-                |> andMaybe constFloat schema.const
-                |> andMaybe minFloat (minimum schema)
-                |> andMaybe maxFloat (maximum schema)
-                |> andMaybe enumFloat schema.enum
-                |> map FloatValue
+--         NumberType ->
+--             float
+--                 |> andMaybe constFloat schema.const
+--                 |> andMaybe minFloat (minimum schema)
+--                 |> andMaybe maxFloat (maximum schema)
+--                 |> andMaybe enumFloat schema.enum
+--                 |> map FloatValue
 
-        StringType ->
-            string
-                |> andMaybe constString schema.const
-                |> andMaybe minLength schema.minLength
-                |> andMaybe maxLength schema.maxLength
-                |> andMaybe pattern schema.pattern
-                |> andMaybe enumString schema.enum
-                |> andMaybe (customFormat formats) schema.format
-                |> map StringValue
+--         StringType ->
+--             string
+--                 |> andMaybe constString schema.const
+--                 |> andMaybe minLength schema.minLength
+--                 |> andMaybe maxLength schema.maxLength
+--                 |> andMaybe pattern schema.pattern
+--                 |> andMaybe enumString schema.enum
+--                 |> andMaybe (customFormat formats) schema.format
+--                 |> map StringValue
 
-        BooleanType ->
-            bool
-                |> andMaybe constBool schema.const
-                |> map BoolValue
+--         BooleanType ->
+--             bool
+--                 |> andMaybe constBool schema.const
+--                 |> map BoolValue
 
-        ArrayType ->
-            case schema.items of
-                NoItems ->
-                    list (lazy (\_ -> validation formats blankSchema))
-                        |> map ListValue
+--         ArrayType ->
+--             case schema.items of
+--                 NoItems ->
+--                     list (lazy (\_ -> validation formats blankSchema))
+--                         |> map ListValue
 
-                ItemDefinition schema_ ->
-                    list (validation formats schema_)
-                        |> andMaybe uniqueItems schema.uniqueItems
-                        |> andMaybe minItems schema.minItems
-                        |> andMaybe maxItems schema.maxItems
-                        |> map ListValue
+--                 ItemDefinition schema_ ->
+--                     list (validation formats schema_)
+--                         |> andMaybe uniqueItems schema.uniqueItems
+--                         |> andMaybe minItems schema.minItems
+--                         |> andMaybe maxItems schema.maxItems
+--                         |> map ListValue
 
-                ArrayOfItems schemaList ->
-                    tuple (List.map (validation formats) schemaList)
-                        |> andMaybe uniqueItems schema.uniqueItems
-                        |> andMaybe minItems schema.minItems
-                        |> andMaybe maxItems schema.maxItems
-                        |> map ListValue
+--                 ArrayOfItems schemaList ->
+--                     tuple (List.map (validation formats) schemaList)
+--                         |> andMaybe uniqueItems schema.uniqueItems
+--                         |> andMaybe minItems schema.minItems
+--                         |> andMaybe maxItems schema.maxItems
+--                         |> map ListValue
 
-        ObjectType ->
-            let
-                required : List String
-                required =
-                    schema.required |> Maybe.withDefault []
+--         ObjectType ->
+--             let
+--                 required : List String
+--                 required =
+--                     schema.required |> Maybe.withDefault []
 
-                isSpecialType : Schema -> Bool
-                isSpecialType =
-                    isType [ BooleanType, ArrayType, ObjectType ]
+--                 isSpecialType : Schema -> Bool
+--                 isSpecialType =
+--                     isType [ BooleanType, ArrayType, ObjectType ]
 
-                schemataItem :
-                    ( String, Schema )
-                    -> Form.Field.Field
-                    -> Result (Form.Error.Error ErrorValue) ( String, Value )
-                schemataItem ( name, schema_ ) =
-                    if List.member name required || isSpecialType schema_ then
-                        field name (validation formats schema_)
-                            |> andThen (\v -> succeed ( name, v ))
+--                 schemataItem :
+--                     ( String, Schema )
+--                     -> Form.Field.Field
+--                     -> Result (Form.Error.Error ErrorValue) ( String, Value )
+--                 schemataItem ( name, schema_ ) =
+--                     if List.member name required || isSpecialType schema_ then
+--                         field name (validation formats schema_)
+--                             |> andThen (\v -> succeed ( name, v ))
 
-                    else
-                        oneOf
-                            [ field name emptyString
-                                |> andThen (\_ -> succeed ( name, EmptyValue ))
-                            , field name (validation formats schema_)
-                                |> andThen (\v -> succeed ( name, v ))
-                            ]
+--                     else
+--                         oneOf
+--                             [ field name emptyString
+--                                 |> andThen (\_ -> succeed ( name, EmptyValue ))
+--                             , field name (validation formats schema_)
+--                                 |> andThen (\v -> succeed ( name, v ))
+--                             ]
 
-                fields : List (Form.Field.Field -> Result (Form.Error.Error ErrorValue) ( String, Value ))
-                fields =
-                    case schema.properties of
-                        Nothing ->
-                            required
-                                |> List.map (\name -> ( name, blankSchema ))
-                                |> List.map schemataItem
+--                 fields : List (Form.Field.Field -> Result (Form.Error.Error ErrorValue) ( String, Value ))
+--                 fields =
+--                     case schema.properties of
+--                         Nothing ->
+--                             required
+--                                 |> List.map (\name -> ( name, blankSchema ))
+--                                 |> List.map schemataItem
 
-                        Just (Json.Schema.Definitions.Schemata schemata) ->
-                            List.map schemataItem schemata
-            in
-            sequence fields |> map ObjectValue
+--                         Just (Json.Schema.Definitions.Schemata schemata) ->
+--                             List.map schemataItem schemata
+--             in
+--             sequence fields |> map ObjectValue
 
-        NullType ->
-            emptyString |> andThen (\_ -> succeed NullValue)
+--         NullType ->
+--             emptyString |> andThen (\_ -> succeed NullValue)
 
 
 constInt : Json.Encode.Value -> Int -> Validation ErrorValue Int
@@ -243,21 +226,21 @@ constFloat constValue value =
         fail (Form.Error.value InvalidFloat)
 
 
-constString : Json.Encode.Value -> String -> Validation ErrorValue String
-constString constValue value field =
-    if Json.Encode.string value == constValue then
-        succeed value field
+-- constString : Json.Encode.Value -> String -> Validation ErrorValue String
+-- constString constValue value field =
+--     if Json.Encode.string value == constValue then
+--         succeed value field
 
-    else if field == Form.Field.value Form.Field.EmptyField then
-        case Json.Decode.decodeValue Json.Decode.string constValue of
-            Ok str ->
-                succeed str field
+--     else if field == Form.Field.value Form.Field.EmptyField then
+--         case Json.Decode.decodeValue Json.Decode.string constValue of
+--             Ok str ->
+--                 succeed str field
 
-            Err _ ->
-                fail (Form.Error.value InvalidString) field
+--             Err _ ->
+--                 fail (Form.Error.value InvalidString) field
 
-    else
-        fail (Form.Error.value InvalidString) field
+--     else
+--         fail (Form.Error.value InvalidString) field
 
 
 constBool : Json.Encode.Value -> Bool -> Validation ErrorValue Bool
@@ -423,50 +406,50 @@ maxItems count list =
         fail (customError (LongerListThan count))
 
 
-tuple : List (Validation ErrorValue a) -> Validation ErrorValue (List a)
-tuple validations =
-    let
-        item : Int -> Validation e a -> Form.Field.Field -> Result (Form.Error.Error e) a
-        item idx =
-            field ("tuple" ++ String.fromInt idx)
-    in
-    List.indexedMap item validations
-        |> sequence
+-- tuple : List (Validation ErrorValue a) -> Validation ErrorValue (List a)
+-- tuple validations =
+--     let
+--         item : Int -> Validation e a -> Form.Field.Field -> Result (Form.Error.Error e) a
+--         item idx =
+--             field ("tuple" ++ String.fromInt idx)
+--     in
+--     List.indexedMap item validations
+--         |> sequence
 
 
-switch : Formats -> List Schema -> Validation ErrorValue Value
-switch formats schemata =
-    let
-        validateValue : Schema -> Form.Field.Field -> Result (Form.Error.Error ErrorValue) Value
-        validateValue schema =
-            case schema of
-                BooleanSchema _ ->
-                    field "value" (validation formats schema)
+-- switch : Formats -> List Schema -> Validation ErrorValue Value
+-- switch formats schemata =
+--     let
+--         validateValue : Schema -> Form.Field.Field -> Result (Form.Error.Error ErrorValue) Value
+--         validateValue schema =
+--             case schema of
+--                 BooleanSchema _ ->
+--                     field "value" (validation formats schema)
 
-                ObjectSchema objectSchema ->
-                    case objectSchema.const of
-                        Just const ->
-                            succeed (constAsValue const)
+--                 ObjectSchema objectSchema ->
+--                     case objectSchema.const of
+--                         Just const ->
+--                             succeed (constAsValue const)
 
-                        Nothing ->
-                            field "value" (validation formats schema)
-    in
-    field "switch" string
-        |> andThen
-            (\str ->
-                schemata
-                    |> List.indexedMap
-                        (\idx schema ->
-                            if str == ("option" ++ String.fromInt idx) then
-                                Just (validateValue schema)
+--                         Nothing ->
+--                             field "value" (validation formats schema)
+--     in
+--     field "switch" string
+--         |> andThen
+--             (\str ->
+--                 schemata
+--                     |> List.indexedMap
+--                         (\idx schema ->
+--                             if str == ("option" ++ String.fromInt idx) then
+--                                 Just (validateValue schema)
 
-                            else
-                                Nothing
-                        )
-                    |> Maybe.values
-                    |> List.head
-                    |> Maybe.withDefault (fail (customError Invalid))
-            )
+--                             else
+--                                 Nothing
+--                         )
+--                     |> Maybe.values
+--                     |> List.head
+--                     |> Maybe.withDefault (fail (customError Invalid))
+--             )
 
 
 constAsValue : Json.Decode.Value -> Value
