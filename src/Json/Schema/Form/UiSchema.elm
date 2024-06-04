@@ -6,13 +6,16 @@ module Json.Schema.Form.UiSchema exposing
     , pointToSchema
     , decodeStringLike
     , defaultValues
+    , defaultValue
     )
 
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode exposing (Value, Decoder)
+import Json.Encode as Encode
 import Json.Schema.Definitions as Schema exposing (Schema)
 import Form.Pointer as Pointer exposing (Pointer)
 import Form.Field exposing (FieldValue(..))
 import Dict exposing (Dict)
+import Json.Schema.Definitions exposing (Schema(..))
 
 
 type UiSchema
@@ -403,3 +406,44 @@ defaultValues schema uiSchema =
         Dict.fromList <| List.filterMap
             pointerDefaultWithLabel
             (allPointers uiSchema)
+
+defaultValue : Schema -> Value
+defaultValue schema = case defaultValue_ schema of
+    Nothing -> case schema of
+        BooleanSchema _ -> Encode.null
+        ObjectSchema o -> case o.type_ of
+            Schema.SingleType Schema.ObjectType -> Encode.object []
+            Schema.SingleType Schema.ArrayType -> Encode.list Encode.int []
+            Schema.SingleType Schema.IntegerType -> Encode.int 0
+            Schema.SingleType Schema.NumberType -> Encode.float 0
+            Schema.SingleType Schema.StringType -> Encode.string ""
+            Schema.SingleType Schema.BooleanType -> Encode.bool False
+            _ -> Encode.null
+    Just v -> v
+
+defaultValue_ : Schema -> Maybe Value
+defaultValue_ schema = case schema of
+    BooleanSchema _ -> Nothing
+    ObjectSchema o -> case o.default of
+        Just d -> Just d
+        Nothing -> case o.type_ of
+                Schema.SingleType t ->
+                    case t of
+                        Schema.ObjectType ->
+                            let
+                                schemata = Maybe.withDefault [] <|
+                                    Maybe.map unSchemata o.properties
+
+                                propDefault (name, sch) = Maybe.map (\s -> (name, s)) <| defaultValue_ sch
+
+                                propDefaults = List.filterMap propDefault schemata
+                            in
+                                if propDefaults == [] then Nothing else Just <| Encode.object propDefaults
+
+                        Schema.ArrayType ->
+                            Nothing
+
+                        _ -> Nothing
+
+                _ ->
+                    Nothing

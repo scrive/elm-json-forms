@@ -1,29 +1,11 @@
 module Json.Schema.Form.Validation exposing (validation)
 
 import Dict exposing (Dict)
-import Form.Error exposing (ErrorValue(..))
+import Form.Error as Error exposing (ErrorValue(..))
 import Form.Field
-import Form.Validate
-    exposing
-        ( Validation
-        , andThen
-        , customError
-        , fail
-        , format
-        , map
-        , maxFloat
-        , maxInt
-        , maxLength
-        , minFloat
-        , minInt
-        , minLength
-        , oneOf
-        , sequence
-        , succeed
-        , withCustomError
-        )
-import Json.Decode exposing (Decoder)
-import Json.Encode
+import Form.Validate as Validate exposing ( Validation )
+import Json.Decode exposing (Decoder, Value)
+import Json.Encode as Encode
 import Json.Schema.Definitions
     exposing
         ( ExclusiveBoundary(..)
@@ -35,10 +17,9 @@ import Json.Schema.Definitions
         , blankSchema
         )
 import Json.Schema.Form.Encode as Encode
-import Json.Schema.Form.Error exposing (ErrorValue(..))
+import Json.Schema.Form.Error exposing (CustomErrorValue(..))
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
-import Json.Schema.Form.Value exposing (Value(..))
 import Maybe.Extra as Maybe
 import Regex
 import Set
@@ -48,20 +29,26 @@ type alias Formats =
     Dict String Format
 
 
-validation : Formats -> Schema -> Validation ErrorValue Value
-validation formats schema = fail (customError Invalid)
-    -- case schema of
-    --     BooleanSchema bool ->
-    --         if bool then
-    --             validation formats blankSchema
+validation : Schema -> Value -> Validation CustomErrorValue Value
+validation schema value =
+    case schema of
+        BooleanSchema bool ->
+            if bool then
+                Validate.succeed value
 
-    --         else
-    --             fail (customError Invalid)
+            else
+                Validate.fail (Validate.customError Invalid)
 
-    --     ObjectSchema objectSchema ->
-    --         subSchema formats objectSchema
+        ObjectSchema objectSchema ->
+            subSchema objectSchema value
 
--- subSchema : Formats -> SubSchema -> Validation ErrorValue Value
+subSchema : SubSchema -> Value -> Validation CustomErrorValue Value
+subSchema schema value =
+    case schema.type_ of
+        SingleType type_ -> singleType schema type_ value
+        _ -> Validate.fail (Error.error <| Unimplemented "Only SingleType is implemented.")
+
+-- subSchema : Formats -> SubSchema -> Validation CustomErrorValue Value
 -- subSchema formats schema =
 --     case schema.type_ of
 --         AnyType ->
@@ -117,8 +104,15 @@ validation formats schema = fail (customError Invalid)
 --         SingleType type_ ->
 --             singleType formats schema type_
 
+singleType : SubSchema -> SingleType -> Value -> Validation CustomErrorValue Value
+singleType schema type_ value =
+    case type_ of
+        IntegerType ->
+            Result.map Encode.int <| Validate.int value
+        _ -> Validate.fail (Validate.customError Invalid) -- TODO: implement
 
--- singleType : Formats -> SubSchema -> SingleType -> Validation ErrorValue Value
+
+-- singleType : Formats -> SubSchema -> SingleType -> Validation CustomErrorValue Value
 -- singleType formats schema type_ =
 --     case type_ of
 --         IntegerType ->
@@ -217,22 +211,22 @@ validation formats schema = fail (customError Invalid)
 --             emptyString |> andThen (\_ -> succeed NullValue)
 
 
-constInt : Json.Encode.Value -> Int -> Validation ErrorValue Int
-constInt constValue value =
-    if Json.Encode.int value == constValue then
-        succeed value
+-- constInt : Json.Encode.Value -> Int -> Validation ErrorValue Int
+-- constInt constValue value =
+--     if Json.Encode.int value == constValue then
+--         succeed value
 
-    else
-        fail (Form.Error.value InvalidInt)
+--     else
+--         fail (Form.Error.error InvalidInt)
 
 
-constFloat : Json.Encode.Value -> Float -> Validation ErrorValue Float
-constFloat constValue value =
-    if Json.Encode.float value == constValue then
-        succeed value
+-- constFloat : Json.Encode.Value -> Float -> Validation ErrorValue Float
+-- constFloat constValue value =
+--     if Json.Encode.float value == constValue then
+--         succeed value
 
-    else
-        fail (Form.Error.value InvalidFloat)
+--     else
+--         fail (Form.Error.error InvalidFloat)
 
 
 -- constString : Json.Encode.Value -> String -> Validation ErrorValue String
@@ -246,38 +240,38 @@ constFloat constValue value =
 --                 succeed str field
 
 --             Err _ ->
---                 fail (Form.Error.value InvalidString) field
+--                 fail (Form.Error.error InvalidString) field
 
 --     else
---         fail (Form.Error.value InvalidString) field
+--         fail (Form.Error.error InvalidString) field
 
 
-constBool : Json.Encode.Value -> Bool -> Validation ErrorValue Bool
-constBool constValue value =
-    if Json.Encode.bool value == constValue then
-        succeed value
+-- constBool : Json.Encode.Value -> Bool -> Validation ErrorValue Bool
+-- constBool constValue value =
+--     if Json.Encode.bool value == constValue then
+--         succeed value
 
-    else
-        fail (Form.Error.value InvalidBool)
-
-
-pattern : String -> (String -> Validation e String)
-pattern str =
-    case Regex.fromString str of
-        Just regex ->
-            format regex
-
-        Nothing ->
-            \_ -> fail (Form.Error.value InvalidFormat)
+--     else
+--         fail (Form.Error.error InvalidBool)
 
 
-multipleOf : Int -> Int -> Validation e Int
-multipleOf multiplier value =
-    if remainderBy multiplier value == 0 then
-        succeed value
+-- pattern : String -> (String -> Validation e String)
+-- pattern str =
+--     case Regex.fromString str of
+--         Just regex ->
+--             format regex
 
-    else
-        fail (Form.Error.value NotIncludedIn)
+--         Nothing ->
+--             \_ -> fail (Form.Error.error InvalidFormat)
+
+
+-- multipleOf : Int -> Int -> Validation e Int
+-- multipleOf multiplier value =
+--     if remainderBy multiplier value == 0 then
+--         succeed value
+
+--     else
+--         fail (Form.Error.error NotIncludedIn)
 
 
 minimum : SubSchema -> Maybe Float
@@ -312,107 +306,107 @@ maximum schema =
             schema.maximum
 
 
-enumInt : List Json.Encode.Value -> Int -> Validation ErrorValue Int
-enumInt =
-    enum Json.Encode.int
+-- enumInt : List Json.Encode.Value -> Int -> Validation ErrorValue Int
+-- enumInt =
+--     enum Json.Encode.int
 
 
-enumFloat : List Json.Encode.Value -> Float -> Validation ErrorValue Float
-enumFloat =
-    enum Json.Encode.float
+-- enumFloat : List Json.Encode.Value -> Float -> Validation ErrorValue Float
+-- enumFloat =
+--     enum Json.Encode.float
 
 
-enumString : List Json.Encode.Value -> String -> Validation ErrorValue String
-enumString =
-    enum Json.Encode.string
+-- enumString : List Json.Encode.Value -> String -> Validation ErrorValue String
+-- enumString =
+--     enum Json.Encode.string
 
 
-enum :
-    (a -> Json.Encode.Value)
-    -> List Json.Encode.Value
-    -> a
-    -> Validation ErrorValue a
-enum encode constValues value =
-    if List.member (encode value) constValues then
-        succeed value
+-- enum :
+--     (a -> Json.Encode.Value)
+--     -> List Json.Encode.Value
+--     -> a
+--     -> Validation ErrorValue a
+-- enum encode constValues value =
+--     if List.member (encode value) constValues then
+--         succeed value
 
-    else
-        fail (Form.Error.value NotIncludedIn)
-
-
-customFormat : Formats -> String -> String -> Validation ErrorValue String
-customFormat formats formatId value =
-    case formatId of
-        "date-time" ->
-            format Json.Schema.Form.Regex.dateTime value
-
-        "date" ->
-            format Json.Schema.Form.Regex.date value
-
-        "time" ->
-            format Json.Schema.Form.Regex.time value
-
-        "email" ->
-            format Json.Schema.Form.Regex.email value
-
-        "hostname" ->
-            format Json.Schema.Form.Regex.hostname value
-
-        "ipv4" ->
-            format Json.Schema.Form.Regex.ipv4 value
-
-        "ipv6" ->
-            format Json.Schema.Form.Regex.ipv6 value
-
-        format ->
-            formats
-                |> Dict.get format
-                |> Maybe.map
-                    (.validation
-                        >> (\v ->
-                                v value
-                                    |> withCustomError
-                                        (InvalidCustomFormat format)
-                           )
-                    )
-                |> Maybe.withDefault (succeed value)
+--     else
+--         fail (Form.Error.error NotIncludedIn)
 
 
-uniqueItems : Bool -> List Value -> Validation ErrorValue (List Value)
-uniqueItems unique value =
-    if unique then
-        let
-            items : List String
-            items =
-                List.map Encode.encode value
-                    |> List.map (Json.Encode.encode 0)
-        in
-        if Set.size (Set.fromList items) == List.length value then
-            succeed value
+-- customFormat : Formats -> String -> String -> Validation ErrorValue String
+-- customFormat formats formatId value =
+--     case formatId of
+--         "date-time" ->
+--             format Json.Schema.Form.Regex.dateTime value
 
-        else
-            fail (customError InvalidSet)
+--         "date" ->
+--             format Json.Schema.Form.Regex.date value
 
-    else
-        succeed value
+--         "time" ->
+--             format Json.Schema.Form.Regex.time value
+
+--         "email" ->
+--             format Json.Schema.Form.Regex.email value
+
+--         "hostname" ->
+--             format Json.Schema.Form.Regex.hostname value
+
+--         "ipv4" ->
+--             format Json.Schema.Form.Regex.ipv4 value
+
+--         "ipv6" ->
+--             format Json.Schema.Form.Regex.ipv6 value
+
+--         format ->
+--             formats
+--                 |> Dict.get format
+--                 |> Maybe.map
+--                     (.validation
+--                         >> (\v ->
+--                                 v value
+--                                     |> withCustomError
+--                                         (InvalidCustomFormat format)
+--                            )
+--                     )
+--                 |> Maybe.withDefault (succeed value)
 
 
-minItems : Int -> List a -> Validation ErrorValue (List a)
-minItems count list =
-    if List.length list >= count then
-        succeed list
+-- uniqueItems : Bool -> List Value -> Validation ErrorValue (List Value)
+-- uniqueItems unique value =
+--     if unique then
+--         let
+--             items : List String
+--             items =
+--                 List.map Encode.encode value
+--                     |> List.map (Json.Encode.encode 0)
+--         in
+--         if Set.size (Set.fromList items) == List.length value then
+--             succeed value
 
-    else
-        fail (customError (ShorterListThan count))
+--         else
+--             fail (customError InvalidSet)
+
+--     else
+--         succeed value
 
 
-maxItems : Int -> List a -> Validation ErrorValue (List a)
-maxItems count list =
-    if List.length list <= count then
-        succeed list
+-- minItems : Int -> List a -> Validation ErrorValue (List a)
+-- minItems count list =
+--     if List.length list >= count then
+--         succeed list
 
-    else
-        fail (customError (LongerListThan count))
+--     else
+--         fail (customError (ShorterListThan count))
+
+
+-- maxItems : Int -> List a -> Validation ErrorValue (List a)
+-- maxItems count list =
+--     if List.length list <= count then
+--         succeed list
+
+--     else
+--         fail (customError (LongerListThan count))
 
 
 -- tuple : List (Validation ErrorValue a) -> Validation ErrorValue (List a)
@@ -426,7 +420,7 @@ maxItems count list =
 --         |> sequence
 
 
--- switch : Formats -> List Schema -> Validation ErrorValue Value
+-- switch : Formats -> List Schema -> Validation CustomErrorValue Value
 -- switch formats schemata =
 --     let
 --         validateValue : Schema -> Form.Field.Field -> Result (Form.Error.Error ErrorValue) Value
@@ -461,35 +455,35 @@ maxItems count list =
 --             )
 
 
-constAsValue : Json.Decode.Value -> Value
-constAsValue const =
-    let
-        decoder : Decoder Value
-        decoder =
-            Json.Decode.oneOf
-                [ Json.Decode.string |> Json.Decode.map StringValue
-                , Json.Decode.int |> Json.Decode.map IntValue
-                , Json.Decode.float |> Json.Decode.map FloatValue
-                , Json.Decode.bool |> Json.Decode.map BoolValue
-                , Json.Decode.null NullValue
-                ]
-    in
-    const
-        |> Json.Decode.decodeValue decoder
-        |> Result.withDefault (JsonValue const)
+-- constAsValue : Value -> Value
+-- constAsValue const =
+--     let
+--         decoder : Decoder Value
+--         decoder =
+--             Json.Decode.oneOf
+--                 [ Json.Decode.string |> Json.Decode.map StringValue
+--                 , Json.Decode.int |> Json.Decode.map IntValue
+--                 , Json.Decode.float |> Json.Decode.map FloatValue
+--                 , Json.Decode.bool |> Json.Decode.map BoolValue
+--                 , Json.Decode.null NullValue
+--                 ]
+--     in
+--     const
+--         |> Json.Decode.decodeValue decoder
+--         |> Result.withDefault (JsonValue const)
 
 
-andMaybe :
-    (a -> b -> Validation ErrorValue b)
-    -> Maybe a
-    -> (Validation ErrorValue b -> Validation ErrorValue b)
-andMaybe func constraint =
-    case constraint of
-        Just constraintValue ->
-            andThen (\value -> func constraintValue value)
+-- andMaybe :
+--     (a -> b -> Validation ErrorValue b)
+--     -> Maybe a
+--     -> (Validation ErrorValue b -> Validation ErrorValue b)
+-- andMaybe func constraint =
+--     case constraint of
+--         Just constraintValue ->
+--             andThen (\value -> func constraintValue value)
 
-        Nothing ->
-            andThen (\value -> succeed value)
+--         Nothing ->
+--             andThen (\value -> succeed value)
 
 
 isType : List SingleType -> Schema -> Bool
@@ -517,6 +511,6 @@ isType types schema_ =
         types
 
 
-lazy : (() -> Validation e o) -> Validation e o
-lazy thunk =
-    andThen thunk (succeed ())
+-- lazy : (() -> Validation e o) -> Validation e o
+-- lazy thunk =
+--     andThen thunk (succeed ())

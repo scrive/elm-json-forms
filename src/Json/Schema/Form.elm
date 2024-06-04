@@ -29,12 +29,13 @@ module Json.Schema.Form exposing
 import Form as F exposing (Msg)
 import Html exposing (Html)
 import Json.Schema.Definitions exposing (Schema)
-import Json.Schema.Form.Error exposing (ErrorValue)
+import Json.Schema.Form.Error exposing (CustomErrorValue)
 import Json.Schema.Form.Fields
+import Form as Form
 import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.UiSchema exposing (UiSchema, generateUiSchema, defaultValues)
+import Json.Schema.Form.UiSchema exposing (UiSchema, generateUiSchema, defaultValues, defaultValue)
 import Json.Schema.Form.Validation exposing (validation)
-import Json.Schema.Form.Value exposing (Value)
+import Json.Encode exposing (Value)
 
 
 {-| The form state.
@@ -43,7 +44,7 @@ type alias State =
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema
-    , form : F.Form ErrorValue Value
+    , form : F.Form CustomErrorValue Value
     }
 
 
@@ -60,9 +61,11 @@ init options schema mUiSchema =
     let
         uiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
+
+        value = defaultValue schema
     in
     State options schema uiSchema <|
-        Debug.log "initial form" <| F.initial (defaultValues schema uiSchema) (validation options.formats schema)
+        Debug.log "initial form" <| F.initial (defaultValues schema uiSchema) value (validation schema value)
 
 
 {-| Update the form state.
@@ -70,10 +73,10 @@ init options schema mUiSchema =
 update : Msg -> State -> State
 update msg state =
     let
-        form : F.Form ErrorValue Value
+        form : F.Form CustomErrorValue Value
         form =
             F.update
-                (validation state.options.formats state.schema)
+                (validation state.schema (Form.getValue state.form))
                 (Debug.log "message" msg)
                 state.form
     in

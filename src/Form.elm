@@ -2,6 +2,7 @@ module Form exposing
     ( Msg(..), InputType(..), Form, FieldState
     , initial, update
     , getField
+    , getValue
     -- , getFieldAsString, getFieldAsBool, getListIndexes
     , getFocus, isSubmitted, getErrors, getOutput, getChangedFields
     )
@@ -32,10 +33,12 @@ with state lifecycle and input helpers for the views.
 -}
 
 import Dict exposing (Dict)
+import Json.Decode exposing (Value)
 import Form.Error as Error exposing (Error, ErrorValue)
 import Form.Field as Field exposing (Field, FieldValue(..))
 import Form.Tree as Tree exposing (Tree)
 import Form.Validate exposing (Validation)
+import Form.Pointer as Pointer
 import Set exposing (Set)
 
 
@@ -53,6 +56,7 @@ type Form customError output
 -}
 type alias Model customError output =
     { values : Dict String FieldValue
+    , value : Value
     , focus : Maybe String
     , dirtyFields : Set String
     , changedFields : Set String
@@ -65,18 +69,19 @@ type alias Model customError output =
 
 {-| Initial form state. See `Form.Field` for initial fields, and `Form.Validate` for validation.
 -}
-initial : Dict String FieldValue -> Validation e output -> Form e output
-initial initialValues validation =
+initial : Dict String FieldValue -> Value -> Validation e output -> Form e output
+initial initialValues initialValue validation =
     let
         model =
             { values = initialValues
+            , value = initialValue
             , focus = Nothing
             , dirtyFields = Set.empty
             , changedFields = Set.empty
             , originalValues = Dict.empty
             , isSubmitted = False
             , output = Nothing
-            , errors = Tree.group []
+            , errors = []
             }
     in
     Form (updateValidate validation model)
@@ -136,14 +141,19 @@ type alias FieldState e =
 --     getField getBoolAt
 
 
-getValue : String -> Form e o -> Maybe FieldValue
-getValue path (Form form) = Dict.get path form.values
+getValue : Form e o -> Value
+getValue (Form form) = form.value
+
+
+-- TODO: re-implement
+getValue_ : String -> Form e o -> Maybe FieldValue
+getValue_ path (Form form) = Dict.get path form.values
 
 
 getField : String -> Form e o -> FieldState e
 getField path form =
     { path = path
-    , value = getValue path form
+    , value = getValue_ path form
     , error = getErrorAt path form
     , liveError = getLiveErrorAt path form
     , isDirty = isDirtyAt path form
@@ -360,11 +370,11 @@ update validation msg (Form model) =
 
 updateValidate : Validation e o -> Model e o -> Model e o
 updateValidate validation model =
-    case validation model.values of
+    case validation of
         Ok output ->
             { model
                 | errors =
-                    Tree.group []
+                    []
                 , output = Just output
             }
 
@@ -414,12 +424,14 @@ isSubmitted (Form model) =
 -}
 getErrors : Form e o -> List ( String, Error.ErrorValue e )
 getErrors (Form model) =
-    Tree.valuesWithPath model.errors
+    List.map (\(p, e) -> (Pointer.toString p, e)) model.errors
 
 
 getErrorAt : String -> Form e o -> Maybe (ErrorValue e)
 getErrorAt path (Form model) =
-    Tree.getAtPath path model.errors |> Maybe.andThen Tree.asValue
+    List.head <| case Pointer.fromString path of
+        Ok pointer -> List.filterMap (\(p, e) -> if pointer == p then Just e else Nothing) model.errors
+        Err _ -> []
 
 
 getLiveErrorAt : String -> Form e o -> Maybe (ErrorValue e)

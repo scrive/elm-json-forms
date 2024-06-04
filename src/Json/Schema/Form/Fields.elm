@@ -24,7 +24,7 @@ import Html.Attributes.Extra as Attr
 import Html.Events exposing (preventDefaultOn)
 import Html.Extra as Html
 import Html.Keyed
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Value)
 import Json.Schema.Definitions
     exposing
         ( Items(..)
@@ -34,20 +34,19 @@ import Json.Schema.Definitions
         , Type(..)
         , blankSchema
         )
-import Json.Schema.Form.Error exposing (ErrorValue, Errors)
+import Json.Schema.Form.Error exposing (CustomErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
 import Form.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Form.Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
-import Json.Schema.Form.Value exposing (Value)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import String.Case
 
 
 type alias Form =
-    F.Form ErrorValue Value
+    F.Form CustomErrorValue Value
 
 
 uiSchemaView : Options -> List String -> UiSchema -> Schema -> Form -> Html F.Msg
@@ -183,7 +182,7 @@ schemaView options path schema form = Html.nothing
 
 --         ArrayType ->
 --             let
---                 f : F.FieldState ErrorValue String
+--                 f : F.FieldState CustomErrorValue String
 --                 f =
 --                     getFieldAsString path form
 --             in
@@ -211,7 +210,7 @@ schemaView options path schema form = Html.nothing
 --             div [] []
 
 
-txt : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue -> { isNumber : Bool } -> Html F.Msg
+txt : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> { isNumber : Bool } -> Html F.Msg
 txt options path schema f { isNumber } =
     let
         format : Format
@@ -326,7 +325,7 @@ txt options path schema f { isNumber } =
         ]
 
 
-checkbox : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue -> Html F.Msg
+checkbox : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> Html F.Msg
 checkbox options path schema f =
     let
         content : List (Html F.Msg)
@@ -369,7 +368,7 @@ checkbox options path schema f =
 
 
 -- TODO: add a None option
-select : Options -> Pointer -> SubSchema -> F.FieldState ErrorValue -> Html F.Msg
+select : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> Html F.Msg
 select options path schema f =
     let
         values : List String
@@ -493,7 +492,7 @@ radio options fieldState ( value, title ) =
 -- switch : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 -- switch options path schema form =
 --     let
---         f : F.FieldState ErrorValue String
+--         f : F.FieldState CustomErrorValue String
 --         f =
 --             getFieldAsString (path ++ [ "switch" ]) form
 
@@ -547,7 +546,7 @@ radio options fieldState ( value, title ) =
 --         ]
 
 
-field : Options -> SubSchema -> F.FieldState ErrorValue -> List (Html F.Msg) -> Html F.Msg
+field : Options -> SubSchema -> F.FieldState CustomErrorValue -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
         meta : List (Html F.Msg)
@@ -584,7 +583,7 @@ field options schema f content =
 -- group : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 -- group options path schema form =
 --     let
---         f : F.FieldState ErrorValue String
+--         f : F.FieldState CustomErrorValue String
 --         f =
 --             getFieldAsString path form
 
@@ -633,7 +632,7 @@ fieldDescription theme schema =
         |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
 
 
-liveError : Theme -> Errors -> F.FieldState ErrorValue -> Maybe (Html F.Msg)
+liveError : Theme -> Errors -> F.FieldState CustomErrorValue -> Maybe (Html F.Msg)
 liveError theme func f =
     f.liveError
         |> Maybe.map

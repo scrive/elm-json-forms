@@ -2,6 +2,7 @@ module Form.Validate exposing
     ( Validation, map, succeed, andThen, andMap, customError, defaultValue, mapError, withCustomError, sequence
     , map2, map3, map4, map5, map6, map7, map8
     , maybe
+    , int
     , minInt, maxInt, minFloat, maxFloat, minLength, maxLength, nonEmpty, format, includedIn
     , fail, customValidation, oneOf
     )
@@ -42,13 +43,15 @@ import Form.Tree as Tree
 import Regex exposing (Regex)
 import Result
 import String
+import Json.Decode as Decode exposing (Value)
+
 
 
 {-| A validation is a function that takes a form field and returns a result
 being either a validation error or the expected object.
 -}
 type alias Validation customError output =
-    Dict String FieldValue -> Result (Error customError) output
+    Result (Error customError) output
 
 
 {-| Map over the result of the validation.
@@ -57,8 +60,7 @@ type alias Validation customError output =
 
 -}
 map : (a -> b) -> Validation e a -> Validation e b
-map f validation validationField =
-    Result.map f (validation validationField)
+map = Result.map
 
 
 {-| Apply a new validation to the result of the validation.
@@ -67,8 +69,7 @@ map f validation validationField =
 
 -}
 andThen : (a -> Validation e b) -> Validation e a -> Validation e b
-andThen callback validation validationField =
-    validation validationField |> Result.andThen (\next -> callback next validationField)
+andThen = Result.andThen
 
 
 {-| Incremental form validation for records with more that 8 fields.
@@ -79,27 +80,25 @@ andThen callback validation validationField =
 
 -}
 andMap : Validation e a -> Validation e (a -> b) -> Validation e b
-andMap aValidation partialValidation validationField =
-    case ( partialValidation validationField, aValidation validationField ) of
+andMap aValidation partialValidation =
+    case ( partialValidation, aValidation ) of
         ( Ok partial, Ok a ) ->
             Ok (partial a)
 
         ( partialResult, aResult ) ->
-            Err (mergeMany [ errMaybe partialResult, errMaybe aResult ])
+            Err (List.append (errList partialResult) (errList aResult))
 
 
 {-| Rescue a failed validation with the supplied value.
 -}
 defaultValue : a -> Validation e a -> Validation e a
-defaultValue a validation validationField =
-    Ok (Result.withDefault a (validation validationField))
+defaultValue a = Ok << Result.withDefault a
 
 
 {-| Call Result.mapError on validation result.
 -}
 mapError : (Error e1 -> Error e2) -> Validation e1 a -> Validation e2 a
-mapError f validation =
-    \validationField -> Result.mapError f (validation validationField)
+mapError = Result.mapError
 
 
 {-| Arrange that if a validation fails, it has the given custom error.
@@ -113,15 +112,14 @@ mapError f validation =
 
 -}
 withCustomError : customErr -> Validation e a -> Validation customErr a
-withCustomError =
-    mapError << always << customError
+withCustomError e =
+    mapError (\_ -> customError e)
 
 
 {-| Helper to create a CustomError.
 -}
 customError : e -> Error e
-customError =
-    CustomError >> Error.value
+customError = Error.error << CustomError
 
 
 -- {-| Access the given field in the group.
@@ -197,47 +195,22 @@ map8 func v1 v2 v3 v4 v5 v6 v7 v8 =
     map7 func v1 v2 v3 v4 v5 v6 v7
         |> andMap v8
 
-
 {-| Private
 -}
-mergeMany : List (Maybe (Error e)) -> Error e
-mergeMany errors =
-    errors
-        |> List.filterMap identity
-        |> List.foldl groupErrorsUnion (Tree.group [])
-
-
-{-| Private
--}
-groupErrorsUnion : Error e -> Error e -> Error e
-groupErrorsUnion e1 e2 =
-    case ( e1, e2 ) of
-        ( Tree.Group g1, Tree.Group g2 ) ->
-            Tree.Group (Dict.union g1 g2)
-
-        _ ->
-            e2
-
-
-{-| Private
--}
-errMaybe : Result e a -> Maybe e
-errMaybe res =
+errList : Validation e a -> Error e
+errList res =
     case res of
         Ok _ ->
-            Nothing
+            []
 
         Err e ->
-            Just e
+            e
 
 
--- {-| Validation an integer using `String.toInt`.
--- -}
--- int : Validation e Int
--- int v =
---     Field.asString v
---         |> Maybe.andThen String.toInt
---         |> Result.fromMaybe (Error.value InvalidInt)
+{-| Validation an integer using `String.toInt`.
+-}
+int : Value -> Validation e Int
+int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decode.int
 
 
 -- {-| Validation a float using `String.toFloat`.
@@ -246,7 +219,7 @@ errMaybe res =
 -- float v =
 --     Field.asString v
 --         |> Maybe.andThen String.toFloat
---         |> Result.fromMaybe (Error.value InvalidFloat)
+--         |> Result.fromMaybe (Error.error InvalidFloat)
 
 
 -- {-| Validation a String.
@@ -256,13 +229,13 @@ errMaybe res =
 --     case Field.asString v of
 --         Just s ->
 --             if String.isEmpty s then
---                 Err (Error.value Empty)
+--                 Err (Error.error Empty)
 
 --             else
 --                 Ok s
 
 --         Nothing ->
---             Err (Error.value InvalidString)
+--             Err (Error.error InvalidString)
 
 
 -- {-| Validate an empty string, otherwise failing with InvalidString.
@@ -276,7 +249,7 @@ errMaybe res =
 --                 Ok s
 
 --             else
---                 Err (Error.value InvalidString)
+--                 Err (Error.error InvalidString)
 
 --         Nothing ->
 --             Ok ""
@@ -297,16 +270,15 @@ errMaybe res =
 {-| Transform validation result to `Maybe`, using `Result.toMaybe`.
 -}
 maybe : Validation e a -> Validation e (Maybe a)
-maybe validation validationField =
-    Ok (Result.toMaybe (validation validationField))
+maybe = Ok << Result.toMaybe
 
 
 {-| Fails if `String.isEmpty`.
 -}
-nonEmpty : String -> Validation e String
-nonEmpty s _ =
+nonEmpty : String -> String -> Validation e String
+nonEmpty path s =
     if String.isEmpty s then
-        Err (Error.value Empty)
+        Err (Error.error Empty)
 
     else
         Ok s
@@ -315,78 +287,78 @@ nonEmpty s _ =
 {-| Min length for String.
 -}
 minLength : Int -> String -> Validation e String
-minLength min s _ =
+minLength min s =
     if String.length s >= min then
         Ok s
 
     else
-        Err (Error.value (ShorterStringThan min))
+        Err (Error.error (ShorterStringThan min))
 
 
 {-| Max length for String.
 -}
 maxLength : Int -> String -> Validation e String
-maxLength max s _ =
+maxLength max s =
     if String.length s <= max then
         Ok s
 
     else
-        Err (Error.value (LongerStringThan max))
+        Err (Error.error (LongerStringThan max))
 
 
 {-| Min value for Int.
 -}
 minInt : Int -> Int -> Validation e Int
-minInt min i _ =
+minInt min i =
     if i >= min then
         Ok i
 
     else
-        Err (Error.value (SmallerIntThan min))
+        Err (Error.error (SmallerIntThan min))
 
 
 {-| Max value for Int.
 -}
 maxInt : Int -> Int -> Validation e Int
-maxInt max i _ =
+maxInt max i =
     if i <= max then
         Ok i
 
     else
-        Err (Error.value (GreaterIntThan max))
+        Err (Error.error (GreaterIntThan max))
 
 
 {-| Min value for Float.
 -}
 minFloat : Float -> Float -> Validation e Float
-minFloat min i _ =
+minFloat min i =
     if i >= min then
         Ok i
 
     else
-        Err (Error.value (SmallerFloatThan min))
+        Err (Error.error (SmallerFloatThan min))
 
 
 {-| Max value for Float.
 -}
 maxFloat : Float -> Float -> Validation e Float
-maxFloat max i _ =
+maxFloat max i =
     if i <= max then
         Ok i
 
     else
-        Err (Error.value (GreaterFloatThan max))
+        Err (Error.error (GreaterFloatThan max))
 
 
 {-| Validates format of the string.
 -}
 format : Regex -> String -> Validation e String
-format regex s _ =
+format regex s =
     if Regex.contains regex s then
         Ok s
 
     else
-        Err (Error.value InvalidFormat)
+        Err (Error.error InvalidFormat)
 
 
 {-| Stolen to elm-validate.
@@ -406,49 +378,46 @@ validEmailPattern =
 --         |> andThen
 --             (\s ->
 --                 format validEmailPattern s
---                     |> mapError (\_ -> Error.value InvalidEmail)
+--                     |> mapError (\_ -> Error.error InvalidEmail)
 --             )
 
 
 {-| Check if the string is included in the given list.
 -}
 includedIn : List String -> String -> Validation e String
-includedIn items s _ =
+includedIn items s =
     if List.member s items then
         Ok s
 
     else
-        Err (Error.value NotIncludedIn)
+        Err (Error.error NotIncludedIn)
 
 
 {-| A validation that always fails. Useful for contextual validation.
 -}
 fail : Error e -> Validation e a
-fail error _ =
+fail error =
     Err error
 
 
 {-| A validation that always succeeds. Useful for contextual validation.
 -}
 succeed : a -> Validation e a
-succeed a _ =
+succeed a =
     Ok a
 
 
 {-| Custom validation for your special cases.
 -}
-customValidation : Validation e a -> (a -> Result (Error e) b) -> Validation e b
-customValidation validation callback validationField =
-    validation validationField |> Result.andThen callback
+customValidation : (a -> Validation e b) -> Validation e a -> Validation e b
+customValidation = Result.andThen
 
 
 {-| First successful validation wins, from left to right.
 -}
 oneOf : List (Validation e a) -> Validation e a
-oneOf validations validationField =
+oneOf validations =
     let
-        results =
-            List.map (\v -> v validationField) validations
 
         walkResults result combined =
             case ( combined, result ) of
@@ -458,7 +427,7 @@ oneOf validations validationField =
                 _ ->
                     result
     in
-    List.foldl walkResults (Err (Error.value Empty)) results
+    List.foldl walkResults (Err (Error.error Empty)) validations
 
 
 {-| Combine a list of validations into a validation producing a list of all

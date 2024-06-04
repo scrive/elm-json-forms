@@ -5,7 +5,7 @@ import Expect exposing (Expectation)
 import Form as F
 import Form.Validate
 import Html.Attributes
-import Json.Encode
+import Json.Encode as Encode exposing (Value)
 import Json.Schema.Builder
     exposing
         ( SchemaBuilder
@@ -26,7 +26,6 @@ import Json.Schema.Builder
 import Json.Schema.Form.Fields exposing (schemaView)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Theme as Theme
-import Json.Schema.Form.Value exposing (Value(..))
 import Test exposing (Test, describe, test)
 import Test.Html.Event as Event
 import Test.Html.Query as Query
@@ -43,7 +42,7 @@ options =
 
 form : F.Form e Value
 form =
-    F.initial Dict.empty (Form.Validate.succeed EmptyValue)
+    F.initial Dict.empty (Encode.object []) (Form.Validate.succeed (Encode.object []))
 
 
 view : (Query.Single F.Msg -> Expectation) -> SchemaBuilder -> Expectation
@@ -101,10 +100,10 @@ suite =
                                     |> withOneOf
                                         [ buildSchema
                                             |> withTitle "One"
-                                            |> withConst (Json.Encode.string "one")
+                                            |> withConst (Encode.string "one")
                                         , buildSchema
                                             |> withTitle "Two"
-                                            |> withConst (Json.Encode.string "two")
+                                            |> withConst (Encode.string "two")
                                         ]
                                     |> isSwitch
                         ]
@@ -115,10 +114,10 @@ suite =
                                     |> withAnyOf
                                         [ buildSchema
                                             |> withTitle "One"
-                                            |> withConst (Json.Encode.string "one")
+                                            |> withConst (Encode.string "one")
                                         , buildSchema
                                             |> withTitle "Two"
-                                            |> withConst (Json.Encode.string "two")
+                                            |> withConst (Encode.string "two")
                                         ]
                                     |> isSwitch
                         ]
@@ -259,10 +258,10 @@ singleTypes =
                         |> withOneOf
                             [ buildSchema
                                 |> withTitle "One"
-                                |> withConst (Json.Encode.string "one")
+                                |> withConst (Encode.string "one")
                             , buildSchema
                                 |> withTitle "Two"
-                                |> withConst (Json.Encode.string "two")
+                                |> withConst (Encode.string "two")
                             ]
                         |> isSwitch
             ]
@@ -274,10 +273,10 @@ singleTypes =
                         |> withAnyOf
                             [ buildSchema
                                 |> withTitle "One"
-                                |> withConst (Json.Encode.string "one")
+                                |> withConst (Encode.string "one")
                             , buildSchema
                                 |> withTitle "Two"
-                                |> withConst (Json.Encode.string "two")
+                                |> withConst (Encode.string "two")
                             ]
                         |> isSwitch
             ]
@@ -523,10 +522,10 @@ isSelect schema =
         |> withAnyOf
             [ buildSchema
                 |> withTitle "One"
-                |> withConst (Json.Encode.string "one")
+                |> withConst (Encode.string "one")
             , buildSchema
                 |> withTitle "Two"
-                |> withConst (Json.Encode.string "two")
+                |> withConst (Encode.string "two")
             ]
         |> Expect.all
             [ isField
@@ -565,10 +564,10 @@ isNumberSelect schema =
         |> withAnyOf
             [ buildSchema
                 |> withTitle "One"
-                |> withConst (Json.Encode.int 1)
+                |> withConst (Encode.int 1)
             , buildSchema
                 |> withTitle "Two"
-                |> withConst (Json.Encode.int 2)
+                |> withConst (Encode.int 2)
             ]
         |> Expect.all
             [ isField
