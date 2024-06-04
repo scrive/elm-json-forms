@@ -6,11 +6,12 @@ module Form.Error exposing (Error, ErrorValue(..), error)
 
 -}
 
-import Form.Tree as Tree exposing (Tree)
 import Form.Pointer as Pointer exposing (Pointer)
+import Form.Tree as Tree exposing (Tree)
 
 
-type alias Error customError = List (Pointer, ErrorValue customError)
+type alias Error customError =
+    List ( Pointer, ErrorValue customError )
 
 
 {-| A validation error. See `Form.Validate.customError` for `CustomError` building.
@@ -37,4 +38,5 @@ type ErrorValue e
 {-| Build a singleton error value
 -}
 error : ErrorValue a -> Error a
-error e = [([], e)]
+error e =
+    [ ( [], e ) ]

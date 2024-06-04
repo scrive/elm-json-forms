@@ -29,8 +29,8 @@ module Json.Schema.Form.Format exposing
 
 -}
 
-import Form.Input exposing (Input)
 import Form.Field exposing (FieldValue)
+import Form.Input exposing (Input)
 import Form.Validate exposing (Validation)
 import Json.Schema.Form.Error exposing (CustomErrorValue)
 

@@ -2,8 +2,9 @@ module Json.Schema.Form.Fields exposing (schemaView, uiSchemaView)
 
 import Dict exposing (Dict)
 import Form as F
+import Form.Field as Field exposing (FieldValue)
 import Form.Input as Input
-import Form.Field  as Field exposing (FieldValue)
+import Form.Pointer as Pointer exposing (Pointer)
 import Form.Validate
 import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
 import Html.Attributes as Attrs
@@ -37,7 +38,6 @@ import Json.Schema.Definitions
 import Json.Schema.Form.Error exposing (CustomErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
-import Form.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Form.Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
 import List.Extra as List
@@ -84,7 +84,8 @@ controlView options uiPath wholeSchema control form =
         mControlSchema =
             UI.pointToSchema wholeSchema control.scope
 
-        fieldState = F.getField (Pointer.toString control.scope) form
+        fieldState =
+            F.getField (Pointer.toString control.scope) form
 
         controlBody schema_ =
             case schema_ of
@@ -118,68 +119,55 @@ controlView options uiPath wholeSchema control form =
 
 
 schemaView : Options -> Pointer -> Schema -> Form -> Html F.Msg
-schemaView options path schema form = Html.nothing
+schemaView options path schema form =
+    Html.nothing
+
+
+
 --     case schema of
 --         BooleanSchema value ->
 --             div []
 --                 [ if value then
 --                     text "True"
-
 --                   else
 --                     text "False"
 --                 ]
-
 --         ObjectSchema subSchema ->
 --             objectView options path subSchema form
-
-
 -- objectView : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 -- objectView options path schema form =
 --     case schema.type_ of
 --         AnyType ->
 --             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
 --                 switch options path schema form
-
 --             else
 --                 fieldView options path schema BooleanType form
-
 --         NullableType singleType ->
 --             fieldView options path schema singleType form
-
 --         UnionType _ ->
 --             fieldView options path schema StringType form
-
 --         SingleType singleType ->
 --             fieldView options path schema singleType form
-
-
 -- fieldView : Options -> Pointer -> SubSchema -> SingleType -> Form -> Html F.Msg
 -- fieldView options path schema type_ form =
 --     case type_ of
 --         IntegerType ->
 --             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
 --                 select options path schema (getFieldAsString path form)
-
 --             else
 --                 txt options path schema (getFieldAsString path form) { isNumber = True }
-
 --         NumberType ->
 --             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
 --                 select options path schema (getFieldAsString path form)
-
 --             else
 --                 txt options path schema (getFieldAsString path form) { isNumber = True }
-
 --         StringType ->
 --             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
 --                 select options path schema (getFieldAsString path form)
-
 --             else
 --                 txt options path schema (getFieldAsString path form) { isNumber = False }
-
 --         BooleanType ->
 --             checkbox options path schema (getFieldAsBool path form)
-
 --         ArrayType ->
 --             let
 --                 f : F.FieldState CustomErrorValue String
@@ -190,22 +178,17 @@ schemaView options path schema form = Html.nothing
 --                 NoItems ->
 --                     field options schema f <|
 --                         list options path form ( schema.title, blankSchema )
-
 --                 ItemDefinition item ->
 --                     field options schema f <|
 --                         list options path form ( schema.title, item )
-
 --                 ArrayOfItems items ->
 --                     field options schema f <|
 --                         tuple options path form ( schema.title, items )
-
 --         ObjectType ->
 --             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
 --                 switch options path schema form
-
 --             else
 --                 fieldset schema [ group options path schema form ]
-
 --         NullType ->
 --             div [] []
 
@@ -367,16 +350,20 @@ checkbox options path schema f =
         ]
 
 
+
 -- TODO: add a None option
+
+
 select : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> Html F.Msg
 select options path schema f =
     let
         values : List String
-        values = Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
+        values =
+            Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
 
-        items : List (String, String)
-        items = List.map (\v -> (v, v)) values
-
+        items : List ( String, String )
+        items =
+            List.map (\v -> ( v, v )) values
     in
     field options
         schema
@@ -403,6 +390,7 @@ option attr schema =
             )
 
 
+
 -- list :
 --     Options
 --     -> Pointer
@@ -414,11 +402,9 @@ option attr schema =
 --         indexes : List Int
 --         indexes =
 --             getListIndexes path form
-
 --         itemPath : Int -> Pointer
 --         itemPath idx =
 --             path ++ [ String.fromInt idx ]
-
 --         itemView : Int -> Html F.Msg
 --         itemView idx =
 --             li
@@ -439,8 +425,6 @@ option attr schema =
 --         [ text (title |> Maybe.withDefault options.theme.listGroupAddItemButtonDefaultTitle)
 --         ]
 --     ]
-
-
 -- tuple :
 --     Options
 --     -> Pointer
@@ -452,7 +436,6 @@ option attr schema =
 --         itemPath : Int -> Pointer
 --         itemPath idx =
 --             path ++ [ "tuple" ++ String.fromInt idx ]
-
 --         itemView : Int -> Schema -> Html F.Msg
 --         itemView idx itemSchema =
 --             div
@@ -462,7 +445,6 @@ option attr schema =
 --     [ case title of
 --         Just str ->
 --             div [ class "field-title" ] [ text str ]
-
 --         Nothing ->
 --             text ""
 --     , div [ Attrs.map never options.theme.formRow ] (List.indexedMap itemView schemata)
@@ -489,29 +471,26 @@ radio options fieldState ( value, title ) =
         ]
 
 
+
 -- switch : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 -- switch options path schema form =
 --     let
 --         f : F.FieldState CustomErrorValue String
 --         f =
 --             getFieldAsString (path ++ [ "switch" ]) form
-
 --         schemata : List Schema
 --         schemata =
 --             List.concat
 --                 [ schema.oneOf |> Maybe.withDefault []
 --                 , schema.anyOf |> Maybe.withDefault []
 --                 ]
-
 --         items : List ( String, Maybe SubSchema )
 --         items =
 --             schemata
 --                 |> List.map (option .title)
-
 --         itemId : Int -> String
 --         itemId idx =
 --             "option" ++ String.fromInt idx
-
 --         itemButton : Int -> ( String, b ) -> Html F.Msg
 --         itemButton idx ( title, _ ) =
 --             div
@@ -521,7 +500,6 @@ radio options fieldState ( value, title ) =
 --                     ]
 --                 ]
 --                 [ radio options f ( itemId idx, title ) ]
-
 --         itemFields : Int -> ( String, Maybe SubSchema ) -> ( String, Html F.Msg )
 --         itemFields idx ( _, schema_ ) =
 --             case schema_ of
@@ -530,11 +508,9 @@ radio options fieldState ( value, title ) =
 --                     , case s.const of
 --                         Just _ ->
 --                             text ""
-
 --                         Nothing ->
 --                             objectView options (path ++ [ "value" ]) s form
 --                     )
-
 --                 Nothing ->
 --                     ( itemId idx, text "" )
 --     in
@@ -557,7 +533,8 @@ field options schema f content =
         feedback =
             Maybe.values [ liveError options.theme options.errors f ]
 
-        stringValue = Maybe.andThen Field.valueAsString f.value
+        stringValue =
+            Maybe.andThen Field.valueAsString f.value
     in
     div
         [ Attrs.map never <|
@@ -580,30 +557,26 @@ field options schema f content =
         ]
 
 
+
 -- group : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
 -- group options path schema form =
 --     let
 --         f : F.FieldState CustomErrorValue String
 --         f =
 --             getFieldAsString path form
-
 --         schemataItem : ( String, Schema ) -> Html F.Msg
 --         schemataItem ( name, subSchema ) =
 --             schemaView options (path ++ [ name ]) subSchema form
-
 --         fields : List (Html F.Msg)
 --         fields =
 --             case schema.properties of
 --                 Nothing ->
 --                     []
-
 --                 Just (Json.Schema.Definitions.Schemata schemata) ->
 --                     List.map schemataItem schemata
-
 --         meta : List (Html msg)
 --         meta =
 --             schema.description |> Html.viewMaybe (\str -> p [] [ text str ]) |> List.singleton
-
 --         feedback : List (Html F.Msg)
 --         feedback =
 --             Maybe.values [ liveError options.theme options.errors f ]
@@ -698,16 +671,13 @@ fieldset schema content =
     Html.fieldset [ tabindex -1 ] (title ++ content)
 
 
+
 -- getFieldAsBool : Pointer -> F.Form e o -> F.FieldState e Bool
 -- getFieldAsBool path =
 --     F.getFieldAsBool (fieldPath path)
-
-
 -- getFieldAsString : Pointer -> F.Form e o -> F.FieldState e String
 -- getFieldAsString path =
 --     F.getFieldAsString (fieldPath path)
-
-
 -- getListIndexes : Pointer -> F.Form e o -> List Int
 -- getListIndexes path =
 --     F.getListIndexes (fieldPath path)
@@ -718,6 +688,7 @@ fieldset schema content =
 fieldPath : Pointer -> String
 fieldPath =
     String.join "."
+
 
 
 -- constAsString : SubSchema -> Maybe String

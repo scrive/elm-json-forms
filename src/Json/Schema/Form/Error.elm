@@ -1,4 +1,7 @@
-module Json.Schema.Form.Error exposing (CustomErrorValue(..), Errors)
+module Json.Schema.Form.Error exposing
+    ( Errors
+    , CustomErrorValue(..)
+    )
 
 {-| Validation errors.
 

@@ -12,16 +12,18 @@ import Form.Test.ValidationExpectation exposing (ValidationExpectation(..))
 import Form.Validate as Validate
 import Test exposing (..)
 
+
 y : Int
-y = 5
+y =
+    5
+
+
 
 -- {-| Test your `Validation`s with a List of test input String, ValidationExpectation pairs.
-
 --     import Form.Error
 --     import Form.Test exposing (..)
 --     import Form.Test.ValidationExpectation exposing (ValidationExpectation(..))
 --     import Form.Validate
-
 --     describeValidation "email"
 --        Form.Validate.email
 --        [ ( "valid@email.com", Valid )
@@ -29,7 +31,6 @@ y = 5
 --          , Invalid Form.Error.InvalidEmail
 --          )
 --        ]
-
 -- -}
 -- describeValidation : String -> Validate.Validation e a -> List ( String, ValidationExpectation e a ) -> Test
 -- describeValidation description validation cases =
@@ -38,17 +39,12 @@ y = 5
 --             List.map (testValidation validation) cases
 --     in
 --     describe (description ++ " validations") testCases
-
-
 -- {-| Create a single test case for a `Validation`.
-
 --     import Form.Error
 --     import Form.Test exposing (..)
 --     import Form.Test.ValidationExpectation exposing (ValidationExpectation(..))
 --     import Form.Validate
-
 --     testValidation Form.Validate.email ( "valid@email.com", Valid )
-
 -- -}
 -- testValidation : Validate.Validation e a -> ( String, ValidationExpectation e a ) -> Test
 -- testValidation validation (( stringToValidate, validationExpectation ) as validationCase) =
@@ -57,13 +53,10 @@ y = 5
 --             case validationExpectation of
 --                 Valid ->
 --                     "Valid"
-
 --                 ValidDecodesTo _ ->
 --                     "ValidDecodesTo"
-
 --                 Invalid _ ->
 --                     "Invalid "
-
 --                 InvalidCustomError _ ->
 --                     "InvalidCustomError"
 --     in

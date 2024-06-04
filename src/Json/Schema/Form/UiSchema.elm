@@ -1,21 +1,20 @@
 module Json.Schema.Form.UiSchema exposing
     ( Control
     , UiSchema(..)
+    , decodeStringLike
+    , defaultValue
+    , defaultValues
     , fromString
     , generateUiSchema
     , pointToSchema
-    , decodeStringLike
-    , defaultValues
-    , defaultValue
     )
 
-import Json.Decode as Decode exposing (Value, Decoder)
-import Json.Encode as Encode
-import Json.Schema.Definitions as Schema exposing (Schema)
-import Form.Pointer as Pointer exposing (Pointer)
-import Form.Field exposing (FieldValue(..))
 import Dict exposing (Dict)
-import Json.Schema.Definitions exposing (Schema(..))
+import Form.Field exposing (FieldValue(..))
+import Form.Pointer as Pointer exposing (Pointer)
+import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Encode as Encode
+import Json.Schema.Definitions as Schema exposing (Schema(..))
 
 
 type UiSchema
@@ -365,85 +364,148 @@ pointToSchema schema pointer =
         _ ->
             Nothing
 
+
 allPointers : UiSchema -> List Pointer
-allPointers uiSchema = case uiSchema of
-    UiControl x -> [x.scope]
-    UiHorizontalLayout x -> List.concatMap allPointers x.elements
-    UiVerticalLayout x -> List.concatMap allPointers x.elements
-    UiGroup x -> List.concatMap allPointers x.elements
-    UiCategorization x -> List.concatMap allPointers
-        <| List.concatMap (.elements) x.elements
+allPointers uiSchema =
+    case uiSchema of
+        UiControl x ->
+            [ x.scope ]
+
+        UiHorizontalLayout x ->
+            List.concatMap allPointers x.elements
+
+        UiVerticalLayout x ->
+            List.concatMap allPointers x.elements
+
+        UiGroup x ->
+            List.concatMap allPointers x.elements
+
+        UiCategorization x ->
+            List.concatMap allPointers <|
+                List.concatMap .elements x.elements
 
 
 decodeStringLike : Decode.Decoder String
-decodeStringLike = Decode.oneOf
-    [ Decode.string
-    , Decode.int |> Decode.map String.fromInt
-    , Decode.float |> Decode.map String.fromFloat
-    ]
+decodeStringLike =
+    Decode.oneOf
+        [ Decode.string
+        , Decode.int |> Decode.map String.fromInt
+        , Decode.float |> Decode.map String.fromFloat
+        ]
+
 
 
 -- TODO: handle non-leaf defaults
+
 
 defaultValues : Schema -> UiSchema -> Dict String FieldValue
 defaultValues schema uiSchema =
     let
         getDefault : Decode.Value -> Maybe FieldValue
-        getDefault = Result.toMaybe << Decode.decodeValue (Decode.oneOf
-            [ Decode.map String decodeStringLike
-            , Decode.map Bool Decode.bool
-            ])
+        getDefault =
+            Result.toMaybe
+                << Decode.decodeValue
+                    (Decode.oneOf
+                        [ Decode.map String decodeStringLike
+                        , Decode.map Bool Decode.bool
+                        ]
+                    )
 
         pointerDefault : Pointer -> Maybe FieldValue
-        pointerDefault pointer = case pointToSchema schema pointer of
-            Nothing -> Nothing
-            Just (Schema.BooleanSchema _) -> Nothing
-            Just (Schema.ObjectSchema os) -> Maybe.andThen getDefault os.default
+        pointerDefault pointer =
+            case pointToSchema schema pointer of
+                Nothing ->
+                    Nothing
 
-        pointerDefaultWithLabel : Pointer -> Maybe (String, FieldValue)
-        pointerDefaultWithLabel pointer = Maybe.map (\v -> (Pointer.toString pointer, v)) <| pointerDefault pointer
+                Just (Schema.BooleanSchema _) ->
+                    Nothing
+
+                Just (Schema.ObjectSchema os) ->
+                    Maybe.andThen getDefault os.default
+
+        pointerDefaultWithLabel : Pointer -> Maybe ( String, FieldValue )
+        pointerDefaultWithLabel pointer =
+            Maybe.map (\v -> ( Pointer.toString pointer, v )) <| pointerDefault pointer
     in
-        Dict.fromList <| List.filterMap
+    Dict.fromList <|
+        List.filterMap
             pointerDefaultWithLabel
             (allPointers uiSchema)
 
+
 defaultValue : Schema -> Value
-defaultValue schema = case defaultValue_ schema of
-    Nothing -> case schema of
-        BooleanSchema _ -> Encode.null
-        ObjectSchema o -> case o.type_ of
-            Schema.SingleType Schema.ObjectType -> Encode.object []
-            Schema.SingleType Schema.ArrayType -> Encode.list Encode.int []
-            Schema.SingleType Schema.IntegerType -> Encode.int 0
-            Schema.SingleType Schema.NumberType -> Encode.float 0
-            Schema.SingleType Schema.StringType -> Encode.string ""
-            Schema.SingleType Schema.BooleanType -> Encode.bool False
-            _ -> Encode.null
-    Just v -> v
+defaultValue schema =
+    case defaultValue_ schema of
+        Nothing ->
+            case schema of
+                BooleanSchema _ ->
+                    Encode.null
+
+                ObjectSchema o ->
+                    case o.type_ of
+                        Schema.SingleType Schema.ObjectType ->
+                            Encode.object []
+
+                        Schema.SingleType Schema.ArrayType ->
+                            Encode.list Encode.int []
+
+                        Schema.SingleType Schema.IntegerType ->
+                            Encode.int 0
+
+                        Schema.SingleType Schema.NumberType ->
+                            Encode.float 0
+
+                        Schema.SingleType Schema.StringType ->
+                            Encode.string ""
+
+                        Schema.SingleType Schema.BooleanType ->
+                            Encode.bool False
+
+                        _ ->
+                            Encode.null
+
+        Just v ->
+            v
+
 
 defaultValue_ : Schema -> Maybe Value
-defaultValue_ schema = case schema of
-    BooleanSchema _ -> Nothing
-    ObjectSchema o -> case o.default of
-        Just d -> Just d
-        Nothing -> case o.type_ of
-                Schema.SingleType t ->
-                    case t of
-                        Schema.ObjectType ->
-                            let
-                                schemata = Maybe.withDefault [] <|
-                                    Maybe.map unSchemata o.properties
+defaultValue_ schema =
+    case schema of
+        BooleanSchema _ ->
+            Nothing
 
-                                propDefault (name, sch) = Maybe.map (\s -> (name, s)) <| defaultValue_ sch
+        ObjectSchema o ->
+            case o.default of
+                Just d ->
+                    Just d
 
-                                propDefaults = List.filterMap propDefault schemata
-                            in
-                                if propDefaults == [] then Nothing else Just <| Encode.object propDefaults
+                Nothing ->
+                    case o.type_ of
+                        Schema.SingleType t ->
+                            case t of
+                                Schema.ObjectType ->
+                                    let
+                                        schemata =
+                                            Maybe.withDefault [] <|
+                                                Maybe.map unSchemata o.properties
 
-                        Schema.ArrayType ->
+                                        propDefault ( name, sch ) =
+                                            Maybe.map (\s -> ( name, s )) <| defaultValue_ sch
+
+                                        propDefaults =
+                                            List.filterMap propDefault schemata
+                                    in
+                                    if propDefaults == [] then
+                                        Nothing
+
+                                    else
+                                        Just <| Encode.object propDefaults
+
+                                Schema.ArrayType ->
+                                    Nothing
+
+                                _ ->
+                                    Nothing
+
+                        _ ->
                             Nothing
-
-                        _ -> Nothing
-
-                _ ->
-                    Nothing

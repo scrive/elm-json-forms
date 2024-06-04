@@ -1,8 +1,7 @@
 module Form.Field exposing
     ( Field, FieldValue(..), value, string, bool, group, list
     , asString, asBool
-    , valueAsString
-    , valueAsBool
+    , valueAsBool, valueAsString
     )
 
 {-| Read and write field values.
@@ -33,17 +32,30 @@ type alias Field =
 type FieldValue
     = String String
     | Bool Bool
-    -- | EmptyField
+
+
+
+-- | EmptyField
+
 
 valueAsString : FieldValue -> Maybe String
-valueAsString fv = case fv of
-    String s -> Just s
-    Bool _ -> Nothing
+valueAsString fv =
+    case fv of
+        String s ->
+            Just s
+
+        Bool _ ->
+            Nothing
+
 
 valueAsBool : FieldValue -> Maybe Bool
-valueAsBool fv = case fv of
-    String _ -> Nothing
-    Bool b -> Just b
+valueAsBool fv =
+    case fv of
+        String _ ->
+            Nothing
+
+        Bool b ->
+            Just b
 
 
 {-| Build a field from its value.

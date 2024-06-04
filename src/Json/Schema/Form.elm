@@ -26,16 +26,15 @@ module Json.Schema.Form exposing
 
 -}
 
-import Form as F exposing (Msg)
+import Form exposing (Msg)
 import Html exposing (Html)
+import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Error exposing (CustomErrorValue)
 import Json.Schema.Form.Fields
-import Form as Form
 import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.UiSchema exposing (UiSchema, generateUiSchema, defaultValues, defaultValue)
+import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, defaultValues, generateUiSchema)
 import Json.Schema.Form.Validation exposing (validation)
-import Json.Encode exposing (Value)
 
 
 {-| The form state.
@@ -62,10 +61,12 @@ init options schema mUiSchema =
         uiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
 
-        value = defaultValue schema
+        value =
+            defaultValue schema
     in
     State options schema uiSchema <|
-        Debug.log "initial form" <| F.initial (defaultValues schema uiSchema) value (validation schema value)
+        Debug.log "initial form" <|
+            F.initial (defaultValues schema uiSchema) value (validation schema value)
 
 
 {-| Update the form state.
@@ -80,7 +81,7 @@ update msg state =
                 (Debug.log "message" msg)
                 state.form
     in
-    { state | form = Debug.log "form" form }
+    { state | form = (\( _, a ) -> a) <| Debug.log "form" ( Encode.encode 2 <| Form.getValue form, form ) }
 
 
 {-| The form fields as HTML. Use together with `submit` to submit the form.

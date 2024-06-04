@@ -1,10 +1,9 @@
 module Form exposing
     ( Msg(..), InputType(..), Form, FieldState
     , initial, update
-    , getField
-    , getValue
-    -- , getFieldAsString, getFieldAsBool, getListIndexes
     , getFocus, isSubmitted, getErrors, getOutput, getChangedFields
+    , getField, getValue
+      -- , getFieldAsString, getFieldAsBool, getListIndexes
     )
 
 {-| Simple forms made easy: A Dict implementation of the core `Json.Decode` API,
@@ -33,12 +32,13 @@ with state lifecycle and input helpers for the views.
 -}
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Value)
 import Form.Error as Error exposing (Error, ErrorValue)
 import Form.Field as Field exposing (Field, FieldValue(..))
+import Form.Pointer as Pointer exposing (Pointer)
 import Form.Tree as Tree exposing (Tree)
 import Form.Validate exposing (Validation)
-import Form.Pointer as Pointer
+import Json.Decode as Decode exposing (Value)
+import Json.Encode as Encode
 import Set exposing (Set)
 
 
@@ -110,6 +110,8 @@ type alias FieldState e =
     , hasFocus : Bool
     }
 
+
+
 -- filterMapFieldState : (a -> Maybe b) -> FieldState e a -> Maybe (FieldState e b)
 -- filterMapFieldState f fs =
 --     case f fs.value of
@@ -123,8 +125,6 @@ type alias FieldState e =
 --             , isChanged = fs.isChanged
 --             , hasFocus = fs.hasFocus
 --             }
-
-
 -- {-| Get field state at path, with value as a `String`.
 -- -}
 -- getFieldAsString : String -> Form e o -> Maybe (FieldState e String)
@@ -132,8 +132,6 @@ type alias FieldState e =
 --     getField path form |> filterMapFieldState (\v -> case v of
 --         Bool _ -> Nothing
 --         String s -> Just s)
-
-
 -- {-| Get field state at path, with value as a `Bool`.
 -- -}
 -- getFieldAsBool : String -> Form e o -> FieldState e Bool
@@ -142,12 +140,17 @@ type alias FieldState e =
 
 
 getValue : Form e o -> Value
-getValue (Form form) = form.value
+getValue (Form form) =
+    form.value
+
 
 
 -- TODO: re-implement
+
+
 getValue_ : String -> Form e o -> Maybe FieldValue
-getValue_ path (Form form) = Dict.get path form.values
+getValue_ path (Form form) =
+    Dict.get path form.values
 
 
 getField : String -> Form e o -> FieldState e
@@ -160,6 +163,7 @@ getField path form =
     , isChanged = isChangedAt path form
     , hasFocus = getFocus form == Just path
     }
+
 
 
 -- {-| return a list of indexes so one can build qualified names of fields in list.
@@ -182,8 +186,8 @@ type Msg
     | Focus String
     | Blur String
     | Input String InputType FieldValue
-    -- | Append String
-    -- | RemoveItem String Int
+      -- | Append String
+      -- | RemoveItem String Int
     | Submit
     | Validate
     | Reset (Dict String FieldValue)
@@ -289,9 +293,21 @@ update validation msg (Form model) =
                         in
                         ( Set.insert name model.changedFields, Dict.insert name originalValue model.originalValues )
 
+                mPointer =
+                    Result.toMaybe <| Pointer.fromString name
+
+                newValue =
+                    case mPointer of
+                        Nothing ->
+                            model.value
+
+                        Just pointer ->
+                            updateValue pointer fieldValue model.value
+
                 newModel =
                     { model
                         | values = newValues
+                        , value = newValue
                         , dirtyFields = newDirtyFields
                         , changedFields = newChangedFields
                         , originalValues = newOriginalValues
@@ -305,36 +321,28 @@ update validation msg (Form model) =
         --             getFieldAt listName model
         --                 |> Maybe.map Tree.asList
         --                 |> Maybe.withDefault []
-
         --         newListFields =
         --             listFields ++ [ Tree.Value Field.EmptyField ]
-
         --         newModel =
         --             { model
         --                 | fields = setFieldAt listName (Tree.List newListFields) model
         --             }
         --     in
         --     F newModel
-
         -- RemoveItem listName index ->
         --     let
         --         listFields =
         --             getFieldAt listName model
         --                 |> Maybe.map Tree.asList
         --                 |> Maybe.withDefault []
-
         --         fieldNamePattern =
         --             listName ++ String.fromInt index
-
         --         filterChangedFields =
         --             Set.filter (not << String.startsWith fieldNamePattern)
-
         --         filterOriginalValue =
         --             Dict.filter (\c _ -> not <| String.startsWith fieldNamePattern c)
-
         --         newListFields =
         --             List.take index listFields ++ List.drop (index + 1) listFields
-
         --         newModel =
         --             { model
         --                 | fields = setFieldAt listName (Tree.List newListFields) model
@@ -343,7 +351,6 @@ update validation msg (Form model) =
         --             }
         --     in
         --     F (updateValidate validation newModel)
-
         Submit ->
             let
                 validatedModel =
@@ -368,6 +375,30 @@ update validation msg (Form model) =
             Form (updateValidate validation newModel)
 
 
+updateValue : Pointer -> FieldValue -> Value -> Value
+updateValue pointer new value =
+    case pointer of
+        "properties" :: key :: ps ->
+            case Decode.decodeValue (Decode.dict Decode.value) value of
+                Ok o ->
+                    Encode.dict identity identity <|
+                        Dict.insert key (updateValue ps new (Maybe.withDefault Encode.null <| Dict.get key o)) o
+
+                Err e ->
+                    value
+
+        [] ->
+            case new of
+                String s ->
+                    Encode.string s
+
+                Bool b ->
+                    Encode.bool b
+
+        _ ->
+            value
+
+
 updateValidate : Validation e o -> Model e o -> Model e o
 updateValidate validation model =
     case validation of
@@ -386,21 +417,16 @@ updateValidate validation model =
             }
 
 
+
 -- getFieldAt : String -> Model e o -> Maybe Field
 -- getFieldAt qualifiedName model =
 --     Tree.getAtPath qualifiedName model.values
-
-
 -- getStringAt : String -> Form e o -> Maybe String
 -- getStringAt name (F model) =
 --     getFieldAt name model |> Maybe.andThen Field.asString
-
-
 -- getBoolAt : String -> Form e o -> Maybe Bool
 -- getBoolAt name (F model) =
 --     getFieldAt name model |> Maybe.andThen Field.asBool
-
-
 -- setFieldAt : String -> Field -> Model e o -> Field
 -- setFieldAt path field model =
 --     Tree.setAtPath path field model.fields
@@ -424,14 +450,26 @@ isSubmitted (Form model) =
 -}
 getErrors : Form e o -> List ( String, Error.ErrorValue e )
 getErrors (Form model) =
-    List.map (\(p, e) -> (Pointer.toString p, e)) model.errors
+    List.map (\( p, e ) -> ( Pointer.toString p, e )) model.errors
 
 
 getErrorAt : String -> Form e o -> Maybe (ErrorValue e)
 getErrorAt path (Form model) =
-    List.head <| case Pointer.fromString path of
-        Ok pointer -> List.filterMap (\(p, e) -> if pointer == p then Just e else Nothing) model.errors
-        Err _ -> []
+    List.head <|
+        case Pointer.fromString path of
+            Ok pointer ->
+                List.filterMap
+                    (\( p, e ) ->
+                        if pointer == p then
+                            Just e
+
+                        else
+                            Nothing
+                    )
+                    model.errors
+
+            Err _ ->
+                []
 
 
 getLiveErrorAt : String -> Form e o -> Maybe (ErrorValue e)

@@ -1,8 +1,7 @@
 module Form.Validate exposing
     ( Validation, map, succeed, andThen, andMap, customError, defaultValue, mapError, withCustomError, sequence
     , map2, map3, map4, map5, map6, map7, map8
-    , maybe
-    , int
+    , int, maybe
     , minInt, maxInt, minFloat, maxFloat, minLength, maxLength, nonEmpty, format, includedIn
     , fail, customValidation, oneOf
     )
@@ -40,11 +39,10 @@ import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue(..))
 import Form.Field as Field exposing (Field, FieldValue(..))
 import Form.Tree as Tree
+import Json.Decode as Decode exposing (Value)
 import Regex exposing (Regex)
 import Result
 import String
-import Json.Decode as Decode exposing (Value)
-
 
 
 {-| A validation is a function that takes a form field and returns a result
@@ -60,7 +58,8 @@ type alias Validation customError output =
 
 -}
 map : (a -> b) -> Validation e a -> Validation e b
-map = Result.map
+map =
+    Result.map
 
 
 {-| Apply a new validation to the result of the validation.
@@ -69,7 +68,8 @@ map = Result.map
 
 -}
 andThen : (a -> Validation e b) -> Validation e a -> Validation e b
-andThen = Result.andThen
+andThen =
+    Result.andThen
 
 
 {-| Incremental form validation for records with more that 8 fields.
@@ -92,13 +92,15 @@ andMap aValidation partialValidation =
 {-| Rescue a failed validation with the supplied value.
 -}
 defaultValue : a -> Validation e a -> Validation e a
-defaultValue a = Ok << Result.withDefault a
+defaultValue a =
+    Ok << Result.withDefault a
 
 
 {-| Call Result.mapError on validation result.
 -}
 mapError : (Error e1 -> Error e2) -> Validation e1 a -> Validation e2 a
-mapError = Result.mapError
+mapError =
+    Result.mapError
 
 
 {-| Arrange that if a validation fails, it has the given custom error.
@@ -119,13 +121,13 @@ withCustomError e =
 {-| Helper to create a CustomError.
 -}
 customError : e -> Error e
-customError = Error.error << CustomError
+customError =
+    Error.error << CustomError
+
 
 
 -- {-| Access the given field in the group.
-
 --     field "name" string
-
 -- -}
 -- field : String -> Validation e a -> Validation e a
 -- field key validation validationField =
@@ -195,6 +197,7 @@ map8 func v1 v2 v3 v4 v5 v6 v7 v8 =
     map7 func v1 v2 v3 v4 v5 v6 v7
         |> andMap v8
 
+
 {-| Private
 -}
 errList : Validation e a -> Error e
@@ -210,7 +213,9 @@ errList res =
 {-| Validation an integer using `String.toInt`.
 -}
 int : Value -> Validation e Int
-int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decode.int
+int =
+    Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decode.int
+
 
 
 -- {-| Validation a float using `String.toFloat`.
@@ -220,8 +225,6 @@ int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decod
 --     Field.asString v
 --         |> Maybe.andThen String.toFloat
 --         |> Result.fromMaybe (Error.error InvalidFloat)
-
-
 -- {-| Validation a String.
 -- -}
 -- string : Validation e String
@@ -230,14 +233,10 @@ int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decod
 --         Just s ->
 --             if String.isEmpty s then
 --                 Err (Error.error Empty)
-
 --             else
 --                 Ok s
-
 --         Nothing ->
 --             Err (Error.error InvalidString)
-
-
 -- {-| Validate an empty string, otherwise failing with InvalidString.
 -- Useful with `oneOf` for optional fields with format validation.
 -- -}
@@ -247,14 +246,10 @@ int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decod
 --         Just s ->
 --             if String.isEmpty s then
 --                 Ok s
-
 --             else
 --                 Err (Error.error InvalidString)
-
 --         Nothing ->
 --             Ok ""
-
-
 -- {-| Validation a Bool.
 -- -}
 -- bool : Validation e Bool
@@ -262,7 +257,6 @@ int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decod
 --     case Field.asBool v of
 --         Just b ->
 --             Ok b
-
 --         Nothing ->
 --             Ok False
 
@@ -270,7 +264,8 @@ int = Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decod
 {-| Transform validation result to `Maybe`, using `Result.toMaybe`.
 -}
 maybe : Validation e a -> Validation e (Maybe a)
-maybe = Ok << Result.toMaybe
+maybe =
+    Ok << Result.toMaybe
 
 
 {-| Fails if `String.isEmpty`.
@@ -370,6 +365,7 @@ validEmailPattern =
         |> Maybe.withDefault Regex.never
 
 
+
 -- {-| Check if the string is a valid email address.
 -- -}
 -- email : Validation e String
@@ -410,7 +406,8 @@ succeed a =
 {-| Custom validation for your special cases.
 -}
 customValidation : (a -> Validation e b) -> Validation e a -> Validation e b
-customValidation = Result.andThen
+customValidation =
+    Result.andThen
 
 
 {-| First successful validation wins, from left to right.
@@ -418,7 +415,6 @@ customValidation = Result.andThen
 oneOf : List (Validation e a) -> Validation e a
 oneOf validations =
     let
-
         walkResults result combined =
             case ( combined, result ) of
                 ( Ok _, _ ) ->
@@ -438,6 +434,7 @@ sequence validations =
     List.foldr (map2 (::)) (succeed []) validations
 
 
+
 -- {-| Validate a list of fields.
 -- -}
 -- list : Validation e a -> Validation e (List a)
@@ -447,15 +444,12 @@ sequence validations =
 --             let
 --                 results =
 --                     List.map validation items
-
 --                 indexedErrMaybe index res =
 --                     case res of
 --                         Ok _ ->
 --                             Nothing
-
 --                         Err e ->
 --                             Just ( String.fromInt index, e )
-
 --                 errors =
 --                     results
 --                         |> List.indexedMap indexedErrMaybe
@@ -463,9 +457,7 @@ sequence validations =
 --             in
 --             if List.isEmpty errors then
 --                 Ok (List.filterMap Result.toMaybe results)
-
 --             else
 --                 Err (Tree.group errors)
-
 --         _ ->
 --             Ok []

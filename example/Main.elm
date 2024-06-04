@@ -16,7 +16,7 @@ import Json.Schema.Builder exposing (..)
 import Json.Schema.Definitions
 import Json.Schema.Form exposing (Msg, State)
 import Json.Schema.Form.Encode
-import Json.Schema.Form.Error exposing (ErrorValue(..), Errors)
+import Json.Schema.Form.Error exposing (CustomErrorValue(..), Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UiSchema
@@ -65,7 +65,7 @@ view state =
                 Just output ->
                     let
                         json =
-                            Json.Encode.encode 4 (Json.Schema.Form.Encode.encode output)
+                            Json.Encode.encode 4 output
                     in
                     pre [] [ text json ]
 
@@ -135,6 +135,8 @@ errorString path error =
         CustomError (LongerListThan n) ->
             "You can not add more than " ++ String.fromInt n ++ " items."
 
+        Unimplemented s -> "Unimplemented: " ++ s
+
         CustomError (InvalidCustomFormat format) ->
             case format of
                 "personal-number" ->
@@ -150,7 +152,7 @@ personalNumber =
         Regex.fromString "^(19|20)[0-9]{6}-?[0-9]{4}$"
 
 
-customInput : Input ErrorValue
+customInput : Input CustomErrorValue
 customInput f attrs =
     button
         ([ onClick
