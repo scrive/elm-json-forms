@@ -1,7 +1,12 @@
 module Form.Input exposing
     ( Input
-    , baseInput, textInput, passwordInput, textArea, checkboxInput, selectInput, radioInput
+    , baseInput, textInput, passwordInput, textArea, checkboxInput
+    , textSelectInput, intSelectInput, floatSelectInput
+    , radioInput
+    , intInput
+    , floatInput
     )
+
 
 {-| Html input view helpers, wired for elm-form validation.
 
@@ -49,6 +54,18 @@ textInput : Input e
 textInput =
     baseInput "text" String Text
 
+{-| Text input.
+-}
+intInput : Input e
+intInput =
+    baseInput "text" (Int << Maybe.withDefault 0 << String.toInt) Text
+
+{-| Text input.
+-}
+floatInput : Input e
+floatInput =
+    baseInput "text" (Number << Maybe.withDefault 0 << String.toFloat) Text
+
 
 {-| Password input.
 -}
@@ -74,13 +91,13 @@ textArea state attrs =
 
 {-| Select input.
 -}
-selectInput : List ( String, String ) -> Input e
-selectInput options state attrs =
+baseSelectInput : List ( String, String ) -> (String -> FieldValue) -> Input e
+baseSelectInput options toFieldValue state attrs =
     let
         formAttrs =
             [ on
                 "change"
-                (targetValue |> Json.map (String >> Input state.path Select))
+                (targetValue |> Json.map (toFieldValue >> Input state.path Select))
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
             ]
@@ -89,6 +106,26 @@ selectInput options state attrs =
             option [ value k, selected (Maybe.andThen Field.valueAsString state.value == Just k) ] [ text v ]
     in
     select (formAttrs ++ attrs) (List.map buildOption options)
+
+
+{-| Text input.
+-}
+textSelectInput : List ( String, String ) -> Input e
+textSelectInput options =
+    baseSelectInput options String
+
+{-| Text input.
+-}
+intSelectInput : List ( String, String ) -> Input e
+intSelectInput options =
+    baseSelectInput options (Int << Maybe.withDefault 0 << String.toInt)
+
+{-| Text input.
+-}
+floatSelectInput : List ( String, String ) -> Input e
+floatSelectInput options =
+    baseSelectInput options (Number << Maybe.withDefault 0 << String.toFloat)
+
 
 
 {-| Checkbox input.

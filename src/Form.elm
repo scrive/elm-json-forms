@@ -392,6 +392,12 @@ updateValue pointer new value =
                 String s ->
                     Encode.string s
 
+                Int i ->
+                    Encode.int i
+
+                Number n ->
+                    Encode.float n
+
                 Bool b ->
                     Encode.bool b
 

@@ -1,4 +1,4 @@
-module Json.Schema.Form.Fields exposing (schemaView, uiSchemaView)
+module Json.Schema.Form.Fields exposing (TextFieldType(..), schemaView, uiSchemaView)
 
 import Dict exposing (Dict)
 import Form as F
@@ -43,6 +43,8 @@ import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import String.Case
+import Form.Input as Input
+import Form.Input as Input
 
 
 type alias Form =
@@ -96,17 +98,24 @@ controlView options uiPath wholeSchema control form =
                     case schema.type_ of
                         SingleType IntegerType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema fieldState
+                                select options control.scope schema fieldState IntField
 
                             else
-                                txt options control.scope schema fieldState { isNumber = True }
+                                txt options control.scope schema fieldState IntField
 
                         SingleType NumberType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema fieldState
+                                select options control.scope schema fieldState NumberField
 
                             else
-                                txt options control.scope schema fieldState { isNumber = True }
+                                txt options control.scope schema fieldState NumberField
+
+                        SingleType StringType ->
+                            if schema.enum /= Nothing then
+                                select options control.scope schema fieldState StringField
+
+                            else
+                                txt options control.scope schema fieldState StringField
 
                         _ ->
                             Html.nothing
@@ -193,8 +202,17 @@ schemaView options path schema form =
 --             div [] []
 
 
-txt : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> { isNumber : Bool } -> Html F.Msg
-txt options path schema f { isNumber } =
+type TextFieldType
+    = NumberField
+    | IntField
+    | StringField
+
+
+isNumericFieldType : TextFieldType -> Bool
+isNumericFieldType fieldType = List.any ((==) fieldType) [NumberField, IntField]
+
+txt : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> TextFieldType -> Html F.Msg
+txt options path schema f fieldType =
     let
         format : Format
         format =
@@ -219,7 +237,7 @@ txt options path schema f { isNumber } =
                     , format = schema.format
                     }
             , id f.path
-            , Attr.attributeIf isNumber <| attribute "type" "number"
+            , Attr.attributeIf (isNumericFieldType fieldType) <| attribute "type" "number"
             , Attr.attributeMaybe placeholder format.placeholder
             , case format.autocomplete of
                 Just "on" ->
@@ -290,7 +308,10 @@ txt options path schema f { isNumber } =
                                         _ ->
                                             "text"
                             in
-                            Input.textInput f
+                            (case fieldType of
+                                NumberField -> Input.floatInput
+                                IntField -> Input.intInput
+                                StringField -> Input.textInput) f
                                 (attributes
                                     ++ [ type_
                                             (format.inputType
@@ -354,8 +375,8 @@ checkbox options path schema f =
 -- TODO: add a None option
 
 
-select : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> Html F.Msg
-select options path schema f =
+select : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> TextFieldType -> Html F.Msg
+select options path schema f fieldType =
     let
         values : List String
         values =
@@ -369,7 +390,10 @@ select options path schema f =
         schema
         f
         [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
-        , Input.selectInput
+        , (case fieldType of
+            StringField -> Input.textSelectInput
+            NumberField -> Input.floatSelectInput
+            IntField -> Input.intSelectInput)
             items
             f
             [ Attrs.map never <| options.theme.select { withError = f.liveError /= Nothing }

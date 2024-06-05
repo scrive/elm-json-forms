@@ -26,7 +26,7 @@ module Json.Schema.Form exposing
 
 -}
 
-import Form exposing (Msg)
+import Form exposing (Form, Msg)
 import Html exposing (Html)
 import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
@@ -43,14 +43,14 @@ type alias State =
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema
-    , form : F.Form CustomErrorValue Value
+    , form : Form CustomErrorValue Value
     }
 
 
 {-| Form messages for `update`.
 -}
 type alias Msg =
-    F.Msg
+    Form.Msg
 
 
 {-| Initialize a form state with options and a schema. Use [json-tools/json-schema](https://package.elm-lang.org/packages/json-tools/json-schema/1.0.2/) to parse or build a schema.
@@ -66,7 +66,7 @@ init options schema mUiSchema =
     in
     State options schema uiSchema <|
         Debug.log "initial form" <|
-            F.initial (defaultValues schema uiSchema) value (validation schema value)
+            Form.initial (defaultValues schema uiSchema) value (validation schema value)
 
 
 {-| Update the form state.
@@ -74,14 +74,14 @@ init options schema mUiSchema =
 update : Msg -> State -> State
 update msg state =
     let
-        form : F.Form CustomErrorValue Value
+        form : Form CustomErrorValue Value
         form =
-            F.update
+            Form.update
                 (validation state.schema (Form.getValue state.form))
                 (Debug.log "message" msg)
                 state.form
     in
-    { state | form = (\( _, a ) -> a) <| Debug.log "form" ( Encode.encode 2 <| Form.getValue form, form ) }
+    { state | form = (\( _, a ) -> a) <| Debug.log "form" ( Encode.encode 0 <| Form.getValue form, form ) }
 
 
 {-| The form fields as HTML. Use together with `submit` to submit the form.
@@ -105,7 +105,7 @@ view state =
 -}
 submit : Msg
 submit =
-    F.Submit
+    Form.Submit
 
 
 {-| Get the output value of the form if it validates.
@@ -123,4 +123,4 @@ submit =
 -}
 getOutput : State -> Maybe Value
 getOutput state =
-    F.getOutput state.form
+    Form.getOutput state.form

@@ -19,6 +19,7 @@ module Form.Field exposing
 -}
 
 import Form.Tree as Tree exposing (Tree)
+import String
 
 
 {-| A field is a tree node.
@@ -31,6 +32,8 @@ type alias Field =
 -}
 type FieldValue
     = String String
+    | Int Int
+    | Number Float
     | Bool Bool
 
 
@@ -44,6 +47,12 @@ valueAsString fv =
         String s ->
             Just s
 
+        Int i ->
+            Just <| String.fromInt i
+
+        Number n ->
+            Just <| String.fromFloat n
+
         Bool _ ->
             Nothing
 
@@ -51,11 +60,10 @@ valueAsString fv =
 valueAsBool : FieldValue -> Maybe Bool
 valueAsBool fv =
     case fv of
-        String _ ->
-            Nothing
-
         Bool b ->
             Just b
+
+        _ -> Nothing
 
 
 {-| Build a field from its value.
