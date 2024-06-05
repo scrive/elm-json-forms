@@ -38,9 +38,8 @@ module Form.Validate exposing
 
 import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue(..))
-import Form.Field as Field exposing (Field, FieldValue(..))
+import Form.Field as Field exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
-import Form.Tree as Tree
 import Json.Decode as Decode exposing (Value)
 import Regex exposing (Regex)
 import Result

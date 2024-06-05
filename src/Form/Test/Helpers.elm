@@ -4,7 +4,6 @@ import Expect exposing (Expectation)
 import Form.Error exposing (ErrorValue)
 import Form.Field as Field
 import Form.Test.ValidationExpectation exposing (..)
-import Form.Tree
 import Form.Validate as Validate exposing (Validation)
 
 

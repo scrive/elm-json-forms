@@ -1,6 +1,5 @@
 module Json.Schema.Form.Default exposing (default)
 
-import Form.Field exposing (Field, bool, group, list, string)
 import Json.Decode
 import Json.Schema.Definitions
     exposing
@@ -12,156 +11,157 @@ import Json.Schema.Definitions
         , Type(..)
         )
 
+default = 5
 
-default : Schema -> List ( String, Field )
-default schema =
-    case schema of
-        BooleanSchema _ ->
-            []
+-- default : Schema -> List ( String, Field )
+-- default schema =
+--     case schema of
+--         BooleanSchema _ ->
+--             []
 
-        ObjectSchema objectSchema ->
-            subSchema objectSchema
-
-
-subSchema : SubSchema -> List ( String, Field )
-subSchema schema =
-    case schema.properties of
-        Just (Schemata props) ->
-            List.concatMap field props
-
-        Nothing ->
-            []
+--         ObjectSchema objectSchema ->
+--             subSchema objectSchema
 
 
-field : ( String, Schema ) -> List ( String, Field )
-field ( name, schema ) =
-    case schema of
-        BooleanSchema _ ->
-            []
+-- subSchema : SubSchema -> List ( String, Field )
+-- subSchema schema =
+--     case schema.properties of
+--         Just (Schemata props) ->
+--             List.concatMap field props
 
-        ObjectSchema schema_ ->
-            case schema_.default of
-                Just value ->
-                    case schema_.type_ of
-                        AnyType ->
-                            anyType value
-                                |> Maybe.map (\f -> [ ( name, f ) ])
-                                |> Maybe.withDefault []
-
-                        SingleType type_ ->
-                            singleType schema_ value type_
-                                |> Maybe.map (\f -> [ ( name, f ) ])
-                                |> Maybe.withDefault []
-
-                        NullableType type_ ->
-                            singleType schema_ value type_
-                                |> Maybe.map (\f -> [ ( name, f ) ])
-                                |> Maybe.withDefault []
-
-                        UnionType types ->
-                            List.filterMap (singleType schema_ value) types
-                                |> List.map (\f -> ( name, f ))
-
-                Nothing ->
-                    subSchema schema_
-                        |> (\fields ->
-                                case fields of
-                                    [] ->
-                                        []
-
-                                    _ ->
-                                        [ ( name, group fields ) ]
-                           )
+--         Nothing ->
+--             []
 
 
-anyType : Json.Decode.Value -> Maybe Field
-anyType value =
-    [ value |> Json.Decode.decodeValue asString |> Result.map string
-    , value |> Json.Decode.decodeValue Json.Decode.bool |> Result.map bool
-    , value
-        |> Json.Decode.decodeValue asList
-        |> Result.map (List.map string)
-        |> Result.map list
-    ]
-        |> List.filterMap Result.toMaybe
-        |> List.head
+-- field : ( String, Schema ) -> List ( String, Field )
+-- field ( name, schema ) =
+--     case schema of
+--         BooleanSchema _ ->
+--             []
+
+--         ObjectSchema schema_ ->
+--             case schema_.default of
+--                 Just value ->
+--                     case schema_.type_ of
+--                         AnyType ->
+--                             anyType value
+--                                 |> Maybe.map (\f -> [ ( name, f ) ])
+--                                 |> Maybe.withDefault []
+
+--                         SingleType type_ ->
+--                             singleType schema_ value type_
+--                                 |> Maybe.map (\f -> [ ( name, f ) ])
+--                                 |> Maybe.withDefault []
+
+--                         NullableType type_ ->
+--                             singleType schema_ value type_
+--                                 |> Maybe.map (\f -> [ ( name, f ) ])
+--                                 |> Maybe.withDefault []
+
+--                         UnionType types ->
+--                             List.filterMap (singleType schema_ value) types
+--                                 |> List.map (\f -> ( name, f ))
+
+--                 Nothing ->
+--                     subSchema schema_
+--                         |> (\fields ->
+--                                 case fields of
+--                                     [] ->
+--                                         []
+
+--                                     _ ->
+--                                         [ ( name, group fields ) ]
+--                            )
 
 
-singleType : SubSchema -> Json.Decode.Value -> SingleType -> Maybe Field
-singleType schema value type_ =
-    case type_ of
-        IntegerType ->
-            value
-                |> Json.Decode.decodeValue Json.Decode.int
-                |> Result.toMaybe
-                |> Maybe.map String.fromInt
-                |> Maybe.map string
-
-        NumberType ->
-            value
-                |> Json.Decode.decodeValue Json.Decode.float
-                |> Result.toMaybe
-                |> Maybe.map String.fromFloat
-                |> Maybe.map string
-
-        StringType ->
-            value
-                |> Json.Decode.decodeValue Json.Decode.string
-                |> Result.toMaybe
-                |> Maybe.map string
-
-        BooleanType ->
-            value
-                |> Json.Decode.decodeValue Json.Decode.bool
-                |> Result.toMaybe
-                |> Maybe.map bool
-
-        ArrayType ->
-            case schema.items of
-                NoItems ->
-                    value
-                        |> Json.Decode.decodeValue (Json.Decode.list asString)
-                        |> Result.toMaybe
-                        |> Maybe.map (List.map string)
-                        |> Maybe.map list
-
-                ItemDefinition _ ->
-                    value
-                        |> Json.Decode.decodeValue (Json.Decode.list asString)
-                        |> Result.toMaybe
-                        |> Maybe.map (List.map string)
-                        |> Maybe.map list
-
-                ArrayOfItems _ ->
-                    value
-                        |> Json.Decode.decodeValue (Json.Decode.list asString)
-                        |> Result.toMaybe
-                        |> Maybe.map
-                            (List.indexedMap
-                                (\idx str ->
-                                    ( "tuple" ++ String.fromInt idx
-                                    , string str
-                                    )
-                                )
-                            )
-                        |> Maybe.map group
-
-        ObjectType ->
-            Nothing
-
-        NullType ->
-            Nothing
+-- anyType : Json.Decode.Value -> Maybe Field
+-- anyType value =
+--     [ value |> Json.Decode.decodeValue asString |> Result.map string
+--     , value |> Json.Decode.decodeValue Json.Decode.bool |> Result.map bool
+--     , value
+--         |> Json.Decode.decodeValue asList
+--         |> Result.map (List.map string)
+--         |> Result.map list
+--     ]
+--         |> List.filterMap Result.toMaybe
+--         |> List.head
 
 
-asString : Json.Decode.Decoder String
-asString =
-    Json.Decode.oneOf
-        [ Json.Decode.string
-        , Json.Decode.int |> Json.Decode.map String.fromInt
-        , Json.Decode.float |> Json.Decode.map String.fromFloat
-        ]
+-- singleType : SubSchema -> Json.Decode.Value -> SingleType -> Maybe Field
+-- singleType schema value type_ =
+--     case type_ of
+--         IntegerType ->
+--             value
+--                 |> Json.Decode.decodeValue Json.Decode.int
+--                 |> Result.toMaybe
+--                 |> Maybe.map String.fromInt
+--                 |> Maybe.map string
+
+--         NumberType ->
+--             value
+--                 |> Json.Decode.decodeValue Json.Decode.float
+--                 |> Result.toMaybe
+--                 |> Maybe.map String.fromFloat
+--                 |> Maybe.map string
+
+--         StringType ->
+--             value
+--                 |> Json.Decode.decodeValue Json.Decode.string
+--                 |> Result.toMaybe
+--                 |> Maybe.map string
+
+--         BooleanType ->
+--             value
+--                 |> Json.Decode.decodeValue Json.Decode.bool
+--                 |> Result.toMaybe
+--                 |> Maybe.map bool
+
+--         ArrayType ->
+--             case schema.items of
+--                 NoItems ->
+--                     value
+--                         |> Json.Decode.decodeValue (Json.Decode.list asString)
+--                         |> Result.toMaybe
+--                         |> Maybe.map (List.map string)
+--                         |> Maybe.map list
+
+--                 ItemDefinition _ ->
+--                     value
+--                         |> Json.Decode.decodeValue (Json.Decode.list asString)
+--                         |> Result.toMaybe
+--                         |> Maybe.map (List.map string)
+--                         |> Maybe.map list
+
+--                 ArrayOfItems _ ->
+--                     value
+--                         |> Json.Decode.decodeValue (Json.Decode.list asString)
+--                         |> Result.toMaybe
+--                         |> Maybe.map
+--                             (List.indexedMap
+--                                 (\idx str ->
+--                                     ( "tuple" ++ String.fromInt idx
+--                                     , string str
+--                                     )
+--                                 )
+--                             )
+--                         |> Maybe.map group
+
+--         ObjectType ->
+--             Nothing
+
+--         NullType ->
+--             Nothing
 
 
-asList : Json.Decode.Decoder (List String)
-asList =
-    Json.Decode.list asString
+-- asString : Json.Decode.Decoder String
+-- asString =
+--     Json.Decode.oneOf
+--         [ Json.Decode.string
+--         , Json.Decode.int |> Json.Decode.map String.fromInt
+--         , Json.Decode.float |> Json.Decode.map String.fromFloat
+--         ]
+
+
+-- asList : Json.Decode.Decoder (List String)
+-- asList =
+--     Json.Decode.list asString

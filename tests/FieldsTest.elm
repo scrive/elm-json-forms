@@ -40,9 +40,9 @@ options =
     }
 
 
-form : F.Form e Value
+form : F.Form e
 form =
-    F.initial Dict.empty (Encode.object []) (Form.Validate.succeed (Encode.object []))
+    F.initial Dict.empty (Encode.object []) Form.Validate.succeed
 
 
 view : (Query.Single F.Msg -> Expectation) -> SchemaBuilder -> Expectation

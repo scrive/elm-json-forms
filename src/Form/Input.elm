@@ -35,7 +35,7 @@ baseInput t toFieldValue inputType state attrs =
     let
         formAttrs =
             [ type_ t
-            , value (Maybe.andThen Field.valueAsString state.value |> Maybe.withDefault "")
+            , value (Maybe.andThen Field.valueAsString (Debug.log "value" state.value) |> Maybe.withDefault "")
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)

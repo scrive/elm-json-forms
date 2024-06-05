@@ -1,7 +1,7 @@
 module Form exposing
-    ( Msg(..), InputType(..), Form, FieldState
+    ( Msg(..), InputType(..), Form(..), FieldState
     , initial, update
-    , getFocus, isSubmitted, getErrors, getOutput, getChangedFields
+    , getFocus, getErrors
     , getField, getValue
       -- , getFieldAsString, getFieldAsBool, getListIndexes
     )
@@ -33,12 +33,12 @@ with state lifecycle and input helpers for the views.
 
 import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue)
-import Form.Field as Field exposing (Field, FieldValue(..))
+import Form.Field as Field exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
-import Form.Tree as Tree exposing (Tree)
 import Form.Validate exposing (Validation)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
+import Json.Schema.Definitions as Schema exposing (Schema)
 import Set exposing (Set)
 
 
@@ -48,39 +48,27 @@ import Set exposing (Set)
   - `output` - the type of the validation output.
 
 -}
-type Form customError output
-    = Form (Model customError output)
+type Form customError
+    = Form (Model customError)
 
 
 {-| Private
 -}
-type alias Model customError output =
-    { values : Dict String FieldValue
-    , value : Value
+type alias Model customError =
+    { value : Value
     , focus : Maybe String
-    , dirtyFields : Set String
-    , changedFields : Set String
-    , originalValues : Dict String (Maybe FieldValue)
-    , isSubmitted : Bool
-    , output : Maybe output
     , errors : Error customError
     }
 
 
 {-| Initial form state. See `Form.Field` for initial fields, and `Form.Validate` for validation.
 -}
-initial : Dict String FieldValue -> Value -> Validation e output -> Form e output
+initial : Dict String FieldValue -> Value -> (Value -> Validation e output) -> Form e
 initial initialValues initialValue validation =
     let
         model =
-            { values = initialValues
-            , value = initialValue
+            { value = initialValue
             , focus = Nothing
-            , dirtyFields = Set.empty
-            , changedFields = Set.empty
-            , originalValues = Dict.empty
-            , isSubmitted = False
-            , output = Nothing
             , errors = []
             }
     in
@@ -104,9 +92,6 @@ type alias FieldState e =
     { path : String
     , value : Maybe FieldValue
     , error : Maybe (ErrorValue e)
-    , liveError : Maybe (ErrorValue e)
-    , isDirty : Bool
-    , isChanged : Bool
     , hasFocus : Bool
     }
 
@@ -127,19 +112,19 @@ type alias FieldState e =
 --             }
 -- {-| Get field state at path, with value as a `String`.
 -- -}
--- getFieldAsString : String -> Form e o -> Maybe (FieldState e String)
+-- getFieldAsString : String -> Form e -> Maybe (FieldState e String)
 -- getFieldAsString path form =
 --     getField path form |> filterMapFieldState (\v -> case v of
 --         Bool _ -> Nothing
 --         String s -> Just s)
 -- {-| Get field state at path, with value as a `Bool`.
 -- -}
--- getFieldAsBool : String -> Form e o -> FieldState e Bool
+-- getFieldAsBool : String -> Form e -> FieldState e Bool
 -- getFieldAsBool =
 --     getField getBoolAt
 
 
-getValue : Form e o -> Value
+getValue : Form e -> Value
 getValue (Form form) =
     form.value
 
@@ -148,19 +133,37 @@ getValue (Form form) =
 -- TODO: re-implement
 
 
-getValue_ : String -> Form e o -> Maybe FieldValue
-getValue_ path (Form form) =
-    Dict.get path form.values
+getValue_ : Pointer -> Value -> Maybe FieldValue
+getValue_ pointer value = case pointer of
+    "properties" :: key :: ps -> case Decode.decodeValue (Decode.dict Decode.value) value of
+        Ok dict -> Maybe.andThen (getValue_ ps) <| Dict.get key dict
+        Err _ -> Nothing
+    [] -> case Decode.decodeValue (Decode.oneOf
+        [ Decode.map Field.Int Decode.int
+        , Decode.map Field.Number Decode.float
+        , Decode.map Field.String Decode.string
+        , Decode.map Field.Bool Decode.bool
+        ]) value of
+        Ok fv -> Just fv
+        Err _ -> Nothing
+    _ -> Nothing
 
 
-getField : String -> Form e o -> FieldState e
+-- getField : String -> Form e -> Maybe (FieldState e)
+-- getField path form = Result.toMaybe (Pointer.fromString path)
+--     |> Maybe.map (\pointer ->
+--             { path = path
+--             , value = getValue_ pointer (getValue form)
+--             , error = getErrorAt path form
+--             , hasFocus = getFocus form == Just path
+--             }
+--     )
+
+getField : String -> Form e -> FieldState e
 getField path form =
     { path = path
-    , value = getValue_ path form
+    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getValue_ pointer (getValue form))
     , error = getErrorAt path form
-    , liveError = getLiveErrorAt path form
-    , isDirty = isDirtyAt path form
-    , isChanged = isChangedAt path form
     , hasFocus = getFocus form == Just path
     }
 
@@ -168,7 +171,7 @@ getField path form =
 
 -- {-| return a list of indexes so one can build qualified names of fields in list.
 -- -}
--- getListIndexes : String -> Form e o -> List Int
+-- getListIndexes : String -> Form e -> List Int
 -- getListIndexes path (F model) =
 --     let
 --         length =
@@ -190,7 +193,7 @@ type Msg
       -- | RemoveItem String Int
     | Submit
     | Validate
-    | Reset (Dict String FieldValue)
+    | Reset Value
 
 
 {-| Input types to determine live validation behaviour.
@@ -205,7 +208,7 @@ type InputType
 
 {-| Update form state with the given message
 -}
-update : Validation e output -> Msg -> Form e output -> Form e output
+update : (Value -> Validation e output) -> Msg -> Form e -> Form e
 update validation msg (Form model) =
     case msg of
         NoOp ->
@@ -220,78 +223,14 @@ update validation msg (Form model) =
 
         Blur name ->
             let
-                newDirtyFields =
-                    Set.remove name model.dirtyFields
 
                 newModel =
-                    { model | focus = Nothing, dirtyFields = newDirtyFields }
+                    { model | focus = Nothing }
             in
             Form (updateValidate validation newModel)
 
         Input name inputType fieldValue ->
             let
-                newValues =
-                    Dict.insert name fieldValue model.values
-
-                isDirty =
-                    case inputType of
-                        Text ->
-                            True
-
-                        Textarea ->
-                            True
-
-                        _ ->
-                            False
-
-                newDirtyFields =
-                    if isDirty then
-                        Set.insert name model.dirtyFields
-
-                    else
-                        model.dirtyFields
-
-                ( newChangedFields, newOriginalValues ) =
-                    if Set.member name model.changedFields then
-                        let
-                            storedValue =
-                                Dict.get name model.originalValues
-                                    |> Maybe.withDefault Nothing
-
-                            shouldBeNothing v =
-                                case v of
-                                    Field.String "" ->
-                                        True
-
-                                    Field.Bool False ->
-                                        True
-
-                                    _ ->
-                                        False
-
-                            sameAsOriginal =
-                                case storedValue of
-                                    Just v ->
-                                        v == fieldValue
-
-                                    Nothing ->
-                                        shouldBeNothing fieldValue
-
-                            changedFields =
-                                if sameAsOriginal then
-                                    Set.remove name model.changedFields
-
-                                else
-                                    model.changedFields
-                        in
-                        ( changedFields, model.originalValues )
-
-                    else
-                        let
-                            originalValue =
-                                Dict.get name model.values
-                        in
-                        ( Set.insert name model.changedFields, Dict.insert name originalValue model.originalValues )
 
                 mPointer =
                     Result.toMaybe <| Pointer.fromString name
@@ -306,12 +245,10 @@ update validation msg (Form model) =
 
                 newModel =
                     { model
-                        | values = newValues
-                        , value = newValue
-                        , dirtyFields = newDirtyFields
-                        , changedFields = newChangedFields
-                        , originalValues = newOriginalValues
+                        | value = Debug.log "Update input value" newValue
                     }
+
+
             in
             Form (updateValidate validation newModel)
 
@@ -352,24 +289,17 @@ update validation msg (Form model) =
         --     in
         --     F (updateValidate validation newModel)
         Submit ->
-            let
-                validatedModel =
-                    updateValidate validation model
-            in
-            Form { validatedModel | isSubmitted = True }
+
+            Form (updateValidate validation model)
 
         Validate ->
             Form (updateValidate validation model)
 
-        Reset values ->
+        Reset value ->
             let
                 newModel =
                     { model
-                        | values = values
-                        , dirtyFields = Set.empty
-                        , changedFields = Set.empty
-                        , originalValues = Dict.empty
-                        , isSubmitted = False
+                        | value = value
                     }
             in
             Form (updateValidate validation newModel)
@@ -405,61 +335,30 @@ updateValue pointer new value =
             value
 
 
-updateValidate : Validation e o -> Model e o -> Model e o
+updateValidate : (Value -> Validation e o) -> Model e -> Model e
 updateValidate validation model =
-    case validation of
+    case validation model.value of
         Ok output ->
             { model
                 | errors =
                     []
-                , output = Just output
             }
 
         Err error ->
             { model
                 | errors =
                     error
-                , output = Nothing
             }
-
-
-
--- getFieldAt : String -> Model e o -> Maybe Field
--- getFieldAt qualifiedName model =
---     Tree.getAtPath qualifiedName model.values
--- getStringAt : String -> Form e o -> Maybe String
--- getStringAt name (F model) =
---     getFieldAt name model |> Maybe.andThen Field.asString
--- getBoolAt : String -> Form e o -> Maybe Bool
--- getBoolAt name (F model) =
---     getFieldAt name model |> Maybe.andThen Field.asBool
--- setFieldAt : String -> Field -> Model e o -> Field
--- setFieldAt path field model =
---     Tree.setAtPath path field model.fields
-
-
-{-| Get form output, in case of validation success.
--}
-getOutput : Form e o -> Maybe o
-getOutput (Form model) =
-    model.output
-
-
-{-| Get form submission state. Useful to show errors on unchanged fields.
--}
-isSubmitted : Form e o -> Bool
-isSubmitted (Form model) =
-    model.isSubmitted
 
 
 {-| Get list of errors on qualified paths.
 -}
-getErrors : Form e o -> List ( String, Error.ErrorValue e )
+getErrors : Form e -> List ( String, Error.ErrorValue e )
 getErrors (Form model) =
     List.map (\( p, e ) -> ( Pointer.toString p, e )) model.errors
 
 
-getErrorAt : String -> Form e o -> Maybe (ErrorValue e)
+getErrorAt : String -> Form e -> Maybe (ErrorValue e)
 getErrorAt path (Form model) =
     List.head <|
         case Pointer.fromString path of
@@ -478,34 +377,8 @@ getErrorAt path (Form model) =
                 []
 
 
-getLiveErrorAt : String -> Form e o -> Maybe (ErrorValue e)
-getLiveErrorAt name form =
-    if isSubmitted form || (isChangedAt name form && not (isDirtyAt name form)) then
-        getErrorAt name form
-
-    else
-        Nothing
-
-
-isChangedAt : String -> Form e o -> Bool
-isChangedAt qualifiedName (Form model) =
-    Set.member qualifiedName model.changedFields
-
-
-isDirtyAt : String -> Form e o -> Bool
-isDirtyAt qualifiedName (Form model) =
-    Set.member qualifiedName model.dirtyFields
-
-
 {-| Return currently focused field, if any.
 -}
-getFocus : Form e o -> Maybe String
+getFocus : Form e -> Maybe String
 getFocus (Form model) =
     model.focus
-
-
-{-| Get set of changed fields.
--}
-getChangedFields : Form e o -> Set String
-getChangedFields (Form model) =
-    model.changedFields

@@ -61,7 +61,7 @@ view state =
                 , disabled anyErrors
                 , if anyErrors then class "opacity-50" else class "hover:bg-blue-500"
                 ] [ text "Submit" ]
-            , case Form.getOutput state.form of
+            , case Json.Schema.Form.getOutput state of
                 Just output ->
                     let
                         json =

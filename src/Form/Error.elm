@@ -7,7 +7,6 @@ module Form.Error exposing (Error, ErrorValue(..), error)
 -}
 
 import Form.Pointer as Pointer exposing (Pointer)
-import Form.Tree as Tree exposing (Tree)
 
 
 type alias Error customError =

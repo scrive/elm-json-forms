@@ -26,7 +26,7 @@ module Json.Schema.Form exposing
 
 -}
 
-import Form exposing (Form, Msg)
+import Form exposing (Form(..), Msg)
 import Html exposing (Html)
 import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
@@ -43,7 +43,7 @@ type alias State =
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema
-    , form : Form CustomErrorValue Value
+    , form : Form CustomErrorValue
     }
 
 
@@ -66,7 +66,7 @@ init options schema mUiSchema =
     in
     State options schema uiSchema <|
         Debug.log "initial form" <|
-            Form.initial (defaultValues schema uiSchema) value (validation schema value)
+            Form.initial (defaultValues schema uiSchema) value (validation schema)
 
 
 {-| Update the form state.
@@ -74,10 +74,10 @@ init options schema mUiSchema =
 update : Msg -> State -> State
 update msg state =
     let
-        form : Form CustomErrorValue Value
+        form : Form CustomErrorValue
         form =
             Form.update
-                (validation state.schema (Form.getValue state.form))
+                (validation state.schema)
                 (Debug.log "message" msg)
                 state.form
     in
@@ -123,4 +123,8 @@ submit =
 -}
 getOutput : State -> Maybe Value
 getOutput state =
-    Form.getOutput state.form
+    let
+        form = case state.form of
+            Form f -> f -- wtf elm
+    in
+        if form.errors == [] then Just form.value else Nothing

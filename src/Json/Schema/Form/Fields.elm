@@ -46,7 +46,7 @@ import String.Case
 
 
 type alias Form =
-    F.Form CustomErrorValue Value
+    F.Form CustomErrorValue
 
 
 uiSchemaView : Options -> List String -> UiSchema -> Schema -> Form -> Html F.Msg
@@ -233,7 +233,7 @@ txt options path schema f fieldType =
         attributes =
             [ Attrs.map never <|
                 options.theme.txt
-                    { withError = f.liveError /= Nothing
+                    { withError = f.error /= Nothing
                     , format = schema.format
                     }
             , id f.path
@@ -343,7 +343,7 @@ checkbox options path schema f =
         content =
             [ div [ Attrs.map never options.theme.checkboxWrapper ]
                 [ Input.checkboxInput f
-                    [ Attrs.map never <| options.theme.checkboxInput { withError = f.liveError /= Nothing }
+                    [ Attrs.map never <| options.theme.checkboxInput { withError = f.error /= Nothing }
                     , id f.path
                     ]
                 , div [ Attrs.map never options.theme.checkboxTitle ]
@@ -357,13 +357,13 @@ checkbox options path schema f =
 
         feedback : List (Html F.Msg)
         feedback =
-            Maybe.values [ liveError options.theme options.errors f ]
+            Maybe.values [ error options.theme options.errors f ]
     in
     div
         [ classList
             [ ( "form-group", True )
             , ( "form-check", True )
-            , ( "is-invalid", f.liveError /= Nothing )
+            , ( "is-invalid", f.error /= Nothing )
             ]
         ]
         [ label [ class "form-check-label" ]
@@ -387,7 +387,7 @@ select options path schema f fieldType =
     let
         values : List String
         values =
-            Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
+            Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "") |> List.append [""]
 
         items : List ( String, String )
         items =
@@ -409,7 +409,7 @@ select options path schema f fieldType =
           )
             items
             f
-            [ Attrs.map never <| options.theme.select { withError = f.liveError /= Nothing }
+            [ Attrs.map never <| options.theme.select { withError = f.error /= Nothing }
             , id <| Pointer.toString path ++ "-input"
             ]
         ]
@@ -568,7 +568,7 @@ field options schema f content =
 
         feedback : List (Html F.Msg)
         feedback =
-            Maybe.values [ liveError options.theme options.errors f ]
+            Maybe.values [ error options.theme options.errors f ]
 
         stringValue =
             Maybe.andThen Field.valueAsString f.value
@@ -577,7 +577,7 @@ field options schema f content =
         [ Attrs.map never <|
             options.theme.field
                 { withError =
-                    f.liveError /= Nothing
+                    f.error /= Nothing
                 , withValue =
                     stringValue /= Nothing && stringValue /= Just ""
                 }
@@ -616,12 +616,12 @@ field options schema f content =
 --             schema.description |> Html.viewMaybe (\str -> p [] [ text str ]) |> List.singleton
 --         feedback : List (Html F.Msg)
 --         feedback =
---             Maybe.values [ liveError options.theme options.errors f ]
+--             Maybe.values [ error options.theme options.errors f ]
 --     in
 --     div
 --         [ Attrs.map never <|
 --             options.theme.group
---                 { withError = f.liveError /= Nothing
+--                 { withError = f.error /= Nothing
 --                 , withValue = f.value /= Nothing && f.value /= Just ""
 --                 }
 --         ]
@@ -642,9 +642,9 @@ fieldDescription theme schema =
         |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
 
 
-liveError : Theme -> Errors -> F.FieldState CustomErrorValue -> Maybe (Html F.Msg)
-liveError theme func f =
-    f.liveError
+error : Theme -> Errors -> F.FieldState CustomErrorValue -> Maybe (Html F.Msg)
+error theme func f =
+    f.error
         |> Maybe.map
             (\err ->
                 div
@@ -709,13 +709,13 @@ fieldset schema content =
 
 
 
--- getFieldAsBool : Pointer -> F.Form e o -> F.FieldState e Bool
+-- getFieldAsBool : Pointer -> F.Form e -> F.FieldState e Bool
 -- getFieldAsBool path =
 --     F.getFieldAsBool (fieldPath path)
--- getFieldAsString : Pointer -> F.Form e o -> F.FieldState e String
+-- getFieldAsString : Pointer -> F.Form e -> F.FieldState e String
 -- getFieldAsString path =
 --     F.getFieldAsString (fieldPath path)
--- getListIndexes : Pointer -> F.Form e o -> List Int
+-- getListIndexes : Pointer -> F.Form e -> List Int
 -- getListIndexes path =
 --     F.getListIndexes (fieldPath path)
 
