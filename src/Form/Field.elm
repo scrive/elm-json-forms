@@ -63,7 +63,8 @@ valueAsBool fv =
         Bool b ->
             Just b
 
-        _ -> Nothing
+        _ ->
+            Nothing
 
 
 {-| Build a field from its value.

@@ -1,9 +1,10 @@
 module Form.Validate exposing
     ( Validation, map, succeed, andThen, andMap, customError, defaultValue, mapError, withCustomError, sequence
     , map2, map3, map4, map5, map6, map7, map8
-    , int, maybe
+    , int, float, bool, maybe
     , minInt, maxInt, minFloat, maxFloat, minLength, maxLength, nonEmpty, format, includedIn
     , fail, customValidation, oneOf
+    , mapErrorPointers, validateAll
     )
 
 {-| Form validation.
@@ -38,6 +39,7 @@ module Form.Validate exposing
 import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue(..))
 import Form.Field as Field exposing (Field, FieldValue(..))
+import Form.Pointer as Pointer exposing (Pointer)
 import Form.Tree as Tree
 import Json.Decode as Decode exposing (Value)
 import Regex exposing (Regex)
@@ -50,6 +52,21 @@ being either a validation error or the expected object.
 -}
 type alias Validation customError output =
     Result (Error customError) output
+
+
+isOk : Validation e a -> Bool
+isOk v =
+    case v of
+        Ok _ ->
+            True
+
+        Err _ ->
+            False
+
+
+isErr : Validation e a -> Bool
+isErr =
+    not << isOk
 
 
 {-| Map over the result of the validation.
@@ -101,6 +118,13 @@ defaultValue a =
 mapError : (Error e1 -> Error e2) -> Validation e1 a -> Validation e2 a
 mapError =
     Result.mapError
+
+
+{-| Call Result.mapError on validation result.
+-}
+mapErrorPointers : (Pointer -> Pointer) -> Validation e a -> Validation e a
+mapErrorPointers f =
+    mapError (\l -> List.map (\( p, e ) -> ( f p, e )) l)
 
 
 {-| Arrange that if a validation fails, it has the given custom error.
@@ -210,11 +234,19 @@ errList res =
             e
 
 
-{-| Validation an integer using `String.toInt`.
--}
 int : Value -> Validation e Int
 int =
     Result.mapError (\_ -> Error.error InvalidInt) << Decode.decodeValue Decode.int
+
+
+float : Value -> Validation e Float
+float =
+    Result.mapError (\_ -> Error.error InvalidFloat) << Decode.decodeValue Decode.float
+
+
+bool : Value -> Validation e Bool
+bool =
+    Result.mapError (\_ -> Error.error InvalidBool) << Decode.decodeValue Decode.bool
 
 
 
@@ -432,6 +464,19 @@ results.
 sequence : List (Validation e a) -> Validation e (List a)
 sequence validations =
     List.foldr (map2 (::)) (succeed []) validations
+
+
+validateAll : List (a -> Validation e b) -> a -> Validation e a
+validateAll l a =
+    let
+        validations =
+            List.map (\v -> v a) l
+    in
+    if List.all isOk validations then
+        Ok a
+
+    else
+        Err <| List.concat <| List.map errList validations
 
 
 

@@ -7,6 +7,7 @@ module Json.Schema.Form.UiSchema exposing
     , fromString
     , generateUiSchema
     , pointToSchema
+    , unSchemata
     )
 
 import Dict exposing (Dict)

@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Form.Error as Error exposing (ErrorValue(..))
 import Form.Field
 import Form.Validate as Validate exposing (Validation)
-import Json.Decode exposing (Decoder, Value)
+import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
     exposing
@@ -20,6 +20,7 @@ import Json.Schema.Form.Encode as Encode
 import Json.Schema.Form.Error exposing (CustomErrorValue(..))
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
+import Json.Schema.Form.UiSchema exposing (unSchemata)
 import Maybe.Extra as Maybe
 import Regex
 import Set
@@ -106,11 +107,41 @@ subSchema schema value =
 singleType : SubSchema -> SingleType -> Value -> Validation CustomErrorValue Value
 singleType schema type_ value =
     case type_ of
+        ObjectType ->
+            let
+                propList =
+                    Maybe.withDefault [] <| Maybe.map unSchemata schema.properties
+
+                propKeys =
+                    List.map (\( k, v ) -> k) propList
+
+                requiredKeys =
+                    Maybe.withDefault [] schema.required
+
+                missingKeys =
+                    List.filter (\k -> not <| List.member k propKeys) requiredKeys
+
+                -- TODO: emit error on missingKeys
+                -- TODO: handle missing keys
+            in
+            Validate.validateAll
+                (List.map
+                    (\( key, propSchema ) _ ->
+                        Validate.mapErrorPointers (\p -> List.append [ "properties", key ] p) <| validation propSchema <| Result.withDefault Encode.null <| Decode.decodeValue (Decode.field key Decode.value) value
+                    )
+                    propList
+                )
+                value
+
+        -- List.map (\(k, v) -> v) propList
         IntegerType ->
             Result.map Encode.int <| Validate.int value
 
-        _ ->
-            Validate.fail (Validate.customError Invalid)
+        NumberType ->
+            Result.map Encode.float <| Validate.float value
+
+        x ->
+            Validate.succeed value
 
 
 

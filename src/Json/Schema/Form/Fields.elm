@@ -43,8 +43,6 @@ import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import String.Case
-import Form.Input as Input
-import Form.Input as Input
 
 
 type alias Form =
@@ -209,7 +207,9 @@ type TextFieldType
 
 
 isNumericFieldType : TextFieldType -> Bool
-isNumericFieldType fieldType = List.any ((==) fieldType) [NumberField, IntField]
+isNumericFieldType fieldType =
+    List.any ((==) fieldType) [ NumberField, IntField ]
+
 
 txt : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> TextFieldType -> Html F.Msg
 txt options path schema f fieldType =
@@ -309,9 +309,16 @@ txt options path schema f fieldType =
                                             "text"
                             in
                             (case fieldType of
-                                NumberField -> Input.floatInput
-                                IntField -> Input.intInput
-                                StringField -> Input.textInput) f
+                                NumberField ->
+                                    Input.floatInput
+
+                                IntField ->
+                                    Input.intInput
+
+                                StringField ->
+                                    Input.textInput
+                            )
+                                f
                                 (attributes
                                     ++ [ type_
                                             (format.inputType
@@ -391,9 +398,15 @@ select options path schema f fieldType =
         f
         [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
         , (case fieldType of
-            StringField -> Input.textSelectInput
-            NumberField -> Input.floatSelectInput
-            IntField -> Input.intSelectInput)
+            StringField ->
+                Input.textSelectInput
+
+            NumberField ->
+                Input.floatSelectInput
+
+            IntField ->
+                Input.intSelectInput
+          )
             items
             f
             [ Attrs.map never <| options.theme.select { withError = f.liveError /= Nothing }

@@ -1,12 +1,8 @@
 module Form.Input exposing
     ( Input
-    , baseInput, textInput, passwordInput, textArea, checkboxInput
-    , textSelectInput, intSelectInput, floatSelectInput
-    , radioInput
-    , intInput
-    , floatInput
+    , baseInput, textInput, passwordInput, textArea, checkboxInput, radioInput
+    , floatInput, floatSelectInput, intInput, intSelectInput, textSelectInput
     )
-
 
 {-| Html input view helpers, wired for elm-form validation.
 
@@ -54,17 +50,19 @@ textInput : Input e
 textInput =
     baseInput "text" String Text
 
+
 {-| Text input.
 -}
 intInput : Input e
 intInput =
-    baseInput "text" (Int << Maybe.withDefault 0 << String.toInt) Text
+    baseInput "text" (\x -> Maybe.withDefault (String x) <| Maybe.map Int <| String.toInt x) Text
+
 
 {-| Text input.
 -}
 floatInput : Input e
 floatInput =
-    baseInput "text" (Number << Maybe.withDefault 0 << String.toFloat) Text
+    baseInput "text" (\x -> Maybe.withDefault (String x) <| Maybe.map Number <| String.toFloat x) Text
 
 
 {-| Password input.
@@ -114,18 +112,19 @@ textSelectInput : List ( String, String ) -> Input e
 textSelectInput options =
     baseSelectInput options String
 
+
 {-| Text input.
 -}
 intSelectInput : List ( String, String ) -> Input e
 intSelectInput options =
-    baseSelectInput options (Int << Maybe.withDefault 0 << String.toInt)
+    baseSelectInput options (\x -> Maybe.withDefault (String x) <| Maybe.map Int <| String.toInt x)
+
 
 {-| Text input.
 -}
 floatSelectInput : List ( String, String ) -> Input e
 floatSelectInput options =
-    baseSelectInput options (Number << Maybe.withDefault 0 << String.toFloat)
-
+    baseSelectInput options (\x -> Maybe.withDefault (String x) <| Maybe.map Number <| String.toFloat x)
 
 
 {-| Checkbox input.
