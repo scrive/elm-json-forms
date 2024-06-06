@@ -4,18 +4,17 @@ import Browser
 import Dict
 import Form exposing (InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
-import Form.Field exposing (FieldValue(..))
+import Form.Field  as Field exposing (FieldValue)
 import Form.Input exposing (Input)
 import Form.Validate
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class, style, disabled)
 import Html.Events exposing (onClick, onSubmit)
-import Json.Encode exposing (bool, float, int, list, string)
+import Json.Encode as Encode exposing (bool, float, int, list, string)
 import Json.Schema
 import Json.Schema.Builder exposing (..)
 import Json.Schema.Definitions
 import Json.Schema.Form exposing (Msg, State)
-import Json.Schema.Form.Encode
 import Json.Schema.Form.Error exposing (CustomErrorValue(..), Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
@@ -65,7 +64,7 @@ view state =
                 Just output ->
                     let
                         json =
-                            Json.Encode.encode 4 output
+                            Encode.encode 4 output
                     in
                     pre [] [ text json ]
 
@@ -79,6 +78,9 @@ errorString path error =
     case error of
         Empty ->
             "The field can not be empty."
+
+        NotConst v ->
+            "Field must be equal to " ++ Encode.encode 0 v ++ "."
 
         InvalidString ->
             "This field is required."
@@ -98,17 +100,29 @@ errorString path error =
         InvalidBool ->
             "That is not a valid option."
 
-        SmallerIntThan n ->
+        LessIntThan n ->
             "Can not be smaller than " ++ String.fromInt n ++ "."
+
+        LessEqualIntThan n ->
+            "Can not be smaller or equal than " ++ String.fromInt n ++ "."
 
         GreaterIntThan n ->
             "Can not be greater than " ++ String.fromInt n ++ "."
 
-        SmallerFloatThan n ->
+        GreaterEqualIntThan n ->
+            "Can not be greater or equal than " ++ String.fromInt n ++ "."
+
+        LessFloatThan n ->
             "Can not be smaller than " ++ String.fromFloat n ++ "."
+
+        LessEqualFloatThan n ->
+            "Can not be smaller or equal than " ++ String.fromFloat n ++ "."
 
         GreaterFloatThan n ->
             "Can not be greater than " ++ String.fromFloat n ++ "."
+
+        GreaterEqualFloatThan n ->
+            "Can not be greater or equal than " ++ String.fromFloat n ++ "."
 
         ShorterStringThan n ->
             "Must be at least " ++ String.fromInt n ++ " characters long."
@@ -116,7 +130,13 @@ errorString path error =
         LongerStringThan n ->
             "Can not be more than " ++ String.fromInt n ++ " characters long."
 
-        NotIncludedIn ->
+        NotMultipleOfInt n ->
+            "Must be a multiple of " ++ String.fromInt n ++ "."
+
+        NotMultipleOfFloat n ->
+            "Must be a multiple of " ++ String.fromFloat n ++ "."
+
+        NotIncludedIn _ ->
             "Is not a valid selection from the list."
 
         CustomError Invalid ->
@@ -158,7 +178,7 @@ customInput f attrs =
         ([ onClick
             (Form.Input f.path
                 Form.Text
-                (String "Hello world")
+                (Field.String "Hello world")
             )
          , class "btn btn-lg btn-light"
          , style "height" "auto"
@@ -166,20 +186,20 @@ customInput f attrs =
             ++ attrs
         )
         [ case f.value of
-            Just (String str) ->
+            Field.String str ->
                 text str
 
-            Just (Int i) ->
+            Field.Int i ->
                 text <| String.fromInt i
 
-            Just (Number n) ->
+            Field.Number n ->
                 text <| String.fromFloat n
 
-            Just (Bool bool) ->
+            Field.Bool bool ->
                 text "(bool)"
 
-            Nothing ->
-                text "Click me!"
+            Field.Empty ->
+                text "(empty)"
         ]
 
 
@@ -225,17 +245,25 @@ schema_json = Json.Schema.fromString """
     "firstName": {
       "type": "string",
       "minLength": 2,
-      "maxLength": 20
+      "maxLength": 20,
+      "const": "abcd"
     },
     "lastName": {
       "type": "string",
       "minLength": 5,
       "maxLength": 15
     },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "minLength": 5,
+      "maxLength": 15
+    },
     "age": {
       "type": "integer",
       "minimum": 18,
-      "maximum": 100
+      "maximum": 100,
+      "multipleOf": 2
     },
     "gender": {
       "type": "string",
@@ -246,7 +274,9 @@ schema_json = Json.Schema.fromString """
       ]
     },
     "height": {
-      "type": "number"
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "multipleOf": 1.1
     },
     "dateOfBirth": {
       "type": "string",
@@ -408,7 +438,7 @@ schema =
               , buildSchema
                     |> withType "array"
                     |> withDefault
-                        (Json.Encode.list Json.Encode.string
+                        (Encode.list Encode.string
                             [ "2019-02-27", "18:00:00" ]
                         )
                     |> withItems
@@ -479,19 +509,19 @@ schema =
                         [ buildSchema
                             |> withTitle "Walking"
                             |> withType "string"
-                            |> withConst (Json.Encode.string "walking")
+                            |> withConst (Encode.string "walking")
                         , buildSchema
                             |> withTitle "Driving car"
                             |> withType "string"
-                            |> withConst (Json.Encode.string "driving")
+                            |> withConst (Encode.string "driving")
                         , buildSchema
                             |> withTitle "Boat"
                             |> withType "string"
-                            |> withConst (Json.Encode.string "boat")
+                            |> withConst (Encode.string "boat")
                         , buildSchema
                             |> withTitle "Bus"
                             |> withType "string"
-                            |> withConst (Json.Encode.string "bus")
+                            |> withConst (Encode.string "bus")
                         , buildSchema
                             |> withTitle "Other"
                             |> withType "object"

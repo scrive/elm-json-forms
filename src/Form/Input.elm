@@ -35,7 +35,7 @@ baseInput t toFieldValue inputType state attrs =
     let
         formAttrs =
             [ type_ t
-            , value (Maybe.andThen Field.valueAsString (Debug.log "value" state.value) |> Maybe.withDefault "")
+            , value (Field.valueAsString state.value)
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -44,32 +44,49 @@ baseInput t toFieldValue inputType state attrs =
     input (formAttrs ++ attrs) []
 
 
+fromIntInput : String -> FieldValue
+fromIntInput s = if String.isEmpty s
+    then Field.Empty
+    else Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
+
+
+fromFloatInput : String -> FieldValue
+fromFloatInput s = if String.isEmpty s
+    then Field.Empty
+    else Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
+
+
+fromStringInput : String -> FieldValue
+fromStringInput s = if String.isEmpty s
+    then Field.Empty
+    else Field.String s
+
 {-| Text input.
 -}
 textInput : Input e
 textInput =
-    baseInput "text" String Text
+    baseInput "text" fromStringInput Text
 
 
 {-| Text input.
 -}
 intInput : Input e
 intInput =
-    baseInput "text" (\x -> Maybe.withDefault (String x) <| Maybe.map Int <| String.toInt x) Text
+    baseInput "text" fromIntInput Text
 
 
 {-| Text input.
 -}
 floatInput : Input e
 floatInput =
-    baseInput "text" (\x -> Maybe.withDefault (String x) <| Maybe.map Number <| String.toFloat x) Text
+    baseInput "text" fromFloatInput Text
 
 
 {-| Password input.
 -}
 passwordInput : Input e
 passwordInput =
-    baseInput "password" String Text
+    baseInput "password" fromStringInput Text
 
 
 {-| Textarea.
@@ -78,7 +95,7 @@ textArea : Input e
 textArea state attrs =
     let
         formAttrs =
-            [ value (state.value |> Maybe.andThen Field.valueAsString |> Maybe.withDefault "")
+            [ value (Field.valueAsString state.value)
             , onInput (String >> Input state.path Textarea)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -101,7 +118,7 @@ baseSelectInput options toFieldValue state attrs =
             ]
 
         buildOption ( k, v ) =
-            option [ value k, selected (Maybe.andThen Field.valueAsString state.value == Just k) ] [ text v ]
+            option [ value k, selected (Field.valueAsString state.value == k) ] [ text v ]
     in
     select (formAttrs ++ attrs) (List.map buildOption options)
 
@@ -110,21 +127,21 @@ baseSelectInput options toFieldValue state attrs =
 -}
 textSelectInput : List ( String, String ) -> Input e
 textSelectInput options =
-    baseSelectInput options String
+    baseSelectInput options fromStringInput
 
 
 {-| Text input.
 -}
 intSelectInput : List ( String, String ) -> Input e
 intSelectInput options =
-    baseSelectInput options (\x -> Maybe.withDefault (String x) <| Maybe.map Int <| String.toInt x)
+    baseSelectInput options fromIntInput
 
 
 {-| Text input.
 -}
 floatSelectInput : List ( String, String ) -> Input e
 floatSelectInput options =
-    baseSelectInput options (\x -> Maybe.withDefault (String x) <| Maybe.map Number <| String.toFloat x)
+    baseSelectInput options fromFloatInput
 
 
 {-| Checkbox input.
@@ -134,7 +151,7 @@ checkboxInput state attrs =
     let
         formAttrs =
             [ type_ "checkbox"
-            , checked (Maybe.andThen Field.valueAsBool state.value |> Maybe.withDefault False)
+            , checked (Field.valueAsBool state.value |> Maybe.withDefault False)
             , onCheck (Bool >> Input state.path Checkbox)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -152,7 +169,7 @@ radioInput value state attrs =
             [ type_ "radio"
             , name state.path
             , HtmlAttr.value value
-            , checked (Maybe.andThen Field.valueAsString state.value == Just value)
+            , checked (Field.valueAsString state.value == value)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
             , on

@@ -18,7 +18,6 @@ import Json.Schema.Builder
         )
 import Json.Schema.Definitions exposing (Schema, blankSchema)
 import Json.Schema.Form.Validation exposing (validation)
-import Json.Schema.Form.Value exposing (Value(..))
 import Test exposing (Test, describe, test)
 
 

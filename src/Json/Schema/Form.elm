@@ -125,6 +125,6 @@ getOutput : State -> Maybe Value
 getOutput state =
     let
         form = case state.form of
-            Form f -> f -- wtf elm
+            Form f -> f
     in
         if form.errors == [] then Just form.value else Nothing

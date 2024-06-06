@@ -90,7 +90,7 @@ can be retrived with `Form.getFieldAsString` or `Form.getFieldAsBool`.
 -}
 type alias FieldState e =
     { path : String
-    , value : Maybe FieldValue
+    , value : FieldValue
     , error : Maybe (ErrorValue e)
     , hasFocus : Bool
     }
@@ -162,7 +162,7 @@ getValue_ pointer value = case pointer of
 getField : String -> Form e -> FieldState e
 getField path form =
     { path = path
-    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getValue_ pointer (getValue form))
+    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getValue_ pointer (getValue form)) |> Maybe.withDefault Empty
     , error = getErrorAt path form
     , hasFocus = getFocus form == Just path
     }
@@ -308,6 +308,15 @@ update validation msg (Form model) =
 updateValue : Pointer -> FieldValue -> Value -> Value
 updateValue pointer new value =
     case pointer of
+        "properties" :: key :: [] ->
+            case Decode.decodeValue (Decode.dict Decode.value) value of
+                Ok o ->
+                    Encode.dict identity identity <| case Field.asValue new of
+                        Nothing -> Dict.remove key o
+                        Just v -> Dict.insert key v o
+
+                Err e ->
+                    value
         "properties" :: key :: ps ->
             case Decode.decodeValue (Decode.dict Decode.value) value of
                 Ok o ->
@@ -316,20 +325,8 @@ updateValue pointer new value =
 
                 Err e ->
                     value
-
         [] ->
-            case new of
-                String s ->
-                    Encode.string s
-
-                Int i ->
-                    Encode.int i
-
-                Number n ->
-                    Encode.float n
-
-                Bool b ->
-                    Encode.bool b
+            Maybe.withDefault Encode.null <| Field.asValue new
 
         _ ->
             value

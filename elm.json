@@ -6,10 +6,8 @@
     "version": "2.0.0",
     "exposed-modules": [
         "Json.Schema.Form",
-        "Json.Schema.Form.Encode",
         "Json.Schema.Form.Error",
         "Json.Schema.Form.Format",
-        "Json.Schema.Form.Value",
         "Json.Schema.Form.Options",
         "Json.Schema.Form.Theme",
         "Json.Schema.Form.UiSchema",

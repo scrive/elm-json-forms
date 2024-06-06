@@ -58,11 +58,6 @@ uiSchemaView options uiPath uiSchema schema form =
         UI.UiHorizontalLayout hl ->
             div [] [ text "unimplemented horizontal layout" ]
 
-        -- TODO: test
-        -- [ Attrs.map never <| options.theme.formRow
-        -- ] <| List.map (\us -> div
-        --     [ Attrs.map never <| options.theme.formRowItem
-        --     ] [uiSchemaView options us schema form]) x.elements
         UI.UiVerticalLayout vl ->
             div
                 -- TODO: simplify options.theme.group
@@ -128,76 +123,6 @@ controlView options uiPath wholeSchema control form =
 schemaView : Options -> Pointer -> Schema -> Form -> Html F.Msg
 schemaView options path schema form =
     Html.nothing
-
-
-
---     case schema of
---         BooleanSchema value ->
---             div []
---                 [ if value then
---                     text "True"
---                   else
---                     text "False"
---                 ]
---         ObjectSchema subSchema ->
---             objectView options path subSchema form
--- objectView : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
--- objectView options path schema form =
---     case schema.type_ of
---         AnyType ->
---             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
---                 switch options path schema form
---             else
---                 fieldView options path schema BooleanType form
---         NullableType singleType ->
---             fieldView options path schema singleType form
---         UnionType _ ->
---             fieldView options path schema StringType form
---         SingleType singleType ->
---             fieldView options path schema singleType form
--- fieldView : Options -> Pointer -> SubSchema -> SingleType -> Form -> Html F.Msg
--- fieldView options path schema type_ form =
---     case type_ of
---         IntegerType ->
---             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
---                 select options path schema (getFieldAsString path form)
---             else
---                 txt options path schema (getFieldAsString path form) { isNumber = True }
---         NumberType ->
---             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
---                 select options path schema (getFieldAsString path form)
---             else
---                 txt options path schema (getFieldAsString path form) { isNumber = True }
---         StringType ->
---             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
---                 select options path schema (getFieldAsString path form)
---             else
---                 txt options path schema (getFieldAsString path form) { isNumber = False }
---         BooleanType ->
---             checkbox options path schema (getFieldAsBool path form)
---         ArrayType ->
---             let
---                 f : F.FieldState CustomErrorValue String
---                 f =
---                     getFieldAsString path form
---             in
---             case schema.items of
---                 NoItems ->
---                     field options schema f <|
---                         list options path form ( schema.title, blankSchema )
---                 ItemDefinition item ->
---                     field options schema f <|
---                         list options path form ( schema.title, item )
---                 ArrayOfItems items ->
---                     field options schema f <|
---                         tuple options path form ( schema.title, items )
---         ObjectType ->
---             if schema.oneOf /= Nothing || schema.anyOf /= Nothing then
---                 switch options path schema form
---             else
---                 fieldset schema [ group options path schema form ]
---         NullType ->
---             div [] []
 
 
 type TextFieldType
@@ -426,139 +351,6 @@ option attr schema =
             , Just schema_
             )
 
-
-
--- list :
---     Options
---     -> Pointer
---     -> Form
---     -> ( Maybe String, Schema )
---     -> List (Html F.Msg)
--- list options path form ( title, schema ) =
---     let
---         indexes : List Int
---         indexes =
---             getListIndexes path form
---         itemPath : Int -> Pointer
---         itemPath idx =
---             path ++ [ String.fromInt idx ]
---         itemView : Int -> Html F.Msg
---         itemView idx =
---             li
---                 [ Attrs.map never options.theme.listGroupItem ]
---                 [ schemaView options (itemPath idx) schema form
---                 , button
---                     [ onClickPreventDefault (F.RemoveItem (fieldPath path) idx)
---                     , Attrs.map never options.theme.listGroupRemoveItemButton
---                     ]
---                     [ text options.theme.listGroupRemoveItemButtonTitle ]
---                 ]
---     in
---     [ ol [ Attrs.map never options.theme.listGroup ] (List.map itemView indexes)
---     , button
---         [ onClickPreventDefault (F.Append (fieldPath path))
---         , Attrs.map never options.theme.listGroupAddItemButton
---         ]
---         [ text (title |> Maybe.withDefault options.theme.listGroupAddItemButtonDefaultTitle)
---         ]
---     ]
--- tuple :
---     Options
---     -> Pointer
---     -> Form
---     -> ( Maybe String, List Schema )
---     -> List (Html F.Msg)
--- tuple options path form ( title, schemata ) =
---     let
---         itemPath : Int -> Pointer
---         itemPath idx =
---             path ++ [ "tuple" ++ String.fromInt idx ]
---         itemView : Int -> Schema -> Html F.Msg
---         itemView idx itemSchema =
---             div
---                 [ Attrs.map never options.theme.formRowItem ]
---                 [ schemaView options (itemPath idx) itemSchema form ]
---     in
---     [ case title of
---         Just str ->
---             div [ class "field-title" ] [ text str ]
---         Nothing ->
---             text ""
---     , div [ Attrs.map never options.theme.formRow ] (List.indexedMap itemView schemata)
---     ]
-
-
-radio options fieldState ( value, title ) =
-    let
-        fieldId : String
-        fieldId =
-            fieldPath [ fieldState.path, value ]
-    in
-    div [ Attrs.map never options.theme.radioWrapper ]
-        [ Input.radioInput value
-            fieldState
-            [ Attrs.map never options.theme.radioInput
-            , id fieldId
-            ]
-        , label
-            [ Attrs.map never options.theme.radioInputLabel
-            , for fieldId
-            ]
-            [ text title ]
-        ]
-
-
-
--- switch : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
--- switch options path schema form =
---     let
---         f : F.FieldState CustomErrorValue String
---         f =
---             getFieldAsString (path ++ [ "switch" ]) form
---         schemata : List Schema
---         schemata =
---             List.concat
---                 [ schema.oneOf |> Maybe.withDefault []
---                 , schema.anyOf |> Maybe.withDefault []
---                 ]
---         items : List ( String, Maybe SubSchema )
---         items =
---             schemata
---                 |> List.map (option .title)
---         itemId : Int -> String
---         itemId idx =
---             "option" ++ String.fromInt idx
---         itemButton : Int -> ( String, b ) -> Html F.Msg
---         itemButton idx ( title, _ ) =
---             div
---                 [ classList
---                     [ ( "form-check", True )
---                     , ( "form-check-inline", List.length items <= 2 )
---                     ]
---                 ]
---                 [ radio options f ( itemId idx, title ) ]
---         itemFields : Int -> ( String, Maybe SubSchema ) -> ( String, Html F.Msg )
---         itemFields idx ( _, schema_ ) =
---             case schema_ of
---                 Just s ->
---                     ( itemId idx
---                     , case s.const of
---                         Just _ ->
---                             text ""
---                         Nothing ->
---                             objectView options (path ++ [ "value" ]) s form
---                     )
---                 Nothing ->
---                     ( itemId idx, text "" )
---     in
---     field options schema f <|
---         [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
---         , div [ class "switch", id f.path, tabindex -1 ]
---             (List.indexedMap itemButton items)
---         , conditional "switch-more" f (List.indexedMap itemFields items)
---         ]
-
-
 field : Options -> SubSchema -> F.FieldState CustomErrorValue -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
@@ -569,9 +361,6 @@ field options schema f content =
         feedback : List (Html F.Msg)
         feedback =
             Maybe.values [ error options.theme options.errors f ]
-
-        stringValue =
-            Maybe.andThen Field.valueAsString f.value
     in
     div
         [ Attrs.map never <|
@@ -579,7 +368,7 @@ field options schema f content =
                 { withError =
                     f.error /= Nothing
                 , withValue =
-                    stringValue /= Nothing && stringValue /= Just ""
+                    f.value /= Field.Empty
                 }
         ]
         [ label [ for f.path, Attrs.map never options.theme.fieldLabel ]
@@ -592,40 +381,6 @@ field options schema f content =
                     div [ Attrs.map never options.theme.fieldInputMeta ] html
             ]
         ]
-
-
-
--- group : Options -> Pointer -> SubSchema -> Form -> Html F.Msg
--- group options path schema form =
---     let
---         f : F.FieldState CustomErrorValue String
---         f =
---             getFieldAsString path form
---         schemataItem : ( String, Schema ) -> Html F.Msg
---         schemataItem ( name, subSchema ) =
---             schemaView options (path ++ [ name ]) subSchema form
---         fields : List (Html F.Msg)
---         fields =
---             case schema.properties of
---                 Nothing ->
---                     []
---                 Just (Json.Schema.Definitions.Schemata schemata) ->
---                     List.map schemataItem schemata
---         meta : List (Html msg)
---         meta =
---             schema.description |> Html.viewMaybe (\str -> p [] [ text str ]) |> List.singleton
---         feedback : List (Html F.Msg)
---         feedback =
---             Maybe.values [ error options.theme options.errors f ]
---     in
---     div
---         [ Attrs.map never <|
---             options.theme.group
---                 { withError = f.error /= Nothing
---                 , withValue = f.value /= Nothing && f.value /= Just ""
---                 }
---         ]
---         (meta ++ fields ++ feedback)
 
 
 fieldTitle : Theme -> SubSchema -> Pointer -> Maybe (Html F.Msg)
@@ -708,33 +463,6 @@ fieldset schema content =
     Html.fieldset [ tabindex -1 ] (title ++ content)
 
 
-
--- getFieldAsBool : Pointer -> F.Form e -> F.FieldState e Bool
--- getFieldAsBool path =
---     F.getFieldAsBool (fieldPath path)
--- getFieldAsString : Pointer -> F.Form e -> F.FieldState e String
--- getFieldAsString path =
---     F.getFieldAsString (fieldPath path)
--- getListIndexes : Pointer -> F.Form e -> List Int
--- getListIndexes path =
---     F.getListIndexes (fieldPath path)
-
-
-{-| Field path as understood by elm-form
--}
-fieldPath : Pointer -> String
-fieldPath =
-    String.join "."
-
-
-
--- constAsString : SubSchema -> Maybe String
--- constAsString schema =
---     schema.const
---         |> Maybe.map (Decode.decodeValue decodeStringLike)
---         |> Maybe.andThen Result.toMaybe
-
-
 onClickPreventDefault : msg -> Attribute msg
 onClickPreventDefault msg =
     preventDefaultOn "click"
@@ -751,7 +479,7 @@ conditional className f conditions =
     let
         cond : ( String, b ) -> Maybe ( String, b )
         cond ( value, html ) =
-            if Maybe.andThen Field.valueAsString f.value == Just value then
+            if Field.valueAsString f.value == value then
                 Just ( value, html )
 
             else

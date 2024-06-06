@@ -17,7 +17,6 @@ import Json.Schema.Definitions
         , Type(..)
         , blankSchema
         )
-import Json.Schema.Form.Encode as Encode
 import Json.Schema.Form.Error exposing (CustomErrorValue(..))
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
@@ -54,387 +53,182 @@ subSchema schema value =
             Validate.fail (Error.error <| Unimplemented "Only SingleType is implemented.")
 
 
-
--- subSchema : Formats -> SubSchema -> Validation CustomErrorValue Value
--- subSchema formats schema =
---     case schema.type_ of
---         AnyType ->
---             case schema.oneOf of
---                 Just schemata ->
---                     switch formats schemata
---                 Nothing ->
---                     oneOf
---                         [ singleType formats schema IntegerType
---                         , singleType formats schema NumberType
---                         , singleType formats schema StringType
---                         , singleType formats schema ObjectType
---                             |> andThen
---                                 (\a ->
---                                     case a of
---                                         ObjectValue fields ->
---                                             if List.isEmpty fields then
---                                                 fail (customError Invalid)
---                                             else
---                                                 succeed a
---                                         _ ->
---                                             fail (customError Invalid)
---                                 )
---                         , singleType formats schema ArrayType
---                             |> andThen
---                                 (\a ->
---                                     case a of
---                                         ListValue items ->
---                                             if List.isEmpty items then
---                                                 fail (customError Invalid)
---                                             else
---                                                 succeed a
---                                         _ ->
---                                             fail (customError Invalid)
---                                 )
---                         , singleType formats schema BooleanType
---                         ]
---         NullableType type_ ->
---             oneOf
---                 [ singleType formats schema type_
---                 , emptyString |> andThen (\_ -> succeed NullValue)
---                 ]
---         UnionType types ->
---             oneOf (List.map (singleType formats schema) types)
---         SingleType type_ ->
---             singleType formats schema type_
-
-
 singleType : SubSchema -> SingleType -> Value -> Validation CustomErrorValue Value
-singleType schema type_ value =
-    case type_ of
-        ObjectType ->
-            let
-                propList = Maybe.withDefault [] <| Maybe.map unSchemata schema.properties
-                propKeys = List.map (\(k, v) -> k) propList
+singleType schema type_ =
+    Validate.validateAll
+        [ Validate.whenJust schema.const validateConst
+        , Validate.whenJust schema.enum validateEnum
+        , \value -> case type_ of
+            ObjectType ->
+                let
+                    propList = Maybe.withDefault [] <| Maybe.map unSchemata schema.properties
 
-                requiredKeys = Maybe.withDefault [] schema.required
+                    requiredKeys = Set.fromList <| Maybe.withDefault [] schema.required
 
-                missingKeys = List.filter (\k -> not <| List.member k propKeys) requiredKeys
-                -- TODO: emit error on missingKeys
-                -- TODO: handle missing keys
-            in Validate.validateAll (List.map (\(key, propSchema) _ ->
-                Validate.mapErrorPointers (\p -> List.append ["properties", key] p) <| validation propSchema <| Result.withDefault Encode.null <| Decode.decodeValue (Decode.field key Decode.value) value
-             ) propList) value  -- List.map (\(k, v) -> v) propList
+                    mValue key = Result.toMaybe <| Decode.decodeValue (Decode.field key Decode.value) value
 
-        IntegerType ->
-            Result.map Encode.int <| Validate.int value
+                    validateKey key propSchema = Validate.mapErrorPointers (List.append ["properties", key]) <| case (mValue key, Set.member key requiredKeys) of
+                            (Nothing, True) -> Err [([], Empty)]
+                            (Nothing, False) -> Ok Encode.null
+                            (Just val, _) -> validation propSchema val
 
-        NumberType ->
-            Result.map Encode.float <| Validate.float value
+                in Validate.validateAll (List.map (\(key, propSchema) _ -> validateKey key propSchema) propList) value
 
-        x ->
-            Validate.succeed value
+            IntegerType ->
+                Result.map Encode.int <| validateInt schema value
 
+            NumberType ->
+                Result.map Encode.float <| validateFloat schema value
 
+            BooleanType ->
+                Result.map Encode.bool <| validateBool schema value
 
--- TODO: implement
--- singleType : Formats -> SubSchema -> SingleType -> Validation CustomErrorValue Value
--- singleType formats schema type_ =
---     case type_ of
---         IntegerType ->
---             int
---                 |> andMaybe constInt schema.const
---                 |> andMaybe multipleOf (Maybe.map round schema.multipleOf)
---                 |> andMaybe minInt (Maybe.map round (minimum schema))
---                 |> andMaybe maxInt (Maybe.map round (maximum schema))
---                 |> andMaybe enumInt schema.enum
---                 |> map IntValue
---         NumberType ->
---             float
---                 |> andMaybe constFloat schema.const
---                 |> andMaybe minFloat (minimum schema)
---                 |> andMaybe maxFloat (maximum schema)
---                 |> andMaybe enumFloat schema.enum
---                 |> map FloatValue
---         StringType ->
---             string
---                 |> andMaybe constString schema.const
---                 |> andMaybe minLength schema.minLength
---                 |> andMaybe maxLength schema.maxLength
---                 |> andMaybe pattern schema.pattern
---                 |> andMaybe enumString schema.enum
---                 |> andMaybe (customFormat formats) schema.format
---                 |> map StringValue
---         BooleanType ->
---             bool
---                 |> andMaybe constBool schema.const
---                 |> map BoolValue
---         ArrayType ->
---             case schema.items of
---                 NoItems ->
---                     list (lazy (\_ -> validation formats blankSchema))
---                         |> map ListValue
---                 ItemDefinition schema_ ->
---                     list (validation formats schema_)
---                         |> andMaybe uniqueItems schema.uniqueItems
---                         |> andMaybe minItems schema.minItems
---                         |> andMaybe maxItems schema.maxItems
---                         |> map ListValue
---                 ArrayOfItems schemaList ->
---                     tuple (List.map (validation formats) schemaList)
---                         |> andMaybe uniqueItems schema.uniqueItems
---                         |> andMaybe minItems schema.minItems
---                         |> andMaybe maxItems schema.maxItems
---                         |> map ListValue
---         ObjectType ->
---             let
---                 required : List String
---                 required =
---                     schema.required |> Maybe.withDefault []
---                 isSpecialType : Schema -> Bool
---                 isSpecialType =
---                     isType [ BooleanType, ArrayType, ObjectType ]
---                 schemataItem :
---                     ( String, Schema )
---                     -> Form.Field.Field
---                     -> Result (Form.Error.Error ErrorValue) ( String, Value )
---                 schemataItem ( name, schema_ ) =
---                     if List.member name required || isSpecialType schema_ then
---                         field name (validation formats schema_)
---                             |> andThen (\v -> succeed ( name, v ))
---                     else
---                         oneOf
---                             [ field name emptyString
---                                 |> andThen (\_ -> succeed ( name, EmptyValue ))
---                             , field name (validation formats schema_)
---                                 |> andThen (\v -> succeed ( name, v ))
---                             ]
---                 fields : List (Form.Field.Field -> Result (Form.Error.Error ErrorValue) ( String, Value ))
---                 fields =
---                     case schema.properties of
---                         Nothing ->
---                             required
---                                 |> List.map (\name -> ( name, blankSchema ))
---                                 |> List.map schemataItem
---                         Just (Json.Schema.Definitions.Schemata schemata) ->
---                             List.map schemataItem schemata
---             in
---             sequence fields |> map ObjectValue
---         NullType ->
---             emptyString |> andThen (\_ -> succeed NullValue)
--- constInt : Json.Encode.Value -> Int -> Validation ErrorValue Int
--- constInt constValue value =
---     if Json.Encode.int value == constValue then
---         succeed value
---     else
---         fail (Form.Error.error InvalidInt)
--- constFloat : Json.Encode.Value -> Float -> Validation ErrorValue Float
--- constFloat constValue value =
---     if Json.Encode.float value == constValue then
---         succeed value
---     else
---         fail (Form.Error.error InvalidFloat)
--- constString : Json.Encode.Value -> String -> Validation ErrorValue String
--- constString constValue value field =
---     if Json.Encode.string value == constValue then
---         succeed value field
---     else if field == Form.Field.value Form.Field.EmptyField then
---         case Json.Decode.decodeValue Json.Decode.string constValue of
---             Ok str ->
---                 succeed str field
---             Err _ ->
---                 fail (Form.Error.error InvalidString) field
---     else
---         fail (Form.Error.error InvalidString) field
--- constBool : Json.Encode.Value -> Bool -> Validation ErrorValue Bool
--- constBool constValue value =
---     if Json.Encode.bool value == constValue then
---         succeed value
---     else
---         fail (Form.Error.error InvalidBool)
--- pattern : String -> (String -> Validation e String)
--- pattern str =
---     case Regex.fromString str of
---         Just regex ->
---             format regex
---         Nothing ->
---             \_ -> fail (Form.Error.error InvalidFormat)
--- multipleOf : Int -> Int -> Validation e Int
--- multipleOf multiplier value =
---     if remainderBy multiplier value == 0 then
---         succeed value
---     else
---         fail (Form.Error.error NotIncludedIn)
+            StringType ->
+                Result.map Encode.string <| validateString schema value
+
+            x ->
+                Err <| Error.error (Error.Unimplemented "type")
+        ]
+
+validateString : SubSchema -> Value -> Validation e String
+validateString schema v = case Decode.decodeValue Decode.string v of
+    Err _ -> Err <| Error.error Error.InvalidString
+    Ok s -> Validate.validateAll
+        [ Validate.whenJust schema.minLength validateMinLength
+        , Validate.whenJust schema.maxLength validateMaxLength
+        , Validate.whenJust schema.pattern validatePattern -- TODO: check specs if this is correct
+        , Validate.whenJust schema.format validateFormat -- TODO: check specs if this is correct
+        ] s
+
+validateFormat : String -> String -> Validation e String
+validateFormat format v =
+    case format of -- TODO: custom error for different formats.
+        "date-time" ->
+            validateRegex Json.Schema.Form.Regex.dateTime v
+        "date" ->
+            validateRegex Json.Schema.Form.Regex.date v
+        "time" ->
+            validateRegex Json.Schema.Form.Regex.time v
+        "email" ->
+            validateRegex Json.Schema.Form.Regex.email v
+        "hostname" ->
+            validateRegex Json.Schema.Form.Regex.hostname v
+        "ipv4" ->
+            validateRegex Json.Schema.Form.Regex.ipv4 v
+        "ipv6" ->
+            validateRegex Json.Schema.Form.Regex.ipv6 v
+        _ -> Validate.succeed v
+
+validatePattern : String -> String -> Validation e String
+validatePattern pat s = case Regex.fromString pat of
+    Just regex -> validateRegex regex s
+    Nothing -> Err (Error.error Error.InvalidFormat)
+
+validateRegex : Regex.Regex -> String -> Validation e String
+validateRegex regex s =
+    if Regex.contains regex s then
+        Ok s
+    else
+        Err (Error.error Error.InvalidFormat) -- TODO: create a more specific error
+
+validateMinLength : Int -> String -> Validation e String
+validateMinLength i s = Validate.unless (String.length s >= i) (Error.ShorterStringThan i) s
+
+validateMaxLength : Int -> String -> Validation e String
+validateMaxLength i s = Validate.unless (String.length s <= i) (Error.LongerStringThan i) s
+
+validateInt : SubSchema -> Value -> Validation e Int
+validateInt schema v = case Decode.decodeValue Decode.int v of
+    Err _ -> Err <| Error.error Error.InvalidInt
+    Ok x -> Validate.validateAll
+        [ Validate.whenJust (minimum schema) boundedInt
+        , Validate.whenJust (maximum schema) boundedInt
+        , Validate.whenJust (Maybe.map round schema.multipleOf) multipleOfInt
+        ] x
 
 
-minimum : SubSchema -> Maybe Float
+validateFloat : SubSchema -> Value -> Validation e Float
+validateFloat schema v = case Decode.decodeValue Decode.float v of
+    Err _ -> Err <| Error.error Error.InvalidFloat
+    Ok x -> Validate.validateAll
+        [ Validate.whenJust (minimum schema) boundedFloat
+        , Validate.whenJust (maximum schema) boundedFloat
+        , Validate.whenJust (schema.multipleOf) multipleOfFloat
+        ] x
+
+
+validateBool : SubSchema -> Value -> Validation e Bool
+validateBool schema v = case Decode.decodeValue Decode.bool v of
+    Err _ -> Err <| Error.error Error.InvalidBool
+    Ok x -> Ok x
+
+
+validateConst : Value -> Value -> Validation e Value
+validateConst a b = Validate.unless (a == b) (Error.NotConst a) b
+
+
+validateEnum : List Value -> Value -> Validation e Value
+validateEnum l a = Validate.unless (List.member a l) (Error.NotIncludedIn l) a
+
+
+multipleOfInt : Int -> Int -> Validation e Int
+multipleOfInt p a = Validate.unless (modBy p a == 0) (Error.NotMultipleOfInt p) a
+
+multipleOfFloat : Float -> Float -> Validation e Float
+multipleOfFloat p a =
+    let
+        isMultiple = toFloat (round (a / p)) == (a / p)
+    in
+        Validate.unless isMultiple (Error.NotMultipleOfFloat p) a
+
+
+boundedInt : Comparison -> Int -> Validation e Int
+boundedInt cmp intA = Result.map (always intA) <| boundedFloat cmp (toFloat intA)
+
+
+boundedFloat : Comparison -> Float -> Validation e Float
+boundedFloat cmp a = a |> case cmp of
+    LT x -> Validate.unless (a < x) <| Error.GreaterEqualFloatThan x
+    LE x -> Validate.unless (a <= x) <| Error.GreaterFloatThan x
+    GT x -> Validate.unless (a > x) <| Error.LessEqualFloatThan x
+    GE x -> Validate.unless (a >= x) <| Error.LessFloatThan x
+
+type Comparison
+    = LT Float
+    | LE Float
+    | GT Float
+    | GE Float
+
+minimum : SubSchema -> Maybe Comparison
 minimum schema =
     case schema.exclusiveMinimum of
         Just (BoolBoundary True) ->
-            Maybe.map (\value -> value + 1) schema.minimum
+            Maybe.map GT schema.minimum
 
         Just (BoolBoundary False) ->
-            schema.minimum
+            Maybe.map GE schema.minimum
 
         Just (NumberBoundary value) ->
-            Just (value + 1)
+            Just (GT value)
 
         Nothing ->
-            schema.minimum
+            Maybe.map GE schema.minimum
 
 
-maximum : SubSchema -> Maybe Float
+maximum : SubSchema -> Maybe Comparison
 maximum schema =
     case schema.exclusiveMaximum of
         Just (BoolBoundary True) ->
-            Maybe.map (\value -> value - 1) schema.maximum
+            Maybe.map LT schema.maximum
 
         Just (BoolBoundary False) ->
-            schema.maximum
+            Maybe.map LE schema.maximum
 
         Just (NumberBoundary value) ->
-            Just (value - 1)
+            Just (LT value)
 
         Nothing ->
-            schema.maximum
-
-
-
--- enumInt : List Json.Encode.Value -> Int -> Validation ErrorValue Int
--- enumInt =
---     enum Json.Encode.int
--- enumFloat : List Json.Encode.Value -> Float -> Validation ErrorValue Float
--- enumFloat =
---     enum Json.Encode.float
--- enumString : List Json.Encode.Value -> String -> Validation ErrorValue String
--- enumString =
---     enum Json.Encode.string
--- enum :
---     (a -> Json.Encode.Value)
---     -> List Json.Encode.Value
---     -> a
---     -> Validation ErrorValue a
--- enum encode constValues value =
---     if List.member (encode value) constValues then
---         succeed value
---     else
---         fail (Form.Error.error NotIncludedIn)
--- customFormat : Formats -> String -> String -> Validation ErrorValue String
--- customFormat formats formatId value =
---     case formatId of
---         "date-time" ->
---             format Json.Schema.Form.Regex.dateTime value
---         "date" ->
---             format Json.Schema.Form.Regex.date value
---         "time" ->
---             format Json.Schema.Form.Regex.time value
---         "email" ->
---             format Json.Schema.Form.Regex.email value
---         "hostname" ->
---             format Json.Schema.Form.Regex.hostname value
---         "ipv4" ->
---             format Json.Schema.Form.Regex.ipv4 value
---         "ipv6" ->
---             format Json.Schema.Form.Regex.ipv6 value
---         format ->
---             formats
---                 |> Dict.get format
---                 |> Maybe.map
---                     (.validation
---                         >> (\v ->
---                                 v value
---                                     |> withCustomError
---                                         (InvalidCustomFormat format)
---                            )
---                     )
---                 |> Maybe.withDefault (succeed value)
--- uniqueItems : Bool -> List Value -> Validation ErrorValue (List Value)
--- uniqueItems unique value =
---     if unique then
---         let
---             items : List String
---             items =
---                 List.map Encode.encode value
---                     |> List.map (Json.Encode.encode 0)
---         in
---         if Set.size (Set.fromList items) == List.length value then
---             succeed value
---         else
---             fail (customError InvalidSet)
---     else
---         succeed value
--- minItems : Int -> List a -> Validation ErrorValue (List a)
--- minItems count list =
---     if List.length list >= count then
---         succeed list
---     else
---         fail (customError (ShorterListThan count))
--- maxItems : Int -> List a -> Validation ErrorValue (List a)
--- maxItems count list =
---     if List.length list <= count then
---         succeed list
---     else
---         fail (customError (LongerListThan count))
--- tuple : List (Validation ErrorValue a) -> Validation ErrorValue (List a)
--- tuple validations =
---     let
---         item : Int -> Validation e a -> Form.Field.Field -> Result (Form.Error.Error e) a
---         item idx =
---             field ("tuple" ++ String.fromInt idx)
---     in
---     List.indexedMap item validations
---         |> sequence
--- switch : Formats -> List Schema -> Validation CustomErrorValue Value
--- switch formats schemata =
---     let
---         validateValue : Schema -> Form.Field.Field -> Result (Form.Error.Error ErrorValue) Value
---         validateValue schema =
---             case schema of
---                 BooleanSchema _ ->
---                     field "value" (validation formats schema)
---                 ObjectSchema objectSchema ->
---                     case objectSchema.const of
---                         Just const ->
---                             succeed (constAsValue const)
---                         Nothing ->
---                             field "value" (validation formats schema)
---     in
---     field "switch" string
---         |> andThen
---             (\str ->
---                 schemata
---                     |> List.indexedMap
---                         (\idx schema ->
---                             if str == ("option" ++ String.fromInt idx) then
---                                 Just (validateValue schema)
---                             else
---                                 Nothing
---                         )
---                     |> Maybe.values
---                     |> List.head
---                     |> Maybe.withDefault (fail (customError Invalid))
---             )
--- constAsValue : Value -> Value
--- constAsValue const =
---     let
---         decoder : Decoder Value
---         decoder =
---             Json.Decode.oneOf
---                 [ Json.Decode.string |> Json.Decode.map StringValue
---                 , Json.Decode.int |> Json.Decode.map IntValue
---                 , Json.Decode.float |> Json.Decode.map FloatValue
---                 , Json.Decode.bool |> Json.Decode.map BoolValue
---                 , Json.Decode.null NullValue
---                 ]
---     in
---     const
---         |> Json.Decode.decodeValue decoder
---         |> Result.withDefault (JsonValue const)
--- andMaybe :
---     (a -> b -> Validation ErrorValue b)
---     -> Maybe a
---     -> (Validation ErrorValue b -> Validation ErrorValue b)
--- andMaybe func constraint =
---     case constraint of
---         Just constraintValue ->
---             andThen (\value -> func constraintValue value)
---         Nothing ->
---             andThen (\value -> succeed value)
+            Maybe.map LE schema.maximum
 
 
 isType : List SingleType -> Schema -> Bool
@@ -460,9 +254,3 @@ isType types schema_ =
                     False
         )
         types
-
-
-
--- lazy : (() -> Validation e o) -> Validation e o
--- lazy thunk =
---     andThen thunk (succeed ())
