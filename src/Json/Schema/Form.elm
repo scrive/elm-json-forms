@@ -124,7 +124,13 @@ submit =
 getOutput : State -> Maybe Value
 getOutput state =
     let
-        form = case state.form of
-            Form f -> f
+        form =
+            case state.form of
+                Form f ->
+                    f
     in
-        if form.errors == [] then Just form.value else Nothing
+    if form.errors == [] then
+        Just form.value
+
+    else
+        Nothing

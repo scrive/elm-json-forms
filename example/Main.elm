@@ -4,11 +4,11 @@ import Browser
 import Dict
 import Form exposing (InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
-import Form.Field  as Field exposing (FieldValue)
+import Form.Field as Field exposing (FieldValue)
 import Form.Input exposing (Input)
 import Form.Validate
 import Html exposing (..)
-import Html.Attributes as Attrs exposing (class, style, disabled)
+import Html.Attributes as Attrs exposing (class, disabled, style)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode as Encode exposing (bool, float, int, list, string)
 import Json.Schema
@@ -51,26 +51,32 @@ update msg state =
 view : State -> Html Msg
 view state =
     let
-        anyErrors = not <| List.isEmpty <| Form.getErrors state.form
+        anyErrors =
+            not <| List.isEmpty <| Form.getErrors state.form
     in
-        form [ onSubmit Json.Schema.Form.submit ]
-            [ Json.Schema.Form.view state
-            , button
-                [ class "rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                , disabled anyErrors
-                , if anyErrors then class "opacity-50" else class "hover:bg-blue-500"
-                ] [ text "Submit" ]
-            , case Json.Schema.Form.getOutput state of
-                Just output ->
-                    let
-                        json =
-                            Encode.encode 4 output
-                    in
-                    pre [] [ text json ]
+    form [ onSubmit Json.Schema.Form.submit ]
+        [ Json.Schema.Form.view state
+        , button
+            [ class "rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            , disabled anyErrors
+            , if anyErrors then
+                class "opacity-50"
 
-                Nothing ->
-                    text ""
+              else
+                class "hover:bg-blue-500"
             ]
+            [ text "Submit" ]
+        , case Json.Schema.Form.getOutput state of
+            Just output ->
+                let
+                    json =
+                        Encode.encode 4 output
+                in
+                pre [] [ text json ]
+
+            Nothing ->
+                text ""
+        ]
 
 
 errorString : Errors
@@ -155,7 +161,8 @@ errorString path error =
         CustomError (LongerListThan n) ->
             "You can not add more than " ++ String.fromInt n ++ " items."
 
-        Unimplemented s -> "Unimplemented: " ++ s
+        Unimplemented s ->
+            "Unimplemented: " ++ s
 
         CustomError (InvalidCustomFormat format) ->
             case format of
@@ -235,7 +242,8 @@ formats =
 
 
 schema_json : Result String Json.Schema.Definitions.Schema
-schema_json = Json.Schema.fromString """
+schema_json =
+    Json.Schema.fromString """
 {
   "type": "object",
   "required": [
@@ -311,6 +319,7 @@ schema_json = Json.Schema.fromString """
     """
 
 
+
 -- schema_json : Result String Json.Schema.Definitions.Schema
 -- schema_json = Json.Schema.fromString """
 -- {
@@ -335,10 +344,13 @@ schema_json = Json.Schema.fromString """
 -- }
 --     """
 
+
 ui_schema_json : Result String UiSchema.UiSchema
-ui_schema_json = UiSchema.fromString """
+ui_schema_json =
+    UiSchema.fromString """
 {}
 """
+
 
 schema : Result String Json.Schema.Definitions.Schema
 schema =

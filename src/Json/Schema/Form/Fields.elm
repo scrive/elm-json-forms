@@ -312,7 +312,7 @@ select options path schema f fieldType =
     let
         values : List String
         values =
-            Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "") |> List.append [""]
+            Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "") |> List.append [ "" ]
 
         items : List ( String, String )
         items =
@@ -350,6 +350,7 @@ option attr schema =
             ( attr schema_ |> Maybe.withDefault ""
             , Just schema_
             )
+
 
 field : Options -> SubSchema -> F.FieldState CustomErrorValue -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =

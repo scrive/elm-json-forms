@@ -1,11 +1,24 @@
 module Form.Validate exposing
-    ( Validation, map, succeed, andThen, andMap, customError, defaultValue, mapError, withCustomError, sequence
-    , map2, map3, map4, map5, map6, map7, map8
-    , float, bool, maybe
-    , minLength, maxLength, nonEmpty, format
-    , fail, customValidation, oneOf
-    , mapErrorPointers, validateAll
-    , unless, whenJust
+    ( Validation
+    , andMap
+    , bool
+    , customError
+    , fail
+    , float
+    , format
+    , map
+    , mapError
+    , mapErrorPointers
+    , maxLength
+    , maybe
+    , minLength
+    , nonEmpty
+    , oneOf
+    , succeed
+    , unless
+    , validateAll
+    , whenJust
+    , withCustomError
     )
 
 import Dict exposing (Dict)
@@ -42,11 +55,6 @@ map =
     Result.map
 
 
-andThen : (a -> Validation e b) -> Validation e a -> Validation e b
-andThen =
-    Result.andThen
-
-
 andMap : Validation e a -> Validation e (a -> b) -> Validation e b
 andMap aValidation partialValidation =
     case ( partialValidation, aValidation ) of
@@ -57,22 +65,11 @@ andMap aValidation partialValidation =
             Err (List.append (errList partialResult) (errList aResult))
 
 
-{-| Rescue a failed validation with the supplied value.
--}
-defaultValue : a -> Validation e a -> Validation e a
-defaultValue a =
-    Ok << Result.withDefault a
-
-
-{-| Call Result.mapError on validation result.
--}
 mapError : (Error e1 -> Error e2) -> Validation e1 a -> Validation e2 a
 mapError =
     Result.mapError
 
 
-{-| Call Result.mapError on validation result.
--}
 mapErrorPointers : (Pointer -> Pointer) -> Validation e a -> Validation e a
 mapErrorPointers f =
     mapError (\l -> List.map (\( p, e ) -> ( f p, e )) l)
@@ -83,76 +80,11 @@ withCustomError e =
     mapError (\_ -> customError e)
 
 
-{-| Helper to create a CustomError.
--}
 customError : e -> Error e
 customError =
     Error.error << Error.CustomError
 
 
-
-{-| Validation a form with two fields.
--}
-map2 : (a -> b -> m) -> Validation e a -> Validation e b -> Validation e m
-map2 func v1 v2 =
-    map func v1
-        |> andMap v2
-
-
-
--- apply (form1 func v1) v2
-
-
-{-| Validation a form with three fields.
--}
-map3 : (a -> b -> c -> m) -> Validation e a -> Validation e b -> Validation e c -> Validation e m
-map3 func v1 v2 v3 =
-    map2 func v1 v2
-        |> andMap v3
-
-
-{-| Validation a form with four fields.
--}
-map4 : (a -> b -> c -> d -> m) -> Validation e a -> Validation e b -> Validation e c -> Validation e d -> Validation e m
-map4 func v1 v2 v3 v4 =
-    map3 func v1 v2 v3
-        |> andMap v4
-
-
-{-| Validation a form with five fields.
--}
-map5 : (a -> b -> c -> d -> e -> m) -> Validation err a -> Validation err b -> Validation err c -> Validation err d -> Validation err e -> Validation err m
-map5 func v1 v2 v3 v4 v5 =
-    map4 func v1 v2 v3 v4
-        |> andMap v5
-
-
-{-| Validation a form with six fields.
--}
-map6 : (a -> b -> c -> d -> e -> f -> m) -> Validation err a -> Validation err b -> Validation err c -> Validation err d -> Validation err e -> Validation err f -> Validation err m
-map6 func v1 v2 v3 v4 v5 v6 =
-    map5 func v1 v2 v3 v4 v5
-        |> andMap v6
-
-
-{-| Validation a form with seven fields.
--}
-map7 : (a -> b -> c -> d -> e -> f -> g -> m) -> Validation err a -> Validation err b -> Validation err c -> Validation err d -> Validation err e -> Validation err f -> Validation err g -> Validation err m
-map7 func v1 v2 v3 v4 v5 v6 v7 =
-    map6 func v1 v2 v3 v4 v5 v6
-        |> andMap v7
-
-
-{-| Validation a form with eight fields.
--}
-map8 : (a -> b -> c -> d -> e -> f -> g -> h -> m) -> Validation err a -> Validation err b -> Validation err c -> Validation err d -> Validation err e -> Validation err f -> Validation err g -> Validation err h -> Validation err m
-map8 func v1 v2 v3 v4 v5 v6 v7 v8 =
-    map7 func v1 v2 v3 v4 v5 v6 v7
-        |> andMap v8
-
-
-{-| Private
--}
 errList : Validation e a -> Error e
 errList res =
     case res of
@@ -247,13 +179,6 @@ succeed a =
     Ok a
 
 
-{-| Custom validation for your special cases.
--}
-customValidation : (a -> Validation e b) -> Validation e a -> Validation e b
-customValidation =
-    Result.andThen
-
-
 {-| First successful validation wins, from left to right.
 -}
 oneOf : List (Validation e a) -> Validation e a
@@ -270,14 +195,6 @@ oneOf validations =
     List.foldl walkResults (Err (Error.error Error.Empty)) validations
 
 
-{-| Combine a list of validations into a validation producing a list of all
-results.
--}
-sequence : List (Validation e a) -> Validation e (List a)
-sequence validations =
-    List.foldr (map2 (::)) (succeed []) validations
-
-
 validateAll : List (a -> Validation e b) -> a -> Validation e a
 validateAll l a =
     let
@@ -292,10 +209,19 @@ validateAll l a =
 
 
 unless : Bool -> ErrorValue e -> a -> Validation e a
-unless p e a = if p then Ok a else Err [([], e)]
+unless p e a =
+    if p then
+        Ok a
+
+    else
+        Err [ ( [], e ) ]
 
 
 whenJust : Maybe b -> (b -> a -> Validation e a) -> a -> Validation e a
-whenJust m f = case m of
-    Nothing -> Ok
-    Just b -> f b
+whenJust m f =
+    case m of
+        Nothing ->
+            Ok
+
+        Just b ->
+            f b

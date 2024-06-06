@@ -1,7 +1,6 @@
 module Form.Field exposing
     ( FieldValue(..)
-    , valueAsBool, valueAsString
-    , asValue
+    , asValue, valueAsBool, valueAsString
     )
 
 {-| Read and write field values.
@@ -18,8 +17,8 @@ module Form.Field exposing
 
 -}
 
-import String
 import Json.Encode as Encode exposing (Value)
+import String
 
 
 {-| Form field. Can either be a group of named fields, or a final field.
@@ -54,23 +53,27 @@ valueAsString fv =
         Bool False ->
             "False"
 
-        Empty -> ""
+        Empty ->
+            ""
+
 
 asValue : FieldValue -> Maybe Value
-asValue fv = case fv of
-    String s ->
-        Just <| Encode.string s
+asValue fv =
+    case fv of
+        String s ->
+            Just <| Encode.string s
 
-    Int i ->
-       Just <| Encode.int i
+        Int i ->
+            Just <| Encode.int i
 
-    Number n ->
-        Just <| Encode.float n
+        Number n ->
+            Just <| Encode.float n
 
-    Bool b ->
-        Just <| Encode.bool b
+        Bool b ->
+            Just <| Encode.bool b
 
-    Empty -> Nothing
+        Empty ->
+            Nothing
 
 
 valueAsBool : FieldValue -> Maybe Bool

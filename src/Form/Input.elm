@@ -45,21 +45,31 @@ baseInput t toFieldValue inputType state attrs =
 
 
 fromIntInput : String -> FieldValue
-fromIntInput s = if String.isEmpty s
-    then Field.Empty
-    else Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
+fromIntInput s =
+    if String.isEmpty s then
+        Field.Empty
+
+    else
+        Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
 
 
 fromFloatInput : String -> FieldValue
-fromFloatInput s = if String.isEmpty s
-    then Field.Empty
-    else Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
+fromFloatInput s =
+    if String.isEmpty s then
+        Field.Empty
+
+    else
+        Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
 
 
 fromStringInput : String -> FieldValue
-fromStringInput s = if String.isEmpty s
-    then Field.Empty
-    else Field.String s
+fromStringInput s =
+    if String.isEmpty s then
+        Field.Empty
+
+    else
+        Field.String s
+
 
 {-| Text input.
 -}

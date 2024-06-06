@@ -134,19 +134,37 @@ getValue (Form form) =
 
 
 getValue_ : Pointer -> Value -> Maybe FieldValue
-getValue_ pointer value = case pointer of
-    "properties" :: key :: ps -> case Decode.decodeValue (Decode.dict Decode.value) value of
-        Ok dict -> Maybe.andThen (getValue_ ps) <| Dict.get key dict
-        Err _ -> Nothing
-    [] -> case Decode.decodeValue (Decode.oneOf
-        [ Decode.map Field.Int Decode.int
-        , Decode.map Field.Number Decode.float
-        , Decode.map Field.String Decode.string
-        , Decode.map Field.Bool Decode.bool
-        ]) value of
-        Ok fv -> Just fv
-        Err _ -> Nothing
-    _ -> Nothing
+getValue_ pointer value =
+    case pointer of
+        "properties" :: key :: ps ->
+            case Decode.decodeValue (Decode.dict Decode.value) value of
+                Ok dict ->
+                    Maybe.andThen (getValue_ ps) <| Dict.get key dict
+
+                Err _ ->
+                    Nothing
+
+        [] ->
+            case
+                Decode.decodeValue
+                    (Decode.oneOf
+                        [ Decode.map Field.Int Decode.int
+                        , Decode.map Field.Number Decode.float
+                        , Decode.map Field.String Decode.string
+                        , Decode.map Field.Bool Decode.bool
+                        ]
+                    )
+                    value
+            of
+                Ok fv ->
+                    Just fv
+
+                Err _ ->
+                    Nothing
+
+        _ ->
+            Nothing
+
 
 
 -- getField : String -> Form e -> Maybe (FieldState e)
@@ -158,6 +176,7 @@ getValue_ pointer value = case pointer of
 --             , hasFocus = getFocus form == Just path
 --             }
 --     )
+
 
 getField : String -> Form e -> FieldState e
 getField path form =
@@ -223,7 +242,6 @@ update validation msg (Form model) =
 
         Blur name ->
             let
-
                 newModel =
                     { model | focus = Nothing }
             in
@@ -231,7 +249,6 @@ update validation msg (Form model) =
 
         Input name inputType fieldValue ->
             let
-
                 mPointer =
                     Result.toMaybe <| Pointer.fromString name
 
@@ -247,8 +264,6 @@ update validation msg (Form model) =
                     { model
                         | value = Debug.log "Update input value" newValue
                     }
-
-
             in
             Form (updateValidate validation newModel)
 
@@ -289,7 +304,6 @@ update validation msg (Form model) =
         --     in
         --     F (updateValidate validation newModel)
         Submit ->
-
             Form (updateValidate validation model)
 
         Validate ->
@@ -311,12 +325,17 @@ updateValue pointer new value =
         "properties" :: key :: [] ->
             case Decode.decodeValue (Decode.dict Decode.value) value of
                 Ok o ->
-                    Encode.dict identity identity <| case Field.asValue new of
-                        Nothing -> Dict.remove key o
-                        Just v -> Dict.insert key v o
+                    Encode.dict identity identity <|
+                        case Field.asValue new of
+                            Nothing ->
+                                Dict.remove key o
+
+                            Just v ->
+                                Dict.insert key v o
 
                 Err e ->
                     value
+
         "properties" :: key :: ps ->
             case Decode.decodeValue (Decode.dict Decode.value) value of
                 Ok o ->
@@ -325,6 +344,7 @@ updateValue pointer new value =
 
                 Err e ->
                     value
+
         [] ->
             Maybe.withDefault Encode.null <| Field.asValue new
 
