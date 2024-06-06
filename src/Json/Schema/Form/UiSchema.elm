@@ -3,7 +3,6 @@ module Json.Schema.Form.UiSchema exposing
     , UiSchema(..)
     , decodeStringLike
     , defaultValue
-    , defaultValues
     , fromString
     , generateUiSchema
     , pointToSchema
@@ -394,44 +393,6 @@ decodeStringLike =
         , Decode.float |> Decode.map String.fromFloat
         ]
 
-
-
--- TODO: handle non-leaf defaults
-
-
-defaultValues : Schema -> UiSchema -> Dict String FieldValue
-defaultValues schema uiSchema =
-    let
-        getDefault : Decode.Value -> Maybe FieldValue
-        getDefault =
-            Result.toMaybe
-                << Decode.decodeValue
-                    (Decode.oneOf
-                        [ Decode.map String decodeStringLike
-                        , Decode.map Bool Decode.bool
-                        ]
-                    )
-
-        pointerDefault : Pointer -> Maybe FieldValue
-        pointerDefault pointer =
-            case pointToSchema schema pointer of
-                Nothing ->
-                    Nothing
-
-                Just (Schema.BooleanSchema _) ->
-                    Nothing
-
-                Just (Schema.ObjectSchema os) ->
-                    Maybe.andThen getDefault os.default
-
-        pointerDefaultWithLabel : Pointer -> Maybe ( String, FieldValue )
-        pointerDefaultWithLabel pointer =
-            Maybe.map (\v -> ( Pointer.toString pointer, v )) <| pointerDefault pointer
-    in
-    Dict.fromList <|
-        List.filterMap
-            pointerDefaultWithLabel
-            (allPointers uiSchema)
 
 
 defaultValue : Schema -> Value

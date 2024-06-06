@@ -24,8 +24,8 @@ type alias Model =
     , errors : Error
     }
 
-initial : Dict String FieldValue -> Value -> (Value -> Validation output) -> Form
-initial initialValues initialValue validation =
+initial : Value -> (Value -> Validation output) -> Form
+initial initialValue validation =
     let
         model =
             { value = initialValue

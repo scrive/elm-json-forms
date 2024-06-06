@@ -11,7 +11,7 @@ import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Fields
 import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, defaultValues, generateUiSchema)
+import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
 import Json.Schema.Form.Validation exposing (validation)
 
 
@@ -33,12 +33,9 @@ init options schema mUiSchema =
         uiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
 
-        value =
-            defaultValue schema
     in
     State options schema uiSchema <|
-        Debug.log "initial form" <|
-            Form.initial (defaultValues schema uiSchema) value (validation schema)
+            Form.initial (defaultValue schema) (validation schema)
 
 update : Msg -> State -> State
 update msg state =
