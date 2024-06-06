@@ -1,10 +1,15 @@
 module Form exposing
-    ( Msg(..), InputType(..), Form(..), FieldState
-    , initial, update
-    , getFocus, getErrors
-    , getField, getValue
+    ( FieldState
+    , Form(..)
+    , InputType(..)
+    , Msg(..)
+    , getErrors
+    , getField
+    , getFocus
+    , getValue
+    , initial
+    , update
     )
-
 
 import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue)
@@ -16,13 +21,17 @@ import Json.Encode as Encode
 import Json.Schema.Definitions as Schema exposing (Schema)
 import Set exposing (Set)
 
-type Form = Form Model
+
+type Form
+    = Form Model
+
 
 type alias Model =
     { value : Value
     , focus : Maybe String
     , errors : Error
     }
+
 
 initial : Value -> (Value -> Validation output) -> Form
 initial initialValue validation =
@@ -34,6 +43,7 @@ initial initialValue validation =
             }
     in
     Form (updateValidate validation model)
+
 
 type alias FieldState =
     { path : String
@@ -88,6 +98,7 @@ getField path form =
     , error = getErrorAt path form
     , hasFocus = getFocus form == Just path
     }
+
 
 type Msg
     = NoOp
@@ -217,7 +228,7 @@ getErrors (Form model) =
     List.map (\( p, e ) -> ( Pointer.toString p, e )) model.errors
 
 
-getErrorAt : String -> Form -> Maybe (ErrorValue)
+getErrorAt : String -> Form -> Maybe ErrorValue
 getErrorAt path (Form model) =
     List.head <|
         case Pointer.fromString path of

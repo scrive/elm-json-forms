@@ -23,6 +23,7 @@ type UiSchema
     | UiVerticalLayout VerticalLayout
     | UiGroup Group
     | UiCategorization Categorization
+    | UiLabel Label
 
 
 type alias Control =
@@ -49,6 +50,12 @@ type alias Group =
     { label : String
     , elements : List UiSchema
     , rule : Maybe Rule
+    }
+
+
+type alias Label =
+    -- TODO: determine remaining props here
+    { text : String
     }
 
 
@@ -121,10 +128,10 @@ fromString =
 
 decodeUiSchema : Decoder UiSchema
 decodeUiSchema =
-    Decode.string
+    Decode.field "type" Decode.string
         |> Decode.andThen
-            (\str ->
-                case str of
+            (\ty ->
+                case ty of
                     "Control" ->
                         Decode.map UiControl decodeControl
 
@@ -140,6 +147,9 @@ decodeUiSchema =
                     "Categorization" ->
                         Decode.map UiCategorization decodeCategorization
 
+                    "Label" ->
+                        Decode.map UiLabel decodeLabel
+
                     _ ->
                         Decode.fail "Unable to decode UiSchema"
             )
@@ -148,47 +158,53 @@ decodeUiSchema =
 decodeControl : Decoder Control
 decodeControl =
     Decode.map4 Control
-        Pointer.decode
-        (Decode.maybe decodeControlLabel)
-        (Decode.maybe decodeOptions)
-        (Decode.maybe decodeRule)
+        (Decode.field "scope" Pointer.decode)
+        (Decode.maybe <| Decode.field "label" decodeControlLabel)
+        (Decode.maybe <| Decode.field "options" decodeOptions)
+        (Decode.maybe <| Decode.field "rule" decodeRule)
 
 
 decodeHorizontalLayout : Decoder HorizontalLayout
 decodeHorizontalLayout =
     Decode.map2 HorizontalLayout
-        (Decode.list decodeUiSchema)
-        (Decode.maybe decodeRule)
+        (Decode.field "elements" <| Decode.list decodeUiSchema)
+        (Decode.maybe <| Decode.field "rule" decodeRule)
 
 
 decodeVerticalLayout : Decoder VerticalLayout
 decodeVerticalLayout =
     Decode.map2 VerticalLayout
-        (Decode.list decodeUiSchema)
-        (Decode.maybe decodeRule)
+        (Decode.field "elements" <| Decode.list decodeUiSchema)
+        (Decode.maybe <| Decode.field "rule" decodeRule)
 
 
 decodeGroup : Decoder Group
 decodeGroup =
     Decode.map3 Group
-        Decode.string
-        (Decode.list decodeUiSchema)
-        (Decode.maybe decodeRule)
+        (Decode.field "label" Decode.string)
+        (Decode.field "elements" <| Decode.list decodeUiSchema)
+        (Decode.maybe <| Decode.field "rule" decodeRule)
+
+
+decodeLabel : Decoder Label
+decodeLabel =
+    Decode.map Label
+        (Decode.field "text" Decode.string)
 
 
 decodeCategorization : Decoder Categorization
 decodeCategorization =
     Decode.map2 Categorization
-        (Decode.list decodeCategory)
-        (Decode.maybe decodeRule)
+        (Decode.field "elements" <| Decode.list decodeCategory)
+        (Decode.maybe <| Decode.field "rule" decodeRule)
 
 
 decodeCategory : Decoder Category
 decodeCategory =
     Decode.map3 Category
-        Decode.string
-        (Decode.list decodeUiSchema)
-        (Decode.maybe decodeRule)
+        (Decode.field "label" <| Decode.string)
+        (Decode.field "elements" <| Decode.list decodeUiSchema)
+        (Decode.maybe <| Decode.field "rule" decodeRule)
 
 
 decodeControlLabel : Decoder ControlLabel
@@ -202,8 +218,8 @@ decodeControlLabel =
 decodeRule : Decoder Rule
 decodeRule =
     Decode.map2 Rule
-        decodeEffect
-        decodeCondition
+        (Decode.field "effect" decodeEffect)
+        (Decode.field "condition" decodeCondition)
 
 
 decodeEffect : Decoder Effect
@@ -232,18 +248,18 @@ decodeEffect =
 decodeCondition : Decoder Condition
 decodeCondition =
     Decode.map2 Condition
-        Pointer.decode
-        Schema.decoder
+        (Decode.field "scope" Pointer.decode)
+        (Decode.field "schema" Schema.decoder)
 
 
 decodeOptions : Decoder Options
 decodeOptions =
     Decode.map5 Options
-        (Decode.maybe decodeDetail)
-        (Decode.maybe Decode.bool)
-        (Decode.maybe decodeElementLabelProp)
-        (Decode.maybe decodeFormat)
-        (Decode.maybe Decode.bool)
+        (Decode.maybe <| Decode.field "detail" decodeDetail)
+        (Decode.maybe <| Decode.field "showSortButtons" Decode.bool)
+        (Decode.maybe <| Decode.field "elementLabelProp" decodeElementLabelProp)
+        (Decode.maybe <| Decode.field "format" decodeFormat)
+        (Decode.maybe <| Decode.field "readonly" Decode.bool)
 
 
 decodeFormat : Decoder Format
@@ -312,29 +328,30 @@ generateUiSchema schema =
 
 generateControlPointers : Schema -> Pointer -> List Pointer
 generateControlPointers s p =
-    case s of
-        Schema.BooleanSchema _ ->
-            []
+    Debug.log "genUiSchema pointers" <|
+        case s of
+            Schema.BooleanSchema _ ->
+                []
 
-        Schema.ObjectSchema o ->
-            case o.type_ of
-                Schema.SingleType t ->
-                    case t of
-                        Schema.ObjectType ->
-                            List.concatMap
-                                (\( name, schema ) -> generateControlPointers schema (List.append [ "properties", name ] p))
-                            <|
-                                Maybe.withDefault [] <|
-                                    Maybe.map unSchemata o.properties
+            Schema.ObjectSchema o ->
+                case o.type_ of
+                    Schema.SingleType t ->
+                        case t of
+                            Schema.ObjectType ->
+                                List.concatMap
+                                    (\( name, schema ) -> List.map (List.append [ "properties", name ]) <| generateControlPointers schema p)
+                                <|
+                                    Maybe.withDefault [] <|
+                                        Maybe.map unSchemata o.properties
 
-                        Schema.NullType ->
-                            []
+                            Schema.NullType ->
+                                []
 
-                        _ ->
-                            [ p ]
+                            _ ->
+                                [ p ]
 
-                _ ->
-                    []
+                    _ ->
+                        []
 
 
 unSchemata : Schema.Schemata -> List ( String, Schema )
@@ -384,6 +401,9 @@ allPointers uiSchema =
             List.concatMap allPointers <|
                 List.concatMap .elements x.elements
 
+        UiLabel x ->
+            []
+
 
 decodeStringLike : Decode.Decoder String
 decodeStringLike =
@@ -392,7 +412,6 @@ decodeStringLike =
         , Decode.int |> Decode.map String.fromInt
         , Decode.float |> Decode.map String.fromFloat
         ]
-
 
 
 defaultValue : Schema -> Value

@@ -32,7 +32,7 @@ type alias Theme =
     , field : { withError : Bool, withValue : Bool } -> Attribute Never
     , fieldLabel : Attribute Never
     , fieldInput : Attribute Never
-    , fieldInputMeta : Attribute Never
+    , fieldInputDescription : Attribute Never
     , group : { withError : Bool, withValue : Bool } -> Attribute Never
     , fieldTitle : Attribute Never
     , fieldDescription : Attribute Never
@@ -106,7 +106,7 @@ default =
                 ]
     , fieldLabel = Attrs.class "d-block"
     , fieldInput = Attrs.class "field-input"
-    , fieldInputMeta = Attrs.class "field-meta"
+    , fieldInputDescription = Attrs.class "field-meta"
     , fieldTitle = Attrs.class "label-text"
     , fieldDescription = Attrs.class "form-text text-muted"
     , group =
@@ -163,7 +163,7 @@ tailwind =
         , select =
             \{ withError } ->
                 Attrs.classList
-                    [ ( "block w-full mt-2 rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6", True )
+                    [ ( "block w-full mt-2 rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", True )
                     , ( "border-0", not withError )
                     , ( isInvalid, withError )
                     ]
@@ -191,7 +191,7 @@ tailwind =
                     ]
         , fieldLabel = Attrs.class "block"
         , fieldInput = Attrs.class "field-input"
-        , fieldInputMeta = Attrs.class "field-meta"
+        , fieldInputDescription = Attrs.class "field-meta"
         , fieldTitle = Attrs.class "block text-sm font-medium leading-6 text-gray-900"
         , fieldDescription = Attrs.class "mt-2 text-sm leading-6 text-gray-600"
         , group =

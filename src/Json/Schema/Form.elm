@@ -1,8 +1,11 @@
 module Json.Schema.Form exposing
-    ( State, Msg
-    , init, update
-    , view, submit
+    ( Msg
+    , State
     , getOutput
+    , init
+    , submit
+    , update
+    , view
     )
 
 import Form exposing (Form(..), Msg)
@@ -32,10 +35,10 @@ init options schema mUiSchema =
     let
         uiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
-
     in
     State options schema uiSchema <|
-            Form.initial (defaultValue schema) (validation schema)
+        Form.initial (defaultValue schema) (validation schema)
+
 
 update : Msg -> State -> State
 update msg state =
@@ -58,6 +61,7 @@ view state =
 submit : Msg
 submit =
     Form.Submit
+
 
 getOutput : State -> Maybe Value
 getOutput state =

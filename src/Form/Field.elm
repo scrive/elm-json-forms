@@ -1,6 +1,8 @@
 module Form.Field exposing
     ( FieldValue(..)
-    , asValue, valueAsBool, valueAsString
+    , asValue
+    , valueAsBool
+    , valueAsString
     )
 
 import Json.Encode as Encode exposing (Value)

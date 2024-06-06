@@ -2,9 +2,9 @@ module Json.Schema.Form.Fields exposing (TextFieldType(..), schemaView, uiSchema
 
 import Dict exposing (Dict)
 import Form as F
+import Form.Error exposing (ErrorValue)
 import Form.Field as Field exposing (FieldValue)
 import Form.Input as Input
-import Form.Error exposing (ErrorValue)
 import Form.Pointer as Pointer exposing (Pointer)
 import Form.Validate
 import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
@@ -45,7 +45,8 @@ import Maybe.Extra as Maybe
 import String.Case
 
 
-type alias Form = F.Form
+type alias Form =
+    F.Form
 
 
 uiSchemaView : Options -> List String -> UiSchema -> Schema -> Form -> Html F.Msg
@@ -55,21 +56,40 @@ uiSchemaView options uiPath uiSchema schema form =
             controlView options uiPath schema c form
 
         UI.UiHorizontalLayout hl ->
-            div [] [ text "unimplemented horizontal layout" ]
+            div
+                -- TODO: simplify options.theme.group
+                [ Attrs.map never <| options.theme.formRow
+                ]
+            <|
+                List.map
+                    (\us ->
+                        div
+                            [ Attrs.map never <| options.theme.formRowItem ]
+                            [ uiSchemaView options uiPath us schema form ]
+                    )
+                    hl.elements
 
         UI.UiVerticalLayout vl ->
             div
                 -- TODO: simplify options.theme.group
-                [ Attrs.map never <| options.theme.group { withError = False, withValue = False }
-                ]
+                []
             <|
-                List.map (\us -> uiSchemaView options uiPath us schema form) vl.elements
+                List.map
+                    (\us ->
+                        div
+                            [ Attrs.map never <| options.theme.formRow ]
+                            [ div [ Attrs.map never <| options.theme.formRowItem ] [ uiSchemaView options uiPath us schema form ] ]
+                    )
+                    vl.elements
 
         UI.UiGroup g ->
             div [] [ text "unimplemented group" ]
 
         UI.UiCategorization c ->
             div [] [ text "unimplemented categorization" ]
+
+        UI.UiLabel l ->
+            div [] [ text l.text ]
 
 
 controlView : Options -> List String -> Schema -> UI.Control -> Form -> Html F.Msg
@@ -109,6 +129,10 @@ controlView options uiPath wholeSchema control form =
                             else
                                 txt options control.scope schema fieldState StringField
 
+                        SingleType BooleanType ->
+                            checkbox options control.scope schema fieldState
+
+                        -- Html.text "checkbox: unimplemented"
                         _ ->
                             Html.nothing
     in
@@ -354,13 +378,13 @@ option attr schema =
 field : Options -> SubSchema -> F.FieldState -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
-        meta : List (Html F.Msg)
-        meta =
-            Maybe.values [ fieldDescription options.theme schema ]
+        description : Html F.Msg
+        description =
+            Maybe.withDefault Html.nothing <| fieldDescription options.theme schema
 
-        feedback : List (Html F.Msg)
-        feedback =
-            Maybe.values [ error options.theme options.errors f ]
+        errorMessage : Html F.Msg
+        errorMessage =
+            Maybe.withDefault Html.nothing <| error options.theme options.errors f
     in
     div
         [ Attrs.map never <|
@@ -372,13 +396,9 @@ field options schema f content =
                 }
         ]
         [ label [ for f.path, Attrs.map never options.theme.fieldLabel ]
-            [ div [ Attrs.map never options.theme.fieldInput ] (content ++ feedback)
-            , case meta of
-                [] ->
-                    text ""
-
-                html ->
-                    div [ Attrs.map never options.theme.fieldInputMeta ] html
+            [ div [ Attrs.map never options.theme.fieldInput ] content
+            , div [ Attrs.map never options.theme.fieldInputDescription ] [ description ]
+            , errorMessage
             ]
         ]
 

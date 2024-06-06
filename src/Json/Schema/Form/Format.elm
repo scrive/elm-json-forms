@@ -121,7 +121,7 @@ withLines lines format =
 
 {-| Customize the input field with your own HTML.
 -}
-withInput : Input  -> Format -> Format
+withInput : Input -> Format -> Format
 withInput input format =
     { format | input = Just input }
 

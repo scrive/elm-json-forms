@@ -38,6 +38,7 @@ type ErrorValue
     | NotIncludedIn (List Value)
     | Unimplemented String
 
+
 error : ErrorValue -> Error
 error e =
     [ ( [], e ) ]
