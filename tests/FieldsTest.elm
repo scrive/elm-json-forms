@@ -40,7 +40,7 @@ options =
     }
 
 
-form : F.Form e
+form : F.Form
 form =
     F.initial Dict.empty (Encode.object []) Form.Validate.succeed
 

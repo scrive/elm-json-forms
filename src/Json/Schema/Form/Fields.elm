@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Form as F
 import Form.Field as Field exposing (FieldValue)
 import Form.Input as Input
+import Form.Error exposing (ErrorValue)
 import Form.Pointer as Pointer exposing (Pointer)
 import Form.Validate
 import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
@@ -35,7 +36,6 @@ import Json.Schema.Definitions
         , Type(..)
         , blankSchema
         )
-import Json.Schema.Form.Error exposing (CustomErrorValue, Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Theme exposing (Theme)
@@ -45,8 +45,7 @@ import Maybe.Extra as Maybe
 import String.Case
 
 
-type alias Form =
-    F.Form CustomErrorValue
+type alias Form = F.Form
 
 
 uiSchemaView : Options -> List String -> UiSchema -> Schema -> Form -> Html F.Msg
@@ -136,7 +135,7 @@ isNumericFieldType fieldType =
     List.any ((==) fieldType) [ NumberField, IntField ]
 
 
-txt : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> TextFieldType -> Html F.Msg
+txt : Options -> Pointer -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
 txt options path schema f fieldType =
     let
         format : Format
@@ -261,7 +260,7 @@ txt options path schema f fieldType =
         ]
 
 
-checkbox : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> Html F.Msg
+checkbox : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
 checkbox options path schema f =
     let
         content : List (Html F.Msg)
@@ -307,7 +306,7 @@ checkbox options path schema f =
 -- TODO: add a None option
 
 
-select : Options -> Pointer -> SubSchema -> F.FieldState CustomErrorValue -> TextFieldType -> Html F.Msg
+select : Options -> Pointer -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
 select options path schema f fieldType =
     let
         values : List String
@@ -352,7 +351,7 @@ option attr schema =
             )
 
 
-field : Options -> SubSchema -> F.FieldState CustomErrorValue -> List (Html F.Msg) -> Html F.Msg
+field : Options -> SubSchema -> F.FieldState -> List (Html F.Msg) -> Html F.Msg
 field options schema f content =
     let
         meta : List (Html F.Msg)
@@ -398,7 +397,7 @@ fieldDescription theme schema =
         |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
 
 
-error : Theme -> Errors -> F.FieldState CustomErrorValue -> Maybe (Html F.Msg)
+error : Theme -> (String -> ErrorValue -> String) -> F.FieldState -> Maybe (Html F.Msg)
 error theme func f =
     f.error
         |> Maybe.map
@@ -475,7 +474,7 @@ alwaysPreventDefault msg =
     ( msg, True )
 
 
-conditional : String -> F.FieldState e -> List ( String, Html F.Msg ) -> Html F.Msg
+conditional : String -> F.FieldState -> List ( String, Html F.Msg ) -> Html F.Msg
 conditional className f conditions =
     let
         cond : ( String, b ) -> Maybe ( String, b )

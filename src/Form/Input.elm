@@ -24,13 +24,13 @@ import Json.Decode as Json
 {-| An input renders Html from a field state and list of additional attributes.
 All input functions using this type alias are pre-wired with event handlers.
 -}
-type alias Input e =
-    FieldState e -> List (Attribute Msg) -> Html Msg
+type alias Input =
+    FieldState -> List (Attribute Msg) -> Html Msg
 
 
 {-| Untyped input, first param is `type` attribute.
 -}
-baseInput : String -> (String -> FieldValue) -> InputType -> Input e
+baseInput : String -> (String -> FieldValue) -> InputType -> Input
 baseInput t toFieldValue inputType state attrs =
     let
         formAttrs =
@@ -73,35 +73,35 @@ fromStringInput s =
 
 {-| Text input.
 -}
-textInput : Input e
+textInput : Input
 textInput =
     baseInput "text" fromStringInput Text
 
 
 {-| Text input.
 -}
-intInput : Input e
+intInput : Input
 intInput =
     baseInput "text" fromIntInput Text
 
 
 {-| Text input.
 -}
-floatInput : Input e
+floatInput : Input
 floatInput =
     baseInput "text" fromFloatInput Text
 
 
 {-| Password input.
 -}
-passwordInput : Input e
+passwordInput : Input
 passwordInput =
     baseInput "password" fromStringInput Text
 
 
 {-| Textarea.
 -}
-textArea : Input e
+textArea : Input
 textArea state attrs =
     let
         formAttrs =
@@ -116,7 +116,7 @@ textArea state attrs =
 
 {-| Select input.
 -}
-baseSelectInput : List ( String, String ) -> (String -> FieldValue) -> Input e
+baseSelectInput : List ( String, String ) -> (String -> FieldValue) -> Input
 baseSelectInput options toFieldValue state attrs =
     let
         formAttrs =
@@ -135,28 +135,28 @@ baseSelectInput options toFieldValue state attrs =
 
 {-| Text input.
 -}
-textSelectInput : List ( String, String ) -> Input e
+textSelectInput : List ( String, String ) -> Input
 textSelectInput options =
     baseSelectInput options fromStringInput
 
 
 {-| Text input.
 -}
-intSelectInput : List ( String, String ) -> Input e
+intSelectInput : List ( String, String ) -> Input
 intSelectInput options =
     baseSelectInput options fromIntInput
 
 
 {-| Text input.
 -}
-floatSelectInput : List ( String, String ) -> Input e
+floatSelectInput : List ( String, String ) -> Input
 floatSelectInput options =
     baseSelectInput options fromFloatInput
 
 
 {-| Checkbox input.
 -}
-checkboxInput : Input e
+checkboxInput : Input
 checkboxInput state attrs =
     let
         formAttrs =
@@ -172,7 +172,7 @@ checkboxInput state attrs =
 
 {-| Radio input.
 -}
-radioInput : String -> Input e
+radioInput : String -> Input
 radioInput value state attrs =
     let
         formAttrs =

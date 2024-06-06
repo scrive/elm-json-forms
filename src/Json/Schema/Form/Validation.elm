@@ -16,7 +16,6 @@ import Json.Schema.Definitions
         , Type(..)
         , blankSchema
         )
-import Json.Schema.Form.Error exposing (CustomErrorValue(..))
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
 import Json.Schema.Form.UiSchema exposing (unSchemata)
@@ -29,7 +28,7 @@ type alias Formats =
     Dict String Format
 
 
-validation : Schema -> Value -> Validation CustomErrorValue Value
+validation : Schema -> Value -> Validation Value
 validation schema value =
     case schema of
         BooleanSchema bool ->
@@ -37,13 +36,13 @@ validation schema value =
                 Validate.succeed value
 
             else
-                Validate.fail (Validate.customError Invalid)
+                Validate.fail (Error.error <| Unimplemented "Boolean schemas are not implemented.")
 
         ObjectSchema objectSchema ->
             subSchema objectSchema value
 
 
-subSchema : SubSchema -> Value -> Validation CustomErrorValue Value
+subSchema : SubSchema -> Value -> Validation Value
 subSchema schema value =
     case schema.type_ of
         SingleType type_ ->
@@ -53,7 +52,7 @@ subSchema schema value =
             Validate.fail (Error.error <| Unimplemented "Only SingleType is implemented.")
 
 
-singleType : SubSchema -> SingleType -> Value -> Validation CustomErrorValue Value
+singleType : SubSchema -> SingleType -> Value -> Validation Value
 singleType schema type_ =
     Validate.validateAll
         [ Validate.whenJust schema.const validateConst
@@ -102,7 +101,7 @@ singleType schema type_ =
         ]
 
 
-validateString : SubSchema -> Value -> Validation e String
+validateString : SubSchema -> Value -> Validation String
 validateString schema v =
     case Decode.decodeValue Decode.string v of
         Err _ ->
@@ -118,7 +117,7 @@ validateString schema v =
                 s
 
 
-validateFormat : String -> String -> Validation e String
+validateFormat : String -> String -> Validation String
 validateFormat format v =
     case format of
         -- TODO: custom error for different formats.
@@ -147,7 +146,7 @@ validateFormat format v =
             Validate.succeed v
 
 
-validatePattern : String -> String -> Validation e String
+validatePattern : String -> String -> Validation String
 validatePattern pat s =
     case Regex.fromString pat of
         Just regex ->
@@ -157,7 +156,7 @@ validatePattern pat s =
             Err (Error.error Error.InvalidFormat)
 
 
-validateRegex : Regex.Regex -> String -> Validation e String
+validateRegex : Regex.Regex -> String -> Validation String
 validateRegex regex s =
     if Regex.contains regex s then
         Ok s
@@ -170,17 +169,17 @@ validateRegex regex s =
 -- TODO: create a more specific error
 
 
-validateMinLength : Int -> String -> Validation e String
+validateMinLength : Int -> String -> Validation String
 validateMinLength i s =
     Validate.unless (String.length s >= i) (Error.ShorterStringThan i) s
 
 
-validateMaxLength : Int -> String -> Validation e String
+validateMaxLength : Int -> String -> Validation String
 validateMaxLength i s =
     Validate.unless (String.length s <= i) (Error.LongerStringThan i) s
 
 
-validateInt : SubSchema -> Value -> Validation e Int
+validateInt : SubSchema -> Value -> Validation Int
 validateInt schema v =
     case Decode.decodeValue Decode.int v of
         Err _ ->
@@ -195,7 +194,7 @@ validateInt schema v =
                 x
 
 
-validateFloat : SubSchema -> Value -> Validation e Float
+validateFloat : SubSchema -> Value -> Validation Float
 validateFloat schema v =
     case Decode.decodeValue Decode.float v of
         Err _ ->
@@ -210,7 +209,7 @@ validateFloat schema v =
                 x
 
 
-validateBool : SubSchema -> Value -> Validation e Bool
+validateBool : SubSchema -> Value -> Validation Bool
 validateBool schema v =
     case Decode.decodeValue Decode.bool v of
         Err _ ->
@@ -220,22 +219,22 @@ validateBool schema v =
             Ok x
 
 
-validateConst : Value -> Value -> Validation e Value
+validateConst : Value -> Value -> Validation Value
 validateConst a b =
     Validate.unless (a == b) (Error.NotConst a) b
 
 
-validateEnum : List Value -> Value -> Validation e Value
+validateEnum : List Value -> Value -> Validation Value
 validateEnum l a =
     Validate.unless (List.member a l) (Error.NotIncludedIn l) a
 
 
-multipleOfInt : Int -> Int -> Validation e Int
+multipleOfInt : Int -> Int -> Validation Int
 multipleOfInt p a =
     Validate.unless (modBy p a == 0) (Error.NotMultipleOfInt p) a
 
 
-multipleOfFloat : Float -> Float -> Validation e Float
+multipleOfFloat : Float -> Float -> Validation Float
 multipleOfFloat p a =
     let
         isMultiple =
@@ -245,12 +244,12 @@ multipleOfFloat p a =
     Validate.unless isMultiple (Error.NotMultipleOfFloat p) a
 
 
-boundedInt : Comparison -> Int -> Validation e Int
+boundedInt : Comparison -> Int -> Validation Int
 boundedInt cmp intA =
     Result.map (always intA) <| boundedFloat cmp (toFloat intA)
 
 
-boundedFloat : Comparison -> Float -> Validation e Float
+boundedFloat : Comparison -> Float -> Validation Float
 boundedFloat cmp a =
     a
         |> (case cmp of

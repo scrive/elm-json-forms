@@ -15,7 +15,6 @@ import Json.Schema
 import Json.Schema.Builder exposing (..)
 import Json.Schema.Definitions
 import Json.Schema.Form exposing (Msg, State)
-import Json.Schema.Form.Error exposing (CustomErrorValue(..), Errors)
 import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UiSchema
@@ -79,7 +78,7 @@ view state =
         ]
 
 
-errorString : Errors
+errorString : String -> ErrorValue -> String
 errorString path error =
     case error of
         Empty ->
@@ -145,69 +144,14 @@ errorString path error =
         NotIncludedIn _ ->
             "Is not a valid selection from the list."
 
-        CustomError Invalid ->
-            "Is not valid."
-
-        CustomError InvalidSet ->
-            "All items added need to be unique."
-
-        CustomError (ShorterListThan n) ->
-            if path == "airports" then
-                "You need to add at least " ++ String.fromInt n ++ " airports."
-
-            else
-                "You need to add at least " ++ String.fromInt n ++ " items."
-
-        CustomError (LongerListThan n) ->
-            "You can not add more than " ++ String.fromInt n ++ " items."
-
         Unimplemented s ->
             "Unimplemented: " ++ s
-
-        CustomError (InvalidCustomFormat format) ->
-            case format of
-                "personal-number" ->
-                    "That is not a valid personal number."
-
-                _ ->
-                    "That is not the correct format."
 
 
 personalNumber : Regex.Regex
 personalNumber =
     Maybe.withDefault Regex.never <|
         Regex.fromString "^(19|20)[0-9]{6}-?[0-9]{4}$"
-
-
-customInput : Input CustomErrorValue
-customInput f attrs =
-    button
-        ([ onClick
-            (Form.Input f.path
-                Form.Text
-                (Field.String "Hello world")
-            )
-         , class "btn btn-lg btn-light"
-         , style "height" "auto"
-         ]
-            ++ attrs
-        )
-        [ case f.value of
-            Field.String str ->
-                text str
-
-            Field.Int i ->
-                text <| String.fromInt i
-
-            Field.Number n ->
-                text <| String.fromFloat n
-
-            Field.Bool bool ->
-                text "(bool)"
-
-            Field.Empty ->
-                text "(empty)"
-        ]
 
 
 formats : List ( String, Format )
@@ -233,10 +177,6 @@ formats =
     , ( "description"
       , Json.Schema.Form.Format.init
             |> Json.Schema.Form.Format.withLines 5
-      )
-    , ( "custom"
-      , Json.Schema.Form.Format.init
-            |> Json.Schema.Form.Format.withInput customInput
       )
     ]
 

@@ -32,7 +32,6 @@ module Json.Schema.Form.Format exposing
 import Form.Field exposing (FieldValue)
 import Form.Input exposing (Input)
 import Form.Validate exposing (Validation)
-import Json.Schema.Form.Error exposing (CustomErrorValue)
 
 
 {-| A custom format.
@@ -44,8 +43,8 @@ type alias Format =
     , autocomplete : Maybe String
     , inputType : Maybe String
     , lines : Int
-    , input : Maybe (Input CustomErrorValue)
-    , validation : String -> Validation CustomErrorValue String
+    , input : Maybe Input
+    , validation : String -> Validation String
     }
 
 
@@ -122,13 +121,11 @@ withLines lines format =
 
 {-| Customize the input field with your own HTML.
 -}
-withInput : Input CustomErrorValue -> Format -> Format
+withInput : Input  -> Format -> Format
 withInput input format =
     { format | input = Just input }
 
 
-{-| A validation function (see [etaque/elm-form](https://package.elm-lang.org/packages/etaque/elm-form/4.0.0/Form-Validate) for details on how to write a validation function).
--}
-withValidation : (String -> Validation CustomErrorValue String) -> Format -> Format
+withValidation : (String -> Validation String) -> Format -> Format
 withValidation validation format =
     { format | validation = validation }

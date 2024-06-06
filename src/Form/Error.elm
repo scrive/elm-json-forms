@@ -6,17 +6,15 @@ module Form.Error exposing (Error, ErrorValue(..), error)
 
 -}
 
-import Form.Pointer as Pointer exposing (Pointer)
+import Form.Pointer exposing (Pointer)
 import Json.Decode exposing (Value)
 
 
-type alias Error customError =
-    List ( Pointer, ErrorValue customError )
+type alias Error =
+    List ( Pointer, ErrorValue )
 
 
-{-| A validation error. See `Form.Validate.customError` for `CustomError` building.
--}
-type ErrorValue e
+type ErrorValue
     = Empty
     | InvalidString
     | InvalidEmail
@@ -39,11 +37,7 @@ type ErrorValue e
     | LongerStringThan Int
     | NotIncludedIn (List Value)
     | Unimplemented String
-    | CustomError e
 
-
-{-| Build a singleton error value
--}
-error : ErrorValue a -> Error a
+error : ErrorValue -> Error
 error e =
     [ ( [], e ) ]

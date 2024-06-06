@@ -2,7 +2,6 @@ module Form.Validate exposing
     ( Validation
     , andMap
     , bool
-    , customError
     , fail
     , float
     , format
@@ -18,7 +17,6 @@ module Form.Validate exposing
     , unless
     , validateAll
     , whenJust
-    , withCustomError
     )
 
 import Dict exposing (Dict)
@@ -31,11 +29,11 @@ import Result
 import String
 
 
-type alias Validation customError output =
-    Result (Error customError) output
+type alias Validation output =
+    Result Error output
 
 
-isOk : Validation e a -> Bool
+isOk : Validation a -> Bool
 isOk v =
     case v of
         Ok _ ->
@@ -45,17 +43,17 @@ isOk v =
             False
 
 
-isErr : Validation e a -> Bool
+isErr : Validation a -> Bool
 isErr =
     not << isOk
 
 
-map : (a -> b) -> Validation e a -> Validation e b
+map : (a -> b) -> Validation a -> Validation b
 map =
     Result.map
 
 
-andMap : Validation e a -> Validation e (a -> b) -> Validation e b
+andMap : Validation a -> Validation (a -> b) -> Validation b
 andMap aValidation partialValidation =
     case ( partialValidation, aValidation ) of
         ( Ok partial, Ok a ) ->
@@ -65,27 +63,17 @@ andMap aValidation partialValidation =
             Err (List.append (errList partialResult) (errList aResult))
 
 
-mapError : (Error e1 -> Error e2) -> Validation e1 a -> Validation e2 a
+mapError : (Error -> Error) -> Validation a -> Validation a
 mapError =
     Result.mapError
 
 
-mapErrorPointers : (Pointer -> Pointer) -> Validation e a -> Validation e a
+mapErrorPointers : (Pointer -> Pointer) -> Validation a -> Validation a
 mapErrorPointers f =
     mapError (\l -> List.map (\( p, e ) -> ( f p, e )) l)
 
 
-withCustomError : customErr -> Validation e a -> Validation customErr a
-withCustomError e =
-    mapError (\_ -> customError e)
-
-
-customError : e -> Error e
-customError =
-    Error.error << Error.CustomError
-
-
-errList : Validation e a -> Error e
+errList : Validation a -> Error
 errList res =
     case res of
         Ok _ ->
@@ -95,26 +83,26 @@ errList res =
             e
 
 
-float : Value -> Validation e Float
+float : Value -> Validation Float
 float =
     Result.mapError (\_ -> Error.error Error.InvalidFloat) << Decode.decodeValue Decode.float
 
 
-bool : Value -> Validation e Bool
+bool : Value -> Validation Bool
 bool =
     Result.mapError (\_ -> Error.error Error.InvalidBool) << Decode.decodeValue Decode.bool
 
 
 {-| Transform validation result to `Maybe`, using `Result.toMaybe`.
 -}
-maybe : Validation e a -> Validation e (Maybe a)
+maybe : Validation a -> Validation (Maybe a)
 maybe =
     Ok << Result.toMaybe
 
 
 {-| Fails if `String.isEmpty`.
 -}
-nonEmpty : String -> String -> Validation e String
+nonEmpty : String -> String -> Validation String
 nonEmpty path s =
     if String.isEmpty s then
         Err (Error.error Error.Empty)
@@ -125,7 +113,7 @@ nonEmpty path s =
 
 {-| Min length for String.
 -}
-minLength : Int -> String -> Validation e String
+minLength : Int -> String -> Validation String
 minLength min s =
     if String.length s >= min then
         Ok s
@@ -136,7 +124,7 @@ minLength min s =
 
 {-| Max length for String.
 -}
-maxLength : Int -> String -> Validation e String
+maxLength : Int -> String -> Validation String
 maxLength max s =
     if String.length s <= max then
         Ok s
@@ -147,7 +135,7 @@ maxLength max s =
 
 {-| Validates format of the string.
 -}
-format : Regex -> String -> Validation e String
+format : Regex -> String -> Validation String
 format regex s =
     if Regex.contains regex s then
         Ok s
@@ -167,21 +155,21 @@ validEmailPattern =
 
 {-| A validation that always fails. Useful for contextual validation.
 -}
-fail : Error e -> Validation e a
+fail : Error -> Validation a
 fail error =
     Err error
 
 
 {-| A validation that always succeeds. Useful for contextual validation.
 -}
-succeed : a -> Validation e a
+succeed : a -> Validation a
 succeed a =
     Ok a
 
 
 {-| First successful validation wins, from left to right.
 -}
-oneOf : List (Validation e a) -> Validation e a
+oneOf : List (Validation a) -> Validation a
 oneOf validations =
     let
         walkResults result combined =
@@ -195,7 +183,7 @@ oneOf validations =
     List.foldl walkResults (Err (Error.error Error.Empty)) validations
 
 
-validateAll : List (a -> Validation e b) -> a -> Validation e a
+validateAll : List (a -> Validation b) -> a -> Validation a
 validateAll l a =
     let
         validations =
@@ -208,7 +196,7 @@ validateAll l a =
         Err <| List.concat <| List.map errList validations
 
 
-unless : Bool -> ErrorValue e -> a -> Validation e a
+unless : Bool -> ErrorValue -> a -> Validation a
 unless p e a =
     if p then
         Ok a
@@ -217,7 +205,7 @@ unless p e a =
         Err [ ( [], e ) ]
 
 
-whenJust : Maybe b -> (b -> a -> Validation e a) -> a -> Validation e a
+whenJust : Maybe b -> (b -> a -> Validation a) -> a -> Validation a
 whenJust m f =
     case m of
         Nothing ->

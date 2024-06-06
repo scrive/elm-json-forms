@@ -3,20 +3,6 @@ module Form.Field exposing
     , asValue, valueAsBool, valueAsString
     )
 
-{-| Read and write field values.
-
-
-# Constructors
-
-@docs Field, FieldValue, value, string, bool, group, list
-
-
-# Value readers
-
-@docs asString, asBool
-
--}
-
 import Json.Encode as Encode exposing (Value)
 import String
 
@@ -29,10 +15,6 @@ type FieldValue
     | Number Float
     | Bool Bool
     | Empty
-
-
-
--- | EmptyField
 
 
 valueAsString : FieldValue -> String

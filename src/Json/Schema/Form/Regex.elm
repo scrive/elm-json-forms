@@ -11,27 +11,6 @@ module Json.Schema.Form.Regex exposing
 import Regex
 
 
-
-{-
-   date-time
-   date
-   time
-   email
-   idn-email
-   hostname
-   idn-hostname
-   ipv4
-   ipv6
-   uri
-   uri-reference
-   iri
-   iri-reference
-   uri-template
-   json-pointer
-   relative-json-pointer
--}
-
-
 dateTime : Regex.Regex
 dateTime =
     Maybe.withDefault Regex.never <|
