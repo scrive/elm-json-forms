@@ -1,33 +1,8 @@
 module Json.Schema.Form.Format exposing
     ( Format, init
-    , withPrefix, withSuffix, withPlaceholder, withAutocompleteOff, withAutocompleteOn, withAutocomplete, withInputType, withLines
-    , withInput
+    , withPrefix, withSuffix, withPlaceholder, withAutocompleteOff, withAutocompleteOn, withAutocomplete, withInputType
     , withValidation
     )
-
-{-| In a JSON schema the `format` keyword has a number of pre-defined formats (`date`, `email`, etc.) but can also be any custom format (see [7. Semantic Validation with "format"](https://json-schema.org/latest/json-schema-validation.html#rfc.section.7)). If you simply need a to match a field against a regular expression you should use the `pattern` keyword instead. Custom formats are intended for annotation and more complex validation that is not possible to accomplish with a regex.
-
-
-# Custom format
-
-@docs Format, init
-
-
-# Input field
-
-@docs withPrefix, withSuffix, withPlaceholder, withAutocompleteOff, withAutocompleteOn, withAutocomplete, withInputType, withLines
-
-
-# Custom input
-
-@docs withInput
-
-
-# Validation
-
-@docs withValidation
-
--}
 
 import Form.Field exposing (FieldValue)
 import Form.Input exposing (Input)
@@ -42,8 +17,6 @@ type alias Format =
     , placeholder : Maybe String
     , autocomplete : Maybe String
     , inputType : Maybe String
-    , lines : Int
-    , input : Maybe Input
     , validation : String -> Validation String
     }
 
@@ -57,8 +30,6 @@ init =
     , placeholder = Nothing
     , autocomplete = Nothing
     , inputType = Nothing
-    , lines = 1
-    , input = Nothing
     , validation = Form.Validate.succeed
     }
 
@@ -109,21 +80,7 @@ withAutocomplete str format =
 -}
 withInputType : String -> Format -> Format
 withInputType str format =
-    { format | inputType = Just str, lines = 1 }
-
-
-{-| The expected number of lines. If more than one the field will be rendered as a `textarea`. The default is 1.
--}
-withLines : Int -> Format -> Format
-withLines lines format =
-    { format | lines = Basics.max 0 lines }
-
-
-{-| Customize the input field with your own HTML.
--}
-withInput : Input -> Format -> Format
-withInput input format =
-    { format | input = Just input }
+    { format | inputType = Just str }
 
 
 withValidation : (String -> Validation String) -> Format -> Format

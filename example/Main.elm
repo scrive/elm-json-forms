@@ -75,7 +75,6 @@ init =
             Ok fs ->
                 Json.Schema.Form.init
                         { errors = errorString
-                        , formats = Dict.empty
                         , theme = Theme.tailwind
                         }
                         fs.schema
@@ -479,12 +478,13 @@ controlExample1UiSchema = """
 """
 
 controlExample2Schema : String
-controlExample2Schema ="""
+controlExample2Schema = """
 {
   "type": "object",
   "properties": {
     "multilineString": {
       "type": "string",
+      "maxLength": 5,
       "description": "Multiline Example"
     },
     "slider": {

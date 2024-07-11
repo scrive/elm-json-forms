@@ -15,6 +15,7 @@ import Form.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions as Schema exposing (Schema(..))
+import Json.Decode.Pipeline as Decode
 
 
 type UiSchema
@@ -102,6 +103,13 @@ type alias Options =
     , elementLabelProp : Maybe ElementLabelProp
     , format : Maybe Format
     , readonly : Maybe Bool
+    , multi : Maybe Bool -- TODO: implement
+    , slider : Maybe Bool -- TODO: implement
+    , trim : Maybe Bool -- TODO: implement
+    , restrict : Maybe Bool -- TODO: implement
+    , showUnfocusedDescription : Maybe Bool -- TODO: implement
+    , hideRequiredAsterisk : Maybe Bool -- TODO: implement
+    , toggle : Maybe Bool -- TODO: implement
     }
 
 
@@ -254,12 +262,19 @@ decodeCondition =
 
 decodeOptions : Decoder Options
 decodeOptions =
-    Decode.map5 Options
-        (Decode.maybe <| Decode.field "detail" decodeDetail)
-        (Decode.maybe <| Decode.field "showSortButtons" Decode.bool)
-        (Decode.maybe <| Decode.field "elementLabelProp" decodeElementLabelProp)
-        (Decode.maybe <| Decode.field "format" decodeFormat)
-        (Decode.maybe <| Decode.field "readonly" Decode.bool)
+    Decode.succeed Options
+        |> Decode.optional "detail" (Decode.nullable decodeDetail) Nothing
+        |> Decode.optional "showSortButtons" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "elementLabelProp" (Decode.nullable decodeElementLabelProp) Nothing
+        |> Decode.optional "format" (Decode.nullable decodeFormat) Nothing
+        |> Decode.optional "readonly" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "multi" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "slider" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "trim" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "restrict" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "showUnfocusedDescription" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "hideRequiredAsterisk" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "toggle" (Decode.nullable Decode.bool) Nothing
 
 
 decodeFormat : Decoder Format

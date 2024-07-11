@@ -35,7 +35,6 @@ import Test.Html.Selector exposing (attribute, checked, class, classes, selected
 options : Options
 options =
     { errors = \_ _ -> ""
-    , formats = Dict.empty
     , theme = Theme.default
     }
 

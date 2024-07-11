@@ -113,26 +113,28 @@ controlView options uiPath wholeSchema control form =
                                 select options control.scope schema fieldState IntField
 
                             else
-                                txt options control.scope schema fieldState IntField
+                                intInput options control.scope schema fieldState
 
                         SingleType NumberType ->
                             if schema.enum /= Nothing then
                                 select options control.scope schema fieldState NumberField
 
                             else
-                                txt options control.scope schema fieldState NumberField
+                                numberInput options control.scope schema fieldState
 
                         SingleType StringType ->
                             if schema.enum /= Nothing then
                                 select options control.scope schema fieldState StringField
 
                             else
-                                txt options control.scope schema fieldState StringField
+                                if (control.options |> Maybe.andThen (.multi)) == Just True then
+                                    textarea options control.scope schema fieldState
+                                else
+                                    textInput options control.scope schema fieldState
 
                         SingleType BooleanType ->
                             checkbox options control.scope schema fieldState
 
-                        -- Html.text "checkbox: unimplemented"
                         _ ->
                             Html.nothing
     in
@@ -154,134 +156,76 @@ type TextFieldType
     | StringField
 
 
-isNumericFieldType : TextFieldType -> Bool
-isNumericFieldType fieldType =
-    List.any ((==) fieldType) [ NumberField, IntField ]
-
-
-txt : Options -> Pointer -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
-txt options path schema f fieldType =
+textInput : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
+textInput options path schema fieldState =
     let
-        format : Format
-        format =
-            schema.format
-                |> Maybe.andThen (getFormat options.formats)
-                |> Maybe.withDefault
-                    { prefix = Nothing
-                    , suffix = Nothing
-                    , placeholder = Nothing
-                    , autocomplete = Nothing
-                    , inputType = Nothing
-                    , lines = 1
-                    , input = Nothing
-                    , validation = Form.Validate.succeed
-                    }
+        inputType : String
+        inputType =
+            case schema.format of
+                Just "email" ->
+                    "email"
 
-        attributes : List (Attribute msg)
-        attributes =
-            [ Attrs.map never <|
-                options.theme.txt
-                    { withError = f.error /= Nothing
-                    , format = schema.format
-                    }
-            , id f.path
-            , Attr.attributeIf (isNumericFieldType fieldType) <| attribute "type" "number"
-            , Attr.attributeMaybe placeholder format.placeholder
-            , case format.autocomplete of
-                Just "on" ->
-                    autocomplete True
+                Just "idn-email" ->
+                    "email"
 
-                Just "off" ->
-                    autocomplete False
+                Just "date" ->
+                    "date"
 
-                Just str ->
-                    attribute "autocomplete" str
+                Just "time" ->
+                    "time"
 
-                Nothing ->
-                    autocomplete True
-            ]
+                Just "date-time" ->
+                    "datetime-local"
 
-        textInput : Html F.Msg
-        textInput =
-            inputGroup
-                options.theme
-                format.prefix
-                format.suffix
-                [ if format.lines > 1 then
-                    Input.textArea f (attributes ++ [ rows format.lines ])
+                Just "month" ->
+                    "month"
 
-                  else
-                    case format.input of
-                        Just html ->
-                            html f attributes
+                Just "week" ->
+                    "week"
 
-                        Nothing ->
-                            let
-                                inputType : String
-                                inputType =
-                                    case schema.format of
-                                        Just "email" ->
-                                            "email"
+                Just "hostname" ->
+                    "url"
 
-                                        Just "idn-email" ->
-                                            "email"
+                Just "idn-hostname" ->
+                    "url"
 
-                                        Just "date" ->
-                                            "date"
+                Just "uri" ->
+                    "url"
 
-                                        Just "time" ->
-                                            "time"
+                Just "iri" ->
+                    "url"
 
-                                        Just "date-time" ->
-                                            "datetime-local"
-
-                                        Just "month" ->
-                                            "month"
-
-                                        Just "week" ->
-                                            "week"
-
-                                        Just "hostname" ->
-                                            "url"
-
-                                        Just "idn-hostname" ->
-                                            "url"
-
-                                        Just "uri" ->
-                                            "url"
-
-                                        Just "iri" ->
-                                            "url"
-
-                                        _ ->
-                                            "text"
-                            in
-                            (case fieldType of
-                                NumberField ->
-                                    Input.floatInput
-
-                                IntField ->
-                                    Input.intInput
-
-                                StringField ->
-                                    Input.textInput
-                            )
-                                f
-                                (attributes
-                                    ++ [ type_
-                                            (format.inputType
-                                                |> Maybe.withDefault inputType
-                                            )
-                                       ]
-                                )
-                ]
+                _ ->
+                    "text"
     in
-    field options
+    fieldGroup (Input.textInput options fieldState [ type_ inputType ])
+        options
+        path
         schema
-        f
-        [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
-        , textInput
-        ]
+        fieldState
+
+
+
+intInput : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
+intInput options path schema fieldState =
+    fieldGroup (Input.intInput options fieldState []) options
+        path
+        schema
+        fieldState
+
+
+
+numberInput : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
+numberInput options path schema fieldState =
+    fieldGroup (Input.floatInput options fieldState []) options
+        path
+        schema
+        fieldState
+
+
+textarea : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
+textarea options path schema state =
+    fieldGroup (Input.textArea options state []) options path schema state
 
 
 checkbox : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
@@ -324,10 +268,6 @@ checkbox options path schema f =
                     div [ class "field-meta" ] html
             ]
         ]
-
-
-
--- TODO: add a None option
 
 
 select : Options -> Pointer -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
@@ -403,6 +343,39 @@ field options schema f content =
         ]
 
 
+
+fieldGroup : Html F.Msg -> Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
+fieldGroup inputField options path schema fieldState  =
+    let
+        description : Html F.Msg
+        description =
+            Maybe.withDefault Html.nothing <| fieldDescription options.theme schema
+
+        errorMessage : Html F.Msg
+        errorMessage =
+            Maybe.withDefault Html.nothing <| error options.theme options.errors fieldState
+    in
+    div
+        [ Attrs.map never <|
+            options.theme.field
+                { withError =
+                    fieldState.error /= Nothing
+                , withValue =
+                    fieldState.value /= Field.Empty
+                }
+        ]
+        [ label [ for fieldState.path, Attrs.map never options.theme.fieldLabel ]
+            [ div [ Attrs.map never options.theme.fieldInput ]
+                [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
+                , div [ Attrs.map never options.theme.inputGroup ]
+                        [inputField]
+                ]
+            , div [ Attrs.map never options.theme.fieldInputDescription ] [ description ]
+            , errorMessage
+            ]
+        ]
+
+
 fieldTitle : Theme -> SubSchema -> Pointer -> Maybe (Html F.Msg)
 fieldTitle theme schema path =
     schema.title
@@ -430,42 +403,9 @@ error theme func f =
             )
 
 
-inputGroup : Theme -> Maybe String -> Maybe String -> List (Html F.Msg) -> Html F.Msg
-inputGroup theme prefix suffix content =
-    let
-        prepend : List (Html msg)
-        prepend =
-            case prefix of
-                Just string ->
-                    [ div
-                        [ Attrs.map never theme.inputGroupPrepend ]
-                        [ span
-                            [ Attrs.map never theme.inputGroupPrependContent ]
-                            [ text string ]
-                        ]
-                    ]
-
-                Nothing ->
-                    []
-
-        append : List (Html msg)
-        append =
-            case suffix of
-                Just string ->
-                    [ div
-                        [ Attrs.map never theme.inputGroupAppend ]
-                        [ span
-                            [ Attrs.map never theme.inputGroupAppendContent ]
-                            [ text string ]
-                        ]
-                    ]
-
-                Nothing ->
-                    []
-    in
-    div
-        [ Attrs.map never theme.inputGroup ]
-        (prepend ++ content ++ append)
+inputGroup : Theme -> List (Html F.Msg) -> Html F.Msg
+inputGroup theme content =
+    div [ Attrs.map never theme.inputGroup ] content
 
 
 fieldset : SubSchema -> List (Html F.Msg) -> Html F.Msg
@@ -507,8 +447,3 @@ conditional className f conditions =
     in
     Html.Keyed.node "div" [ class className ] <|
         List.filterMap cond conditions
-
-
-getFormat : Dict String Format -> String -> Maybe Format
-getFormat formats format =
-    Dict.get format formats

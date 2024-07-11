@@ -12,12 +12,14 @@ module Form.Input exposing
 
 -}
 
+import Html.Attributes as Attrs
 import Form exposing (FieldState, InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
 import Form.Field as Field exposing (FieldValue(..))
 import Html exposing (..)
 import Html.Attributes as HtmlAttr exposing (..)
 import Html.Events exposing (..)
+import Json.Schema.Form.Options exposing (Options)
 import Json.Decode as Json
 
 
@@ -28,21 +30,43 @@ type alias Input =
     FieldState -> List (Attribute Msg) -> Html Msg
 
 
-{-| Untyped input, first param is `type` attribute.
+{-| Untyped input
 -}
-baseInput : String -> (String -> FieldValue) -> InputType -> Input
-baseInput t toFieldValue inputType state attrs =
+baseInput : Options -> String -> (String -> FieldValue) -> InputType -> Input
+baseInput options type__ toFieldValue inputType state attrs =
     let
         formAttrs =
-            [ type_ t
+            [ id state.path
+            , type_ type__
             , value (Field.valueAsString state.value)
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
+            , Attrs.map never <|
+                options.theme.txt
+                    { withError = state.error /= Nothing
+                    }
             ]
     in
     input (formAttrs ++ attrs) []
 
+textArea : Options -> Input
+textArea options state attrs =
+    let
+        formAttrs =
+            [ id state.path
+            , value (Field.valueAsString state.value)
+            , onInput (String >> Input state.path Textarea)
+            , onFocus (Focus state.path)
+            , onBlur (Blur state.path)
+            , attribute "rows" "4"
+            , Attrs.map never <|
+                options.theme.txt
+                    { withError = state.error /= Nothing
+                    }
+            ]
+    in
+    Html.textarea (formAttrs ++ attrs) []
 
 fromIntInput : String -> FieldValue
 fromIntInput s =
@@ -73,45 +97,30 @@ fromStringInput s =
 
 {-| Text input.
 -}
-textInput : Input
-textInput =
-    baseInput "text" fromStringInput Text
+textInput : Options -> Input
+textInput options =
+    baseInput options "text" fromStringInput Text
 
 
 {-| Text input.
 -}
-intInput : Input
-intInput =
-    baseInput "text" fromIntInput Text
+intInput : Options -> Input
+intInput options state attrs =
+    baseInput options "text" fromIntInput Text state ([attribute "type" "number"] ++ attrs)
 
 
 {-| Text input.
 -}
-floatInput : Input
-floatInput =
-    baseInput "text" fromFloatInput Text
+floatInput : Options -> Input
+floatInput options state attrs =
+    baseInput options "text" fromFloatInput Text state ([attribute "type" "number"] ++ attrs)
 
 
 {-| Password input.
 -}
-passwordInput : Input
-passwordInput =
-    baseInput "password" fromStringInput Text
-
-
-{-| Textarea.
--}
-textArea : Input
-textArea state attrs =
-    let
-        formAttrs =
-            [ value (Field.valueAsString state.value)
-            , onInput (String >> Input state.path Textarea)
-            , onFocus (Focus state.path)
-            , onBlur (Blur state.path)
-            ]
-    in
-    Html.textarea (formAttrs ++ attrs) []
+passwordInput : Options -> Input
+passwordInput options =
+    baseInput options "password" fromStringInput Text
 
 
 {-| Select input.

@@ -13,7 +13,7 @@ import Html.Attributes as Attrs
 {-| Record, that holds the styling of elements
 -}
 type alias Theme =
-    { txt : { withError : Bool, format : Maybe String } -> Attribute Never
+    { txt : { withError : Bool } -> Attribute Never
     , checkboxWrapper : Attribute Never
     , checkboxInput : { withError : Bool } -> Attribute Never
     , checkboxTitle : Attribute Never
@@ -51,16 +51,10 @@ default : Theme
 default =
     { -- inputs
       txt =
-        \{ withError, format } ->
+        \{ withError } ->
             Attrs.classList
                 [ ( "form-control", True )
                 , ( "is-invalid", withError )
-                , case format of
-                    Just str ->
-                        ( "format-" ++ str, True )
-
-                    Nothing ->
-                        ( "", False )
                 ]
 
     -- checkbox
@@ -136,17 +130,11 @@ tailwind =
     { default
         | -- inputs
           txt =
-            \{ withError, format } ->
+            \{ withError } ->
                 Attrs.classList
                     [ ( "block w-full rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", True )
                     , ( "border-0", not withError )
                     , ( isInvalid, withError )
-                    , case format of
-                        Just str ->
-                            ( "format-" ++ str, True )
-
-                        Nothing ->
-                            ( "", False )
                     ]
 
         -- checkbox
