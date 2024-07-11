@@ -89,7 +89,7 @@ uiSchemaView options uiPath uiSchema schema form =
             div [] [ text "unimplemented categorization" ]
 
         UI.UiLabel l ->
-            div [] [ text l.text ]
+            div [] [ Html.h6 [class "my-4"] [text l.text] ]
 
 
 controlView : Options -> List String -> Schema -> UI.Control -> Form -> Html F.Msg

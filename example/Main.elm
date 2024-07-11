@@ -5,28 +5,55 @@ import Dict
 import Form exposing (InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
 import Form.Field as Field exposing (FieldValue)
-import Form.Input exposing (Input)
-import Form.Validate
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class, disabled, style)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode as Encode exposing (bool, float, int, list, string)
 import Json.Schema
-import Json.Schema.Builder exposing (..)
-import Json.Schema.Definitions
 import Json.Schema.Form exposing (Msg, State)
-import Json.Schema.Form.Format exposing (Format)
+import Json.Schema.Definitions as Schema exposing (Schema)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
-import Json.Schema.Form.UiSchema as UiSchema
-import Regex
+import Json.Schema.Form.UiSchema as UiSchema exposing (UiSchema)
 
 
 type alias MainState =
     { forms : List State
     }
 
+type alias FormSpec =
+  { title : String
+  , schema : Schema
+  , uiSchema : Maybe UiSchema
+  }
 
-main : Program () MainState Msg
+type alias MainMsg =
+  { formId : Int
+  , msg : Msg
+  }
+
+
+formSpec : String -> String -> Maybe String -> Result String FormSpec
+formSpec title schemaText uiSchemaText =
+  let
+    schema = Json.Schema.fromString schemaText
+    uiSchema = Maybe.map UiSchema.fromString uiSchemaText
+
+  in case (schema, uiSchema) of
+    (Ok s, Nothing) ->
+      Ok { title = title
+      , schema = s
+      , uiSchema = Nothing
+      }
+    (Ok s, Just (Ok us)) ->
+      Ok { title = title
+      , schema = s
+      , uiSchema = Just us
+      }
+    (Err e, _) -> Err e
+    (_, Just (Err e)) -> Err e
+
+
+main : Program () MainState MainMsg
 main =
     Browser.sandbox { init = init, update = update, view = view }
 
@@ -34,43 +61,41 @@ main =
 init : MainState
 init =
     let
-        schemas =
-            [ basicExampleSchema
-            ]
+        formSpecs =
+          [ formSpec "Basic Example" basicExampleSchema (Just basicExampleUiSchema)
+          , formSpec "Control Example 1" controlExample1Schema (Just controlExample1UiSchema)
+          , formSpec "Control Example 2" controlExample2Schema (Just controlExample2UiSchema)
+          , formSpec "Testing Schema" testingSchema Nothing
+          ]
 
-        uiSchemas =
-            [ basicExampleUiSchema
-            ]
     in
-    case ( basicExampleSchema, basicExampleUiSchema ) of
-        ( Ok schema, Ok uiSchema ) ->
-            { forms =
-                [ Json.Schema.Form.init
-                    { errors = errorString
-                    , formats = Dict.empty
-                    , theme = Theme.tailwind
-                    }
-                    schema
-                    (Just uiSchema)
-                ]
-            }
+    { forms =
+      List.map (\formSpecRes ->
+        case formSpecRes of
+            Ok fs ->
+                Json.Schema.Form.init
+                        { errors = errorString
+                        , formats = Dict.empty
+                        , theme = Theme.tailwind
+                        }
+                        fs.schema
+                        fs.uiSchema
 
-        ( Err error, _ ) ->
-            Debug.todo error
-
-        ( _, Err error ) ->
-            Debug.todo error
-
-
-update : Msg -> MainState -> MainState
-update msg state =
-    { forms = List.map (Json.Schema.Form.update msg) state.forms
+            Err error ->
+                Debug.todo error
+      ) formSpecs
     }
 
 
-view : MainState -> Html Msg
+update : MainMsg -> MainState -> MainState
+update msg state =
+    { forms = List.indexedMap (\i f -> if msg.formId == i then Json.Schema.Form.update msg.msg f else f) state.forms
+    }
+
+
+view : MainState -> Html MainMsg
 view state =
-    div [] <| List.map viewForm state.forms
+    div [] <| List.indexedMap (\i f -> Html.map (\m -> {formId = i, msg = m}) (viewForm f)) state.forms
 
 
 viewForm : State -> Html Msg
@@ -169,9 +194,9 @@ errorString path error =
             "Unimplemented: " ++ s
 
 
-schema_json : Result String Json.Schema.Definitions.Schema
-schema_json =
-    Json.Schema.fromString """
+testingSchema : String
+testingSchema =
+    """
 {
   "type": "object",
   "required": [
@@ -247,9 +272,8 @@ schema_json =
     """
 
 
-basicExampleSchema : Result String Json.Schema.Definitions.Schema
-basicExampleSchema =
-    Json.Schema.fromString """
+basicExampleSchema : String
+basicExampleSchema ="""
 {
   "type": "object",
   "properties": {
@@ -314,9 +338,8 @@ basicExampleSchema =
     """
 
 
-basicExampleUiSchema : Result String UiSchema.UiSchema
-basicExampleUiSchema =
-    UiSchema.fromString """
+basicExampleUiSchema : String
+basicExampleUiSchema ="""
 {
   "type": "VerticalLayout",
   "elements": [
@@ -367,6 +390,193 @@ basicExampleUiSchema =
           ]
         }
       ]
+    }
+  ]
+}
+"""
+
+controlExample1Schema : String
+controlExample1Schema ="""
+{
+  "type": "object",
+  "properties": {
+    "string": {
+      "type": "string"
+    },
+    "boolean": {
+      "type": "boolean",
+      "description": "Boolean description as a tooltip"
+    },
+    "number": {
+      "type": "number"
+    },
+    "integer": {
+      "type": "integer"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time": {
+      "type": "string",
+      "format": "time"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "enum": {
+      "type": "string",
+      "enum": [
+        "One",
+        "Two",
+        "Three"
+      ]
+    }
+  }
+}
+"""
+
+controlExample1UiSchema : String
+controlExample1UiSchema = """
+{
+  "type": "VerticalLayout",
+  "elements": [
+    {
+      "type": "Control",
+      "scope": "#/properties/string"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/boolean"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/number"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/integer"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/date"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/time"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/dateTime"
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/enum"
+    }
+  ]
+}
+"""
+
+controlExample2Schema : String
+controlExample2Schema ="""
+{
+  "type": "object",
+  "properties": {
+    "multilineString": {
+      "type": "string",
+      "description": "Multiline Example"
+    },
+    "slider": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 2,
+      "description": "Slider Example"
+    },
+    "trimText": {
+      "type": "string",
+      "description": "Trim indicates whether the control shall grab the full width available"
+    },
+    "restrictText": {
+      "type": "string",
+      "maxLength": 5,
+      "description": "Restricts the input length to the set value (in this case: 5)"
+    },
+    "unfocusedDescription": {
+      "type": "string",
+      "description": "This description is shown even when the control is not focused"
+    },
+    "hideRequiredAsterisk": {
+      "type": "string",
+      "description": "Hides the \\"*\\" symbol, when the field is required"
+    },
+    "toggle": {
+      "type": "boolean",
+      "description": "The \\"toggle\\" option renders boolean values as a toggle."
+    }
+  },
+  "required": [
+    "hideRequiredAsterisk",
+    "restrictText"
+  ]
+}
+"""
+
+controlExample2UiSchema : String
+controlExample2UiSchema = """
+{
+  "type": "VerticalLayout",
+  "elements": [
+    {
+      "type": "Control",
+      "scope": "#/properties/multilineString",
+      "options": {
+        "multi": true
+      }
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/slider",
+      "options": {
+        "slider": true
+      }
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/trimText",
+      "options": {
+        "trim": true
+      }
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/restrictText",
+      "options": {
+        "restrict": true
+      }
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/unfocusedDescription",
+      "options": {
+        "showUnfocusedDescription": true
+      }
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/hideRequiredAsterisk",
+      "options": {
+        "hideRequiredAsterisk": true
+      }
+    },
+    {
+      "type": "Control",
+      "scope": "#/properties/toggle",
+      "label": "Boolean as Toggle",
+      "options": {
+        "toggle": true
+      }
     }
   ]
 }
