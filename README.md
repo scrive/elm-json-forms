@@ -17,7 +17,7 @@ Generate validating forms from JSON schemas.
 ## Unimplemented features
 
 - [x] Fix multiple forms on the same page sharing IDs
-- [ ] Validate e-mails
+- [x] Validate e-mails
 - [x] Layout
   - [x] Remove unnecessary nested formRow items for horizontal layout inside vertical layout
 - [ ] Control Example
