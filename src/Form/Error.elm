@@ -22,6 +22,7 @@ type ErrorValue
     | InvalidInt
     | InvalidFloat
     | InvalidBool
+    | InvalidNull
     | NotConst Value
     | NotMultipleOfInt Int
     | LessIntThan Int

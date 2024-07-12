@@ -5,6 +5,9 @@ module Json.Schema.Form.UiSchema exposing
     , Group
     , HorizontalLayout
     , UiSchema(..)
+    , Rule
+    , Effect (..)
+    , Condition
     , VerticalLayout
     , decodeStringLike
     , defaultValue
@@ -12,6 +15,7 @@ module Json.Schema.Form.UiSchema exposing
     , generateUiSchema
     , pointToSchema
     , unSchemata
+    , getRule
     )
 
 import Dict exposing (Dict)
@@ -429,6 +433,28 @@ allPointers uiSchema =
             []
 
 
+getRule : UiSchema -> Maybe Rule
+getRule uiSchema =
+    case uiSchema of
+        UiControl x ->
+           x.rule
+
+        UiHorizontalLayout x ->
+            x.rule
+
+        UiVerticalLayout x ->
+            x.rule
+
+        UiGroup x ->
+            x.rule
+
+        UiCategorization x ->
+            x.rule
+
+        UiLabel x ->
+            Nothing
+
+
 decodeStringLike : Decode.Decoder String
 decodeStringLike =
     Decode.oneOf
@@ -437,6 +463,20 @@ decodeStringLike =
         , Decode.float |> Decode.map String.fromFloat
         ]
 
+
+{-| Properties which are, by default, not omitted but with a default value.
+-}
+defaultedProps : Schema.SubSchema -> List (String, Value)
+defaultedProps schema =
+    Maybe.map unSchemata schema.properties
+    |> Maybe.withDefault []
+    |> List.filter (\(k, v) ->
+        case v of
+            ObjectSchema o_ -> List.member o_.type_ [Schema.SingleType Schema.BooleanType, Schema.SingleType Schema.ObjectType]
+            BooleanSchema _ -> False
+        )
+    |> List.map (\(k, v) -> (k, defaultValue v))
+    |> List.sortBy (\(k, _) -> k)
 
 defaultValue : Schema -> Value
 defaultValue schema =
@@ -448,8 +488,7 @@ defaultValue schema =
 
                 ObjectSchema o ->
                     case o.type_ of
-                        Schema.SingleType Schema.ObjectType ->
-                            Encode.object []
+                        Schema.SingleType Schema.ObjectType -> Encode.object (defaultedProps o)
 
                         Schema.SingleType Schema.ArrayType ->
                             Encode.list Encode.int []

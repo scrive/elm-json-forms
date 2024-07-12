@@ -43,62 +43,77 @@ validation schema value =
 
 
 subSchema : SubSchema -> Value -> Validation Value
-subSchema schema value =
-    case schema.type_ of
-        SingleType type_ ->
-            singleType schema type_ value
+subSchema schema =
+    let
+        typeValidations : Value -> Validation Value
+        typeValidations =
+            case schema.type_ of
+                SingleType type_ ->
+                    validateSingleType schema type_
 
-        _ ->
-            Validate.fail (Error.error <| Unimplemented "Only SingleType is implemented.")
+                AnyType -> Validate.succeed
+
+                NullableType type_ ->
+                    Validate.oneOf
+                        [ \v -> Result.map (always Encode.null) <| validateNull schema v
+                        , validateSingleType schema type_
+                        ]
+
+                UnionType types ->
+                    Validate.oneOf <| List.map (\type_ -> validateSingleType schema type_) types
+    in
+        Validate.validateAll
+            [ Validate.whenJust schema.const validateConst
+            , Validate.whenJust schema.enum validateEnum
+            , typeValidations
+            ]
 
 
-singleType : SubSchema -> SingleType -> Value -> Validation Value
-singleType schema type_ =
-    Validate.validateAll
-        [ Validate.whenJust schema.const validateConst
-        , Validate.whenJust schema.enum validateEnum
-        , \value ->
-            case type_ of
-                ObjectType ->
-                    let
-                        propList =
-                            Maybe.withDefault [] <| Maybe.map unSchemata schema.properties
+validateSingleType : SubSchema -> SingleType -> Value -> Validation Value
+validateSingleType schema type_ value =
+    case type_ of
+        ObjectType ->
+            let
+                propList =
+                    Maybe.withDefault [] <| Maybe.map unSchemata schema.properties
 
-                        requiredKeys =
-                            Set.fromList <| Maybe.withDefault [] schema.required
+                requiredKeys =
+                    Set.fromList <| Maybe.withDefault [] schema.required
 
-                        mValue key =
-                            Result.toMaybe <| Decode.decodeValue (Decode.field key Decode.value) value
+                mValue key =
+                    Result.toMaybe <| Decode.decodeValue (Decode.field key Decode.value) value
 
-                        validateKey key propSchema =
-                            Validate.mapErrorPointers (List.append [ "properties", key ]) <|
-                                case ( mValue key, Set.member key requiredKeys ) of
-                                    ( Nothing, True ) ->
-                                        Err [ ( [], Empty ) ]
+                validateKey key propSchema =
+                    Validate.mapErrorPointers (List.append [ "properties", key ]) <|
+                        case ( mValue key, Set.member key requiredKeys ) of
+                            ( Nothing, True ) ->
+                                Err [ ( [], Empty ) ]
 
-                                    ( Nothing, False ) ->
-                                        Ok Encode.null
+                            ( Nothing, False ) ->
+                                Ok Encode.null
 
-                                    ( Just val, _ ) ->
-                                        validation propSchema val
-                    in
-                    Validate.validateAll (List.map (\( key, propSchema ) _ -> validateKey key propSchema) propList) value
+                            ( Just val, _ ) ->
+                                validation propSchema val
+            in
+            Validate.validateAll (List.map (\( key, propSchema ) _ -> validateKey key propSchema) propList) value
 
-                IntegerType ->
-                    Result.map Encode.int <| validateInt schema value
+        IntegerType ->
+            Result.map Encode.int <| validateInt schema value
 
-                NumberType ->
-                    Result.map Encode.float <| validateFloat schema value
+        NumberType ->
+            Result.map Encode.float <| validateFloat schema value
 
-                BooleanType ->
-                    Result.map Encode.bool <| validateBool schema value
+        BooleanType ->
+            Result.map Encode.bool <| validateBool schema value
 
-                StringType ->
-                    Result.map Encode.string <| validateString schema value
+        StringType ->
+            Result.map Encode.string <| validateString schema value
 
-                x ->
-                    Err <| Error.error (Error.Unimplemented "type")
-        ]
+        NullType ->
+            Result.map (always Encode.null) <| validateNull schema value
+
+        x ->
+            Err <| Error.error (Error.Unimplemented "type")
 
 
 validateString : SubSchema -> Value -> Validation String
@@ -214,6 +229,16 @@ validateBool schema v =
     case Decode.decodeValue Decode.bool v of
         Err _ ->
             Err <| Error.error Error.InvalidBool
+
+        Ok x ->
+            Ok x
+
+
+validateNull : SubSchema -> Value -> Validation ()
+validateNull schema v =
+    case Decode.decodeValue (Decode.null ()) v of
+        Err _ ->
+            Err <| Error.error Error.InvalidNull
 
         Ok x ->
             Ok x

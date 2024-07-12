@@ -40,104 +40,158 @@ import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UI exposing (UiSchema)
+import Json.Schema.Form.Validation  exposing (validation)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import String.Case
+import Json.Schema.Form.UiSchema exposing (Effect(..))
 
 
 type alias Form =
     F.Form
 
+type alias UiState =
+    { disabled : Bool
+    , uiPath : List Int
+    }
 
-uiSchemaView : Options -> List Int -> UiSchema -> Schema -> Form -> List (Html F.Msg)
-uiSchemaView options uiPath uiSchema schema form =
-    case uiSchema of
-        UI.UiControl c ->
-            [ controlView options schema c form ]
+type AppliedEffect = Hidden | Disabled
 
-        UI.UiHorizontalLayout hl ->
-            horizontalLayoutView options uiPath schema form hl
+appendPathElement : Int -> UiState -> UiState
+appendPathElement i st = { st | uiPath = List.append st.uiPath [i] }
 
-        UI.UiVerticalLayout vl ->
-            verticalLayoutView options uiPath schema form vl
+uiSchemaView : Options -> UiState -> UiSchema -> Schema -> Form -> List (Html F.Msg)
+uiSchemaView options uiState uiSchema schema form =
+    let
 
-        UI.UiGroup g ->
-            groupView options uiPath schema form g
+        ruleEffect : Maybe AppliedEffect
+        ruleEffect = computeRule (F.getValue form) (UI.getRule uiSchema)
 
-        UI.UiCategorization c ->
-            categorizationView options uiPath schema form c
+        newUiState = {uiState | disabled = ruleEffect == Just Disabled}
 
-        UI.UiLabel l ->
-            [Html.div [ Attrs.map never <| options.theme.label ] [ text l.text ]]
+    in
+        applyEffect ruleEffect <| case uiSchema of
+            UI.UiControl c ->
+                [ controlView options newUiState schema c form ]
+
+            UI.UiHorizontalLayout hl ->
+                horizontalLayoutView options newUiState schema form hl
+
+            UI.UiVerticalLayout vl ->
+                verticalLayoutView options newUiState schema form vl
+
+            UI.UiGroup g ->
+                groupView options newUiState schema form g
+
+            UI.UiCategorization c ->
+                categorizationView options newUiState schema form c
+
+            UI.UiLabel l ->
+                [Html.div [ Attrs.map never <| options.theme.label ] [ text l.text ]]
+
+applyEffect : Maybe AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
+applyEffect effect x =
+    case effect of
+        Just Hidden -> []
+        Just Disabled -> [div [Attrs.class "opacity-50"] x]
+        Nothing -> x
 
 
-horizontalLayoutView : Options -> List Int -> Schema -> Form -> UI.HorizontalLayout -> List (Html F.Msg)
-horizontalLayoutView options uiPath wholeSchema form hl =
+computeRule : Value -> Maybe UI.Rule -> Maybe AppliedEffect
+computeRule formValue mRule =
+    let
+        condition rule = case F.getPointedValue rule.condition.scope formValue of
+            Nothing -> False
+            Just v -> Form.Validate.isOk <| validation rule.condition.schema v
+
+        go rule =
+            case (rule.effect, condition rule) of
+                (EffectDisable, True) -> Just Disabled
+                (EffectEnable, False) -> Just Disabled
+                (EffectShow, False) -> Just Hidden
+                (EffectHide, True) -> Just Hidden
+                _ -> Nothing
+
+    in Maybe.andThen go mRule
+
+
+horizontalLayoutView : Options -> UiState -> Schema -> Form -> UI.HorizontalLayout -> List (Html F.Msg)
+horizontalLayoutView options uiState wholeSchema form hl =
     [ div [ Attrs.map never <| options.theme.horizontalLayout ] <|
     List.indexedMap
         (\ix us ->
             div
                 [ Attrs.map never <| options.theme.horizontalLayoutItem ]
-                (uiSchemaView options (List.append uiPath [ix]) us wholeSchema form)
+                (uiSchemaView options (appendPathElement ix uiState) us wholeSchema form)
         )
         hl.elements
     ]
 
 
-verticalLayoutView : Options -> List Int -> Schema -> Form -> UI.VerticalLayout -> List (Html F.Msg)
-verticalLayoutView options uiPath wholeSchema form vl =
+verticalLayoutView : Options -> UiState -> Schema -> Form -> UI.VerticalLayout -> List (Html F.Msg)
+verticalLayoutView options uiState wholeSchema form vl =
         List.indexedMap
             (\ix us ->
                 div
                     [  ]
-                    (uiSchemaView options (List.append uiPath [ix]) us wholeSchema form)
+                    (uiSchemaView options (appendPathElement ix uiState) us wholeSchema form)
             )
             vl.elements
 
 
-groupView : Options -> List Int -> Schema -> Form -> UI.Group -> List (Html F.Msg)
-groupView options uiPath wholeSchema form group =
+groupView : Options -> UiState -> Schema -> Form -> UI.Group -> List (Html F.Msg)
+groupView options uiState wholeSchema form group =
     let
         title = Maybe.unwrap [] (\l -> [Html.div [ Attrs.map never <| options.theme.groupLabel ] [ text l ]]) group.label
+        contents = verticalLayoutView options uiState wholeSchema form { elements = group.elements, rule = group.rule }
     in
-        [ div [Attrs.map never <| options.theme.group ]
-        <| title ++ verticalLayoutView options uiPath wholeSchema form { elements = group.elements, rule = group.rule }
+        [ div [Attrs.map never <| options.theme.group ] (title ++ contents)
         ]
 
 
 
-categorizationView : Options -> List Int -> Schema -> Form -> UI.Categorization -> List (Html F.Msg)
-categorizationView options uiPath wholeSchema (F.Form form) categorization =
+categorizationView : Options -> UiState -> Schema -> Form -> UI.Categorization -> List (Html F.Msg)
+categorizationView options uiState wholeSchema form categorization =
     let
 
-        focusedCategoryIx = Maybe.withDefault 0 <| Dict.get uiPath form.categoryFocus
+        focusedCategoryIx = Maybe.withDefault 0 <| Dict.get uiState.uiPath (F.getCategoryFocus form)
 
-        categoryButton ix category = button
-            [ Attrs.map never <| options.theme.categorizationMenuItem {focus = focusedCategoryIx == ix}
-            , onClick <| F.FocusCategory uiPath ix
-            ] [ text category.label ]
+
+        categoryButton ix category =
+            if computeRule (F.getValue form) category.rule == Just Hidden
+                then Nothing
+                else
+                    Just <| button
+                        [ Attrs.map never <| options.theme.categorizationMenuItem {focus = focusedCategoryIx == ix}
+                        , onClick <| F.FocusCategory uiState.uiPath ix
+                        ] [ text category.label ]
     in
         [ div
             [ Attrs.map never <| options.theme.categorizationMenu
             ]
-            (List.indexedMap categoryButton categorization.elements)
-        ] ++ Maybe.unwrap [] (categoryView options (List.append uiPath [focusedCategoryIx]) wholeSchema (F.Form form)) (List.getAt focusedCategoryIx categorization.elements)
+            (Maybe.values <| List.indexedMap categoryButton categorization.elements)
+        ] ++ Maybe.unwrap [] (categoryView options (appendPathElement focusedCategoryIx uiState) wholeSchema form) (List.getAt focusedCategoryIx categorization.elements)
 
 
 
-categoryView : Options -> List Int -> Schema -> Form -> UI.Category -> List (Html F.Msg)
-categoryView options uiPath wholeSchema form category =
-    verticalLayoutView options uiPath wholeSchema form { elements = category.elements, rule = category.rule }
+categoryView : Options -> UiState -> Schema -> Form -> UI.Category -> List (Html F.Msg)
+categoryView options uiState wholeSchema form category =
+    let
+        ruleEffect = computeRule (F.getValue form) category.rule
+        newUiState = {uiState | disabled = ruleEffect == Just Disabled}
+
+    in applyEffect ruleEffect
+        <| verticalLayoutView options newUiState wholeSchema form { elements = category.elements, rule = category.rule }
 
 
-controlView : Options -> Schema -> UI.Control -> Form -> Html F.Msg
-controlView options wholeSchema control form =
+controlView : Options -> UiState -> Schema -> UI.Control -> Form -> Html F.Msg
+controlView options uiState wholeSchema control form =
     let
         mControlSchema =
             UI.pointToSchema wholeSchema control.scope
 
         fieldState =
-            F.getField (Pointer.toString control.scope) form
+            F.getField uiState.disabled (Pointer.toString control.scope) form
 
         controlBody schema_ =
             case schema_ of

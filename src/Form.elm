@@ -9,6 +9,8 @@ module Form exposing
     , getValue
     , initial
     , update
+    , getPointedValue
+    , getCategoryFocus
     )
 
 import Dict exposing (Dict)
@@ -52,6 +54,7 @@ type alias FieldState =
     , value : FieldValue
     , error : Maybe ErrorValue
     , hasFocus : Bool
+    , disabled : Bool
     }
 
 
@@ -60,7 +63,33 @@ getValue (Form form) =
     form.value
 
 
-getPointedValue : Pointer -> Value -> Maybe FieldValue
+getCategoryFocus : Form -> Dict (List Int) Int
+getCategoryFocus (Form form) =
+    form.categoryFocus
+
+
+toFieldValue : Value -> Maybe FieldValue
+toFieldValue value =
+    case Decode.decodeValue
+                    (Decode.oneOf
+                        [ Decode.map Field.Int Decode.int
+                        , Decode.map Field.Number Decode.float
+                        , Decode.map Field.String Decode.string
+                        , Decode.map Field.Bool Decode.bool
+                        ]
+                    )
+                    value of
+                Ok fv ->
+                    Just fv
+
+                Err _ ->
+                    Nothing
+
+getPointedFieldValue : Pointer -> Value -> Maybe FieldValue
+getPointedFieldValue pointer value = Maybe.andThen toFieldValue (getPointedValue pointer value)
+
+
+getPointedValue : Pointer -> Value -> Maybe Value
 getPointedValue pointer value =
     case pointer of
         "properties" :: key :: ps ->
@@ -71,34 +100,19 @@ getPointedValue pointer value =
                 Err _ ->
                     Nothing
 
-        [] ->
-            case
-                Decode.decodeValue
-                    (Decode.oneOf
-                        [ Decode.map Field.Int Decode.int
-                        , Decode.map Field.Number Decode.float
-                        , Decode.map Field.String Decode.string
-                        , Decode.map Field.Bool Decode.bool
-                        ]
-                    )
-                    value
-            of
-                Ok fv ->
-                    Just fv
-
-                Err _ ->
-                    Nothing
+        [] -> Just value
 
         _ ->
             Nothing
 
 
-getField : String -> Form -> FieldState
-getField path form =
+getField : Bool -> String -> Form -> FieldState
+getField disabled path form =
     { path = path
-    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getPointedValue pointer (getValue form)) |> Maybe.withDefault Empty
+    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getPointedFieldValue pointer (getValue form)) |> Maybe.withDefault Empty
     , error = getErrorAt path form
     , hasFocus = getFocus form == Just path
+    , disabled = disabled
     }
 
 
@@ -176,10 +190,10 @@ update validation msg (Form model) =
             in
             Form (updateValidate validation newModel)
 
-        FocusCategory uiPath ix ->
+        FocusCategory uiState ix ->
             let
                 newModel =
-                    { model | categoryFocus = Dict.insert uiPath ix model.categoryFocus }
+                    { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
             in Form (updateValidate validation newModel)
 
 

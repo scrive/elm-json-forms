@@ -13,6 +13,7 @@ module Form.Validate exposing
     , minLength
     , nonEmpty
     , oneOf
+    , isOk
     , succeed
     , unless
     , validateAll
@@ -169,18 +170,19 @@ succeed a =
 
 {-| First successful validation wins, from left to right.
 -}
-oneOf : List (Validation a) -> Validation a
-oneOf validations =
+oneOf : List (Value -> Validation a) -> Value -> Validation a
+oneOf validations v =
     let
-        walkResults result combined =
-            case ( combined, result ) of
-                ( Ok _, _ ) ->
-                    combined
+        f : (Value -> Validation a) -> Validation a -> Validation a
+        f a b =
+            case a v of
+                Ok x ->
+                    a v
 
-                _ ->
-                    result
+                Err _ ->
+                    b
     in
-    List.foldl walkResults (Err (Error.error Error.Empty)) validations
+    List.foldl f (Err (Error.error Error.Empty)) validations
 
 
 validateAll : List (a -> Validation b) -> a -> Validation a

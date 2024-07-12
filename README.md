@@ -16,8 +16,8 @@ Generate validating forms from JSON schemas.
 
 ## Unimplemented features
 
-- [ ] Layout
-  - [ ] Remove unnecessary nested formRow items for horizontal layout inside vertical layout
+- [x] Layout
+  - [x] Remove unnecessary nested formRow items for horizontal layout inside vertical layout
 - [ ] Control Example
   - [ ] Descriptions as tooltips for Booleans
   - [ ] Asterisks for required fields
@@ -27,14 +27,14 @@ Generate validating forms from JSON schemas.
   - [ ] Hide required asterisk
 - [ ] Categorization Example
   - [x] Fix multiple categorizations in one schema (in vertical layout)
-  - [ ] Rules to show and hide categories
+  - [x] Rules to show and hide categories
   - [ ] Implement prev/next buttons
   - [ ] Implement stepper variant
-- [ ] Rule example
+- [x] Rule example
   - [x] Groups
   - [x] Group labels
-  - [ ] Rule to enable/disable
-  - [ ] Rule to show/hide
+  - [x] Rule to enable/disable
+  - [x] Rule to show/hide
 
 ## Warnings
 

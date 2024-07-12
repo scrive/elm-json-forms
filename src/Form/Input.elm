@@ -42,6 +42,7 @@ baseInput options type__ toFieldValue inputType state attrs =
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
             , Attrs.map never options.theme.fieldInput
+            , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.txt
                     { withError = state.error /= Nothing
@@ -98,6 +99,7 @@ slider options schema toFieldValue inputType state attrs =
             , Attrs.attribute "min" (String.fromFloat minLimit)
             , Attrs.attribute "max" (String.fromFloat maxLimit)
             , Attrs.attribute "step" (String.fromFloat step)
+            , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.txt
                     { withError = state.error /= Nothing
@@ -124,6 +126,7 @@ textArea options state attrs =
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
             , attribute "rows" "4"
+            , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.txt
                     { withError = state.error /= Nothing
@@ -200,6 +203,7 @@ baseSelectInput options valueList toFieldValue state attrs =
                 (targetValue |> Json.map (toFieldValue >> Input state.path Select))
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
+            , Attrs.disabled state.disabled
             , Attrs.map never <| options.theme.select { withError = state.error /= Nothing }
             ]
 
@@ -235,6 +239,7 @@ checkboxInput state attrs =
             , onCheck (Bool >> Input state.path Checkbox)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
+            , Attrs.disabled state.disabled
             ]
     in
     input (formAttrs ++ attrs) []
@@ -252,6 +257,7 @@ radioInput value state attrs =
             , checked (Field.valueAsString state.value == value)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
+            , Attrs.disabled state.disabled
             , on
                 "change"
                 (targetValue |> Json.map (String >> Input state.path Radio))

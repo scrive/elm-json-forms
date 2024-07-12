@@ -61,9 +61,9 @@ tailwind =
                 , ( "border-0", not withError )
                 , ( isInvalid, withError )
                 ]
-    , categorizationMenu = Attrs.class "flex space-x-4 my-4 bg-indigo-500 font-bold shadow-sm rounded-md ring-1"
+    , categorizationMenu = Attrs.class "flex my-4 bg-indigo-500 font-bold shadow-sm rounded-md ring-1"
     , categorizationMenuItem = \{ focus } -> Attrs.classList
-        [ ("m-4 max-w-full", True)
+        [ ("p-4 max-w-full", True)
         , ("text-white", focus)
         , ("text-white/60", not focus)
         ]

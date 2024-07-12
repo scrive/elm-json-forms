@@ -55,7 +55,7 @@ update msg state =
 
 view : State -> Html Msg
 view state =
-    div [] <| Json.Schema.Form.Fields.uiSchemaView state.options [] state.uiSchema state.schema state.form
+    div [] <| Json.Schema.Form.Fields.uiSchemaView state.options {uiPath = [], disabled = False} state.uiSchema state.schema state.form
 
 
 submit : Msg

@@ -179,6 +179,10 @@ errorString path error =
         InvalidBool ->
             "That is not a valid option."
 
+
+        InvalidNull ->
+            "That is not a valid option."
+
         LessIntThan n ->
             "Can not be smaller than " ++ String.fromInt n ++ "."
 
@@ -758,6 +762,10 @@ categorizationExample1UiSchema =
           {
             "type": "HorizontalLayout",
             "elements": [
+          {
+            "type": "Control",
+            "scope": "#/properties/provideAddress"
+          },
               {
                 "type": "Control",
                 "scope": "#/properties/address/properties/street"
