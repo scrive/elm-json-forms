@@ -62,11 +62,13 @@ tailwind =
                 , ( isInvalid, withError )
                 ]
     , categorizationMenu = Attrs.class "flex my-4 bg-indigo-500 font-bold shadow-sm rounded-md ring-1"
-    , categorizationMenuItem = \{ focus } -> Attrs.classList
-        [ ("p-4 max-w-full", True)
-        , ("text-white", focus)
-        , ("text-white/60", not focus)
-        ]
+    , categorizationMenuItem =
+        \{ focus } ->
+            Attrs.classList
+                [ ( "p-4 max-w-full", True )
+                , ( "text-white", focus )
+                , ( "text-white/60", not focus )
+                ]
     , checkboxWrapper = Attrs.class "flex h-6 items-center"
     , checkboxInput =
         \{ withError } ->

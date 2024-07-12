@@ -3,15 +3,15 @@ module Form exposing
     , Form(..)
     , InputType(..)
     , Msg(..)
+    , getCategoryFocus
     , getErrors
     , getField
     , getFocus
-    , getValue
     , getFormId
+    , getPointedValue
+    , getValue
     , initial
     , update
-    , getPointedValue
-    , getCategoryFocus
     )
 
 import Dict exposing (Dict)
@@ -25,7 +25,9 @@ import Json.Schema.Definitions as Schema exposing (Schema)
 import Set exposing (Set)
 
 
-type Form  -- TODO: rename to State
+type
+    Form
+    -- TODO: rename to State
     = Form Model
 
 
@@ -74,23 +76,27 @@ getCategoryFocus (Form form) =
 
 toFieldValue : Value -> Maybe FieldValue
 toFieldValue value =
-    case Decode.decodeValue
-                    (Decode.oneOf
-                        [ Decode.map Field.Int Decode.int
-                        , Decode.map Field.Number Decode.float
-                        , Decode.map Field.String Decode.string
-                        , Decode.map Field.Bool Decode.bool
-                        ]
-                    )
-                    value of
-                Ok fv ->
-                    Just fv
+    case
+        Decode.decodeValue
+            (Decode.oneOf
+                [ Decode.map Field.Int Decode.int
+                , Decode.map Field.Number Decode.float
+                , Decode.map Field.String Decode.string
+                , Decode.map Field.Bool Decode.bool
+                ]
+            )
+            value
+    of
+        Ok fv ->
+            Just fv
 
-                Err _ ->
-                    Nothing
+        Err _ ->
+            Nothing
+
 
 getPointedFieldValue : Pointer -> Value -> Maybe FieldValue
-getPointedFieldValue pointer value = Maybe.andThen toFieldValue (getPointedValue pointer value)
+getPointedFieldValue pointer value =
+    Maybe.andThen toFieldValue (getPointedValue pointer value)
 
 
 getPointedValue : Pointer -> Value -> Maybe Value
@@ -104,7 +110,8 @@ getPointedValue pointer value =
                 Err _ ->
                     Nothing
 
-        [] -> Just value
+        [] ->
+            Just value
 
         _ ->
             Nothing
@@ -199,18 +206,27 @@ update validation msg (Form model) =
             let
                 newModel =
                     { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
-            in Form (updateValidate validation newModel)
+            in
+            Form (updateValidate validation newModel)
 
 
 updateValue : Pointer -> FieldValue -> Value -> Value
 updateValue pointer new value =
     case pointer of
         "properties" :: key :: [] ->
-            Encode.dict identity identity <| case (Decode.decodeValue (Decode.dict Decode.value) value, Field.asValue new) of
-                (Ok o, Nothing) -> Dict.remove key o
-                (Ok o, Just v) -> Dict.insert key v o
-                (Err _, Nothing) -> Dict.empty
-                (Err _, Just v) -> Dict.singleton key v
+            Encode.dict identity identity <|
+                case ( Decode.decodeValue (Decode.dict Decode.value) value, Field.asValue new ) of
+                    ( Ok o, Nothing ) ->
+                        Dict.remove key o
+
+                    ( Ok o, Just v ) ->
+                        Dict.insert key v o
+
+                    ( Err _, Nothing ) ->
+                        Dict.empty
+
+                    ( Err _, Just v ) ->
+                        Dict.singleton key v
 
         "properties" :: key :: ps ->
             case Decode.decodeValue (Decode.dict Decode.value) value of
@@ -271,6 +287,7 @@ getErrorAt path (Form model) =
 getFocus : Form -> Maybe String
 getFocus (Form model) =
     model.focus
+
 
 getFormId : Form -> String
 getFormId (Form model) =

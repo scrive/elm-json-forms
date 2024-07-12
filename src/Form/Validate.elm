@@ -5,6 +5,7 @@ module Form.Validate exposing
     , fail
     , float
     , format
+    , isOk
     , map
     , mapError
     , mapErrorPointers
@@ -13,7 +14,6 @@ module Form.Validate exposing
     , minLength
     , nonEmpty
     , oneOf
-    , isOk
     , succeed
     , unless
     , validateAll

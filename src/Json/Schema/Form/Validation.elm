@@ -51,7 +51,8 @@ subSchema schema =
                 SingleType type_ ->
                     validateSingleType schema type_
 
-                AnyType -> Validate.succeed
+                AnyType ->
+                    Validate.succeed
 
                 NullableType type_ ->
                     Validate.oneOf
@@ -62,11 +63,11 @@ subSchema schema =
                 UnionType types ->
                     Validate.oneOf <| List.map (\type_ -> validateSingleType schema type_) types
     in
-        Validate.validateAll
-            [ Validate.whenJust schema.const validateConst
-            , Validate.whenJust schema.enum validateEnum
-            , typeValidations
-            ]
+    Validate.validateAll
+        [ Validate.whenJust schema.const validateConst
+        , Validate.whenJust schema.enum validateEnum
+        , typeValidations
+        ]
 
 
 validateSingleType : SubSchema -> SingleType -> Value -> Validation Value

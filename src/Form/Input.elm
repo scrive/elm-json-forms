@@ -1,7 +1,7 @@
 module Form.Input exposing
     ( Input
-    , baseInput, textInput, textArea, checkboxInput, radioInput, inputElementId, inputElementGroupId
-    , floatInput, floatSelectInput, intInput, intSelectInput, intSlider, numberSlider, textSelectInput
+    , baseInput, textInput, textArea, checkboxInput, radioInput
+    , floatInput, floatSelectInput, inputElementGroupId, inputElementId, intInput, intSelectInput, intSlider, numberSlider, textSelectInput
     )
 
 {-| Html input view helpers, wired for elm-form validation.
@@ -229,10 +229,14 @@ floatSelectInput options valueList =
 
 
 inputElementId : String -> String -> String
-inputElementId formId path = formId ++ "-" ++ path ++ "-input"
+inputElementId formId path =
+    formId ++ "-" ++ path ++ "-input"
+
 
 inputElementGroupId : String -> String -> String
-inputElementGroupId formId path = formId ++ "-" ++ path
+inputElementGroupId formId path =
+    formId ++ "-" ++ path
+
 
 {-| Checkbox input.
 -}

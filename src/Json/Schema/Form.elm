@@ -13,13 +13,14 @@ import Html exposing (Html, div)
 import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Fields
-import Maybe.Extra as Maybe
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
 import Json.Schema.Form.Validation exposing (validation)
+import Maybe.Extra as Maybe
 
 
-type alias State = -- TODO: rename to Form
+type alias State =
+    -- TODO: rename to Form
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema
@@ -56,7 +57,7 @@ update msg state =
 
 view : State -> Html Msg
 view state =
-    div [] <| Json.Schema.Form.Fields.uiSchemaView state.options {uiPath = [], disabled = False} state.uiSchema state.schema state.form
+    div [] <| Json.Schema.Form.Fields.uiSchemaView state.options { uiPath = [], disabled = False } state.uiSchema state.schema state.form
 
 
 submit : Msg

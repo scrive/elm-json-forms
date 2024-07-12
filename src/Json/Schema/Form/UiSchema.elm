@@ -1,22 +1,22 @@
 module Json.Schema.Form.UiSchema exposing
     ( Categorization
     , Category
+    , Condition
     , Control
+    , Effect(..)
     , Group
     , HorizontalLayout
-    , UiSchema(..)
     , Rule
-    , Effect (..)
-    , Condition
+    , UiSchema(..)
     , VerticalLayout
     , decodeStringLike
     , defaultValue
+    , fieldNameToTitle
     , fromString
     , generateUiSchema
+    , getRule
     , pointToSchema
     , unSchemata
-    , fieldNameToTitle
-    , getRule
     )
 
 import Dict exposing (Dict)
@@ -24,9 +24,9 @@ import Form.Field exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
-import String.Case
 import Json.Encode as Encode
 import Json.Schema.Definitions as Schema exposing (Schema(..))
+import String.Case
 
 
 type UiSchema
@@ -338,52 +338,59 @@ decodeDetail =
 
 
 fieldNameToTitle : String -> String
-fieldNameToTitle = String.Case.convertCase " " True True
+fieldNameToTitle =
+    String.Case.convertCase " " True True
+
 
 generateUiSchema : Schema -> UiSchema
 generateUiSchema schema =
     let
         go : Maybe String -> Schema -> Pointer -> Maybe UiSchema
         go mName s p =
+            case s of
+                Schema.BooleanSchema _ ->
+                    Nothing
 
-                case s of
-                    Schema.BooleanSchema _ ->
-                        Nothing
+                Schema.ObjectSchema o ->
+                    case o.type_ of
+                        Schema.SingleType t ->
+                            case t of
+                                Schema.ObjectType ->
+                                    let
+                                        elements =
+                                            List.filterMap (\( name, x ) -> go (Just name) x (List.append p [ "properties", name ])) (Maybe.withDefault [] <| Maybe.map unSchemata o.properties)
+                                    in
+                                    Just <|
+                                        case mName of
+                                            Nothing ->
+                                                UiVerticalLayout
+                                                    { elements = elements
+                                                    , rule = Nothing
+                                                    }
 
-                    Schema.ObjectSchema o ->
-                        case o.type_ of
-                            Schema.SingleType t ->
-                                case t of
-                                    Schema.ObjectType ->
-                                        let
-                                            elements = List.filterMap (\(name, x) -> go (Just name) x (List.append p [ "properties", name ])) (Maybe.withDefault [] <| Maybe.map unSchemata o.properties)
-                                        in Just <| case mName of
-                                            Nothing -> UiVerticalLayout
-                                                { elements = elements
-                                                , rule = Nothing
-                                                }
-                                            Just name -> UiGroup
-                                                { label = Just (fieldNameToTitle name)
-                                                , elements = elements
-                                                , rule = Nothing
-                                                }
+                                            Just name ->
+                                                UiGroup
+                                                    { label = Just (fieldNameToTitle name)
+                                                    , elements = elements
+                                                    , rule = Nothing
+                                                    }
 
-                                    Schema.NullType ->
-                                        Nothing
+                                Schema.NullType ->
+                                    Nothing
 
-                                    _ ->
-                                        Just <| UiControl
-                                        { scope = p
-                                        , label = Nothing
-                                        , options = Nothing
-                                        , rule = Nothing
-                                        }
+                                _ ->
+                                    Just <|
+                                        UiControl
+                                            { scope = p
+                                            , label = Nothing
+                                            , options = Nothing
+                                            , rule = Nothing
+                                            }
 
-                            _ ->
-                                Nothing
-
+                        _ ->
+                            Nothing
     in
-        Maybe.withDefault (UiVerticalLayout { elements = [], rule = Nothing }) <| go Nothing schema []
+    Maybe.withDefault (UiVerticalLayout { elements = [], rule = Nothing }) <| go Nothing schema []
 
 
 unSchemata : Schema.Schemata -> List ( String, Schema )
@@ -441,7 +448,7 @@ getRule : UiSchema -> Maybe Rule
 getRule uiSchema =
     case uiSchema of
         UiControl x ->
-           x.rule
+            x.rule
 
         UiHorizontalLayout x ->
             x.rule
@@ -470,17 +477,22 @@ decodeStringLike =
 
 {-| Properties which are, by default, not omitted but with a default value.
 -}
-defaultedProps : Schema.SubSchema -> List (String, Value)
+defaultedProps : Schema.SubSchema -> List ( String, Value )
 defaultedProps schema =
     Maybe.map unSchemata schema.properties
-    |> Maybe.withDefault []
-    |> List.filter (\(k, v) ->
-        case v of
-            ObjectSchema o_ -> List.member o_.type_ [Schema.SingleType Schema.BooleanType, Schema.SingleType Schema.ObjectType]
-            BooleanSchema _ -> False
-        )
-    |> List.map (\(k, v) -> (k, defaultValue v))
-    |> List.sortBy (\(k, _) -> k)
+        |> Maybe.withDefault []
+        |> List.filter
+            (\( k, v ) ->
+                case v of
+                    ObjectSchema o_ ->
+                        List.member o_.type_ [ Schema.SingleType Schema.BooleanType, Schema.SingleType Schema.ObjectType ]
+
+                    BooleanSchema _ ->
+                        False
+            )
+        |> List.map (\( k, v ) -> ( k, defaultValue v ))
+        |> List.sortBy (\( k, _ ) -> k)
+
 
 defaultValue : Schema -> Value
 defaultValue schema =
@@ -492,7 +504,8 @@ defaultValue schema =
 
                 ObjectSchema o ->
                     case o.type_ of
-                        Schema.SingleType Schema.ObjectType -> Encode.object (defaultedProps o)
+                        Schema.SingleType Schema.ObjectType ->
+                            Encode.object (defaultedProps o)
 
                         Schema.SingleType Schema.ArrayType ->
                             Encode.list Encode.int []
