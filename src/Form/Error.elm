@@ -1,17 +1,26 @@
 module Form.Error exposing
-    ( ErrorValue(..)
-    , Errors
+    ( Errors
+    , ErrorValue (..)
     , getErrors
     )
+
+{-| Form field error handling
+
+@docs Errors, ErrorValue, getErrors
+-}
 
 import Json.Decode exposing (Value)
 import Json.Pointer as Pointer exposing (Pointer)
 
 
+{-| List of all errors in a form. One field may generate multiple entries.
+-}
 type alias Errors =
     List ( Pointer, ErrorValue )
 
 
+{-| A single error value for a single field
+-}
 type ErrorValue
     = Empty
     | InvalidString
@@ -38,6 +47,8 @@ type ErrorValue
     | Unimplemented String
 
 
+{-| Get all form errors as a list
+-}
 getErrors : Errors -> List ( String, ErrorValue )
 getErrors errors =
     List.map (\( p, e ) -> ( Pointer.toString p, e )) errors

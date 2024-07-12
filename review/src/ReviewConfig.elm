@@ -45,7 +45,14 @@ import Simplify
 
 config : List Rule
 config =
-    [ NoUnused.Variables.rule
+    [ Docs.NoMissing.rule
+         { document = onlyExposed
+         , from = exposedModules
+         }
+    , Docs.ReviewLinksAndSections.rule
+    , Docs.ReviewAtDocs.rule
+    , Docs.UpToDateReadmeLinks.rule
+    , NoUnused.Variables.rule
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
     , NoUnused.CustomTypeConstructors.rule []

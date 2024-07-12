@@ -2,9 +2,17 @@ module Form exposing
     ( Form
     , Msg
     , init
-    , update
     , view
+    , update
     )
+
+{-| JSON Forms implementation with validations.
+
+Documentation for the original TypeScript library can be found here: https://jsonforms.io/
+
+@docs Form, Msg, init, update, view
+
+-}
 
 import Form.Options exposing (Options)
 import Form.State
@@ -16,19 +24,20 @@ import Maybe.Extra as Maybe
 import UiSchema.Internal exposing (UiSchema, defaultValue, generateUiSchema)
 
 
+{-| Main form type
+-}
 type alias Form =
     Form.State.Form
 
 
+{-| Form messages
+-}
 type alias Msg =
     Form.State.Msg
 
 
-view : Form -> Html Msg
-view form =
-    div [] <| Form.View.view form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
-
-
+{-| Initialize form state
+-}
 init : String -> Options -> Schema -> Maybe UiSchema -> Form
 init id options schema mUiSchema =
     let
@@ -38,7 +47,15 @@ init id options schema mUiSchema =
     Form.State.Form options schema uiSchema <|
         Form.State.initState id (defaultValue schema) (validation schema)
 
+{-| View the form
+-}
+view : Form -> Html Msg
+view form =
+    div [] <| Form.View.view form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
 
+
+{-| Update the form
+-}
 update : Msg -> Form -> Form
 update msg form =
     { form
