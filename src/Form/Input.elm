@@ -1,19 +1,23 @@
 module Form.Input exposing
     ( Input
-    , baseInput, textInput, textArea, checkboxInput, radioInput
-    , floatInput, floatSelectInput, inputElementGroupId, inputElementId, intInput, intSelectInput, intSlider, numberSlider, textSelectInput
+    , baseInput
+    , textInput
+    , textArea
+    , checkboxInput
+    , radioInput
+    , floatInput
+    , floatSelectInput
+    , inputElementGroupId
+    , inputElementId
+    , intInput
+    , intSelectInput
+    , intSlider
+    , numberSlider
+    , textSelectInput
     )
 
-{-| Html input view helpers, wired for elm-form validation.
-
-@docs Input
-
-@docs baseInput, textInput, passwordInput, textArea, checkboxInput, selectInput, radioInput
-
--}
-
 import Form exposing (FieldState, InputType(..), Msg(..))
-import Form.Field as Field exposing (FieldValue(..))
+import Form.FieldValue as FieldValue exposing (FieldValue(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
 import Html.Events exposing (..)
@@ -22,9 +26,6 @@ import Json.Schema.Definitions as Schema
 import Json.Schema.Form.Options exposing (Options)
 
 
-{-| An input renders Html from a field state and list of additional attributes.
-All input functions using this type alias are pre-wired with event handlers.
--}
 type alias Input =
     FieldState -> List (Attribute Msg) -> Html Msg
 
@@ -35,7 +36,7 @@ baseInput options toFieldValue inputType state attrs =
         formAttrs =
             [ id (inputElementId state.formId state.path)
             , type_ "text"
-            , value (Field.valueAsString state.value)
+            , value (FieldValue.asString state.value)
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -90,7 +91,7 @@ slider options schema toFieldValue inputType state attrs =
         formAttrs =
             [ id state.path
             , type_ "range"
-            , value (Field.valueAsString state.value)
+            , value (FieldValue.asString state.value)
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -119,7 +120,7 @@ textArea options state attrs =
     let
         formAttrs =
             [ id state.path
-            , value (Field.valueAsString state.value)
+            , value (FieldValue.asString state.value)
             , onInput (String >> Input state.path Textarea)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -137,7 +138,7 @@ textArea options state attrs =
 fromIntInput : String -> FieldValue
 fromIntInput s =
     if String.isEmpty s then
-        Field.Empty
+        FieldValue.Empty
 
     else
         Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
@@ -146,7 +147,7 @@ fromIntInput s =
 fromFloatInput : String -> FieldValue
 fromFloatInput s =
     if String.isEmpty s then
-        Field.Empty
+        FieldValue.Empty
 
     else
         Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
@@ -155,10 +156,10 @@ fromFloatInput s =
 fromStringInput : String -> FieldValue
 fromStringInput s =
     if String.isEmpty s then
-        Field.Empty
+        FieldValue.Empty
 
     else
-        Field.String s
+        FieldValue.String s
 
 
 textInput : Options -> Input
@@ -201,7 +202,7 @@ baseSelectInput options valueList toFieldValue state attrs =
             ]
 
         buildOption ( k, v ) =
-            option [ value k, selected (Field.valueAsString state.value == k) ] [ text v ]
+            option [ value k, selected (FieldValue.asString state.value == k) ] [ text v ]
     in
     select (formAttrs ++ attrs) (List.map buildOption valueList)
 
@@ -231,14 +232,12 @@ inputElementGroupId formId path =
     formId ++ "-" ++ path
 
 
-{-| Checkbox input.
--}
 checkboxInput : Input
 checkboxInput state attrs =
     let
         formAttrs =
             [ type_ "checkbox"
-            , checked (Field.valueAsBool state.value |> Maybe.withDefault False)
+            , checked (FieldValue.asBool state.value |> Maybe.withDefault False)
             , onCheck (Bool >> Input state.path Checkbox)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
@@ -248,8 +247,6 @@ checkboxInput state attrs =
     input (formAttrs ++ attrs) []
 
 
-{-| Radio input.
--}
 radioInput : String -> Input
 radioInput value state attrs =
     let
@@ -257,7 +254,7 @@ radioInput value state attrs =
             [ type_ "radio"
             , name state.path
             , Attrs.value value
-            , checked (Field.valueAsString state.value == value)
+            , checked (FieldValue.asString state.value == value)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
             , Attrs.disabled state.disabled

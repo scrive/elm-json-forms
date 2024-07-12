@@ -1,10 +1,5 @@
 module Form.Error exposing (Error, ErrorValue(..), error)
 
-{-| Validation errors.
-
-@docs Error, ErrorValue, error
-
--}
 
 import Form.Pointer exposing (Pointer)
 import Json.Decode exposing (Value)

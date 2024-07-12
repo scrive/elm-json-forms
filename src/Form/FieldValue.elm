@@ -1,8 +1,8 @@
-module Form.Field exposing
+module Form.FieldValue exposing
     ( FieldValue(..)
     , asValue
-    , valueAsBool
-    , valueAsString
+    , asBool
+    , asString
     )
 
 import Json.Encode as Encode exposing (Value)
@@ -17,8 +17,8 @@ type FieldValue
     | Empty
 
 
-valueAsString : FieldValue -> String
-valueAsString fv =
+asString : FieldValue -> String
+asString fv =
     case fv of
         String s ->
             s
@@ -58,8 +58,8 @@ asValue fv =
             Nothing
 
 
-valueAsBool : FieldValue -> Maybe Bool
-valueAsBool fv =
+asBool : FieldValue -> Maybe Bool
+asBool fv =
     case fv of
         Bool b ->
             Just b

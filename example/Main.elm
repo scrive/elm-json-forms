@@ -1,18 +1,16 @@
 module Main exposing (main)
 
 import Browser
-import Dict
 import Form exposing (InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
-import Form.Field as Field exposing (FieldValue)
 import Html exposing (..)
-import Html.Attributes as Attrs exposing (class, disabled, style)
-import Html.Events exposing (onClick, onSubmit)
-import Json.Encode as Encode exposing (bool, float, int, list, string)
+import Html.Attributes as Attrs exposing (class)
+import Html.Events exposing (onSubmit)
+import Json.Encode as Encode
 import Json.Schema
-import Json.Schema.Definitions as Schema exposing (Schema)
+import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form exposing (Form, Msg)
-import Json.Schema.Form.Theme as Theme exposing (Theme)
+import Json.Schema.Form.Theme as Theme
 import Json.Schema.Form.UiSchema as UiSchema exposing (UiSchema)
 import List.Extra as List
 
@@ -143,7 +141,7 @@ viewForm title form =
             [ Json.Schema.Form.view form
             , let
                 json =
-                    Encode.encode 4 <| form.state.value
+                    Encode.encode 4 form.state.value
               in
               pre
                 [ if anyErrors then
@@ -159,7 +157,7 @@ viewForm title form =
 
 
 errorString : String -> ErrorValue -> String
-errorString path error =
+errorString _ error =
     case error of
         Empty ->
             "is a required property"

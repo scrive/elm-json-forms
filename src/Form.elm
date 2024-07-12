@@ -12,7 +12,7 @@ module Form exposing
 
 import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue)
-import Form.Field as Field exposing (FieldValue(..))
+import Form.FieldValue as FieldValue exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
 import Form.Validate exposing (Validation)
 import Json.Decode as Decode exposing (Value)
@@ -57,10 +57,10 @@ toFieldValue value =
     case
         Decode.decodeValue
             (Decode.oneOf
-                [ Decode.map Field.Int Decode.int
-                , Decode.map Field.Number Decode.float
-                , Decode.map Field.String Decode.string
-                , Decode.map Field.Bool Decode.bool
+                [ Decode.map FieldValue.Int Decode.int
+                , Decode.map FieldValue.Number Decode.float
+                , Decode.map FieldValue.String Decode.string
+                , Decode.map FieldValue.Bool Decode.bool
                 ]
             )
             value
@@ -189,7 +189,7 @@ updateValue pointer new value =
     case pointer of
         "properties" :: key :: [] ->
             Encode.dict identity identity <|
-                case ( Decode.decodeValue (Decode.dict Decode.value) value, Field.asValue new ) of
+                case ( Decode.decodeValue (Decode.dict Decode.value) value, FieldValue.asValue new ) of
                     ( Ok o, Nothing ) ->
                         Dict.remove key o
 
@@ -212,7 +212,7 @@ updateValue pointer new value =
                     Encode.dict identity identity <| Dict.singleton key (updateValue ps new Encode.null)
 
         [] ->
-            Maybe.withDefault Encode.null <| Field.asValue new
+            Maybe.withDefault Encode.null <| FieldValue.asValue new
 
         _ ->
             value
