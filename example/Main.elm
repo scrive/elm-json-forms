@@ -10,47 +10,61 @@ import Html.Attributes as Attrs exposing (class, disabled, style)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode as Encode exposing (bool, float, int, list, string)
 import Json.Schema
-import Json.Schema.Form exposing (Msg, State)
 import Json.Schema.Definitions as Schema exposing (Schema)
+import Json.Schema.Form exposing (Msg, State)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UiSchema exposing (UiSchema)
+import List.Extra as List
 
 
 type alias MainState =
     { forms : List State
+    , titles : List String
     }
 
+
 type alias FormSpec =
-  { title : String
-  , schema : Schema
-  , uiSchema : Maybe UiSchema
-  }
+    { title : String
+    , schema : Schema
+    , uiSchema : Maybe UiSchema
+    }
+
 
 type alias MainMsg =
-  { formId : Int
-  , msg : Msg
-  }
+    { formId : Int
+    , msg : Msg
+    }
 
 
 formSpec : String -> String -> Maybe String -> Result String FormSpec
 formSpec title schemaText uiSchemaText =
-  let
-    schema = Json.Schema.fromString schemaText
-    uiSchema = Maybe.map UiSchema.fromString uiSchemaText
+    let
+        schema =
+            Json.Schema.fromString schemaText
 
-  in case (schema, uiSchema) of
-    (Ok s, Nothing) ->
-      Ok { title = title
-      , schema = s
-      , uiSchema = Nothing
-      }
-    (Ok s, Just (Ok us)) ->
-      Ok { title = title
-      , schema = s
-      , uiSchema = Just us
-      }
-    (Err e, _) -> Err e
-    (_, Just (Err e)) -> Err e
+        uiSchema =
+            Maybe.map UiSchema.fromString uiSchemaText
+    in
+    case ( schema, uiSchema ) of
+        ( Ok s, Nothing ) ->
+            Ok
+                { title = title
+                , schema = s
+                , uiSchema = Nothing
+                }
+
+        ( Ok s, Just (Ok us) ) ->
+            Ok
+                { title = title
+                , schema = s
+                , uiSchema = Just us
+                }
+
+        ( Err e, _ ) ->
+            Err e
+
+        ( _, Just (Err e) ) ->
+            Err e
 
 
 main : Program () MainState MainMsg
@@ -62,49 +76,63 @@ init : MainState
 init =
     let
         formSpecs =
-          [ formSpec "Basic Example" basicExampleSchema (Just basicExampleUiSchema)
-          , formSpec "Control Example 1" controlExample1Schema (Just controlExample1UiSchema)
-          , formSpec "Control Example 2" controlExample2Schema (Just controlExample2UiSchema)
-          , formSpec "Testing Schema" testingSchema Nothing
-          ]
-
+            [ formSpec "Basic Example" basicExampleSchema (Just basicExampleUiSchema)
+            , formSpec "Control Example 1" controlExample1Schema (Just controlExample1UiSchema)
+            , formSpec "Control Example 2" controlExample2Schema (Just controlExample2UiSchema)
+            , formSpec "Categorization Example 1" categorizationExample1Schema (Just categorizationExample1UiSchema)
+            , formSpec "Testing Schema" testingSchema Nothing
+            ]
     in
     { forms =
-      List.map (\formSpecRes ->
-        case formSpecRes of
-            Ok fs ->
-                Json.Schema.Form.init
-                        { errors = errorString
-                        , theme = Theme.tailwind
-                        }
-                        fs.schema
-                        fs.uiSchema
+        List.map
+            (\formSpecRes ->
+                case formSpecRes of
+                    Ok fs ->
+                        Json.Schema.Form.init
+                            { errors = errorString
+                            , theme = Theme.tailwind
+                            }
+                            fs.schema
+                            fs.uiSchema
 
-            Err error ->
-                Debug.todo error
-      ) formSpecs
+                    Err error ->
+                        Debug.todo error
+            )
+            formSpecs
+    , titles = List.map (\x -> Result.withDefault "(no title)" <| Result.map .title x) formSpecs
     }
 
 
 update : MainMsg -> MainState -> MainState
 update msg state =
-    { forms = List.indexedMap (\i f -> if msg.formId == i then Json.Schema.Form.update msg.msg f else f) state.forms
+    { state
+        | forms =
+            List.indexedMap
+                (\i f ->
+                    if msg.formId == i then
+                        Json.Schema.Form.update msg.msg f
+
+                    else
+                        f
+                )
+                state.forms
     }
 
 
 view : MainState -> Html MainMsg
 view state =
-    div [] <| List.indexedMap (\i f -> Html.map (\m -> {formId = i, msg = m}) (viewForm f)) state.forms
+    div [] <| List.indexedMap (\i ( title, form ) -> Html.map (\m -> { formId = i, msg = m }) (viewForm title form)) (List.zip state.titles state.forms)
 
 
-viewForm : State -> Html Msg
-viewForm state =
+viewForm : String -> State -> Html Msg
+viewForm title state =
     let
         anyErrors =
             not <| List.isEmpty <| Form.getErrors state.form
     in
     div []
-        [ form [ onSubmit Json.Schema.Form.submit ]
+        [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]
+        , form [ onSubmit Json.Schema.Form.submit ]
             [ Json.Schema.Form.view state
             , let
                 json =
@@ -272,7 +300,8 @@ testingSchema =
 
 
 basicExampleSchema : String
-basicExampleSchema ="""
+basicExampleSchema =
+    """
 {
   "type": "object",
   "properties": {
@@ -338,7 +367,8 @@ basicExampleSchema ="""
 
 
 basicExampleUiSchema : String
-basicExampleUiSchema ="""
+basicExampleUiSchema =
+    """
 {
   "type": "VerticalLayout",
   "elements": [
@@ -394,8 +424,10 @@ basicExampleUiSchema ="""
 }
 """
 
+
 controlExample1Schema : String
-controlExample1Schema ="""
+controlExample1Schema =
+    """
 {
   "type": "object",
   "properties": {
@@ -436,8 +468,10 @@ controlExample1Schema ="""
 }
 """
 
+
 controlExample1UiSchema : String
-controlExample1UiSchema = """
+controlExample1UiSchema =
+    """
 {
   "type": "VerticalLayout",
   "elements": [
@@ -477,8 +511,10 @@ controlExample1UiSchema = """
 }
 """
 
+
 controlExample2Schema : String
-controlExample2Schema = """
+controlExample2Schema =
+    """
 {
   "type": "object",
   "properties": {
@@ -523,8 +559,10 @@ controlExample2Schema = """
 }
 """
 
+
 controlExample2UiSchema : String
-controlExample2UiSchema = """
+controlExample2UiSchema =
+    """
 {
   "type": "VerticalLayout",
   "elements": [
@@ -580,4 +618,215 @@ controlExample2UiSchema = """
     }
   ]
 }
+"""
+
+
+categorizationExample1Schema : String
+categorizationExample1Schema =
+    """
+{
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Please enter your first name"
+    },
+    "secondName": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Please enter your second name"
+    },
+    "vegetarian": {
+      "type": "boolean"
+    },
+    "birthDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Please enter your birth date."
+    },
+    "nationality": {
+      "type": "string",
+      "enum": [
+        "DE",
+        "IT",
+        "JP",
+        "US",
+        "RU",
+        "Other"
+      ]
+    },
+    "provideAddress": {
+      "type": "boolean"
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "streetNumber": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 5
+        }
+      }
+    },
+    "vegetarianOptions": {
+      "type": "object",
+      "properties": {
+        "vegan": {
+          "type": "boolean"
+        },
+        "favoriteVegetable": {
+          "type": "string",
+          "enum": [
+            "Tomato",
+            "Potato",
+            "Salad",
+            "Aubergine",
+            "Cucumber",
+            "Other"
+          ]
+        },
+        "otherFavoriteVegetable": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+"""
+
+
+categorizationExample1UiSchema : String
+categorizationExample1UiSchema =
+    """
+  {
+    "type": "Categorization",
+    "elements": [
+      {
+        "type": "Category",
+        "label": "Basic",
+        "elements": [
+          {
+            "type": "HorizontalLayout",
+            "elements": [
+              {
+                "type": "Control",
+                "scope": "#/properties/firstName"
+              },
+              {
+                "type": "Control",
+                "scope": "#/properties/secondName"
+              }
+            ]
+          },
+          {
+            "type": "HorizontalLayout",
+            "elements": [
+              {
+                "type": "Control",
+                "scope": "#/properties/birthDate"
+              },
+              {
+                "type": "Control",
+                "scope": "#/properties/nationality"
+              }
+            ]
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/provideAddress"
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/vegetarian"
+          }
+        ]
+      },
+      {
+        "type": "Category",
+        "label": "Address",
+        "elements": [
+          {
+            "type": "HorizontalLayout",
+            "elements": [
+              {
+                "type": "Control",
+                "scope": "#/properties/address/properties/street"
+              },
+              {
+                "type": "Control",
+                "scope": "#/properties/address/properties/streetNumber"
+              }
+            ]
+          },
+          {
+            "type": "HorizontalLayout",
+            "elements": [
+              {
+                "type": "Control",
+                "scope": "#/properties/address/properties/city"
+              },
+              {
+                "type": "Control",
+                "scope": "#/properties/address/properties/postalCode"
+              }
+            ]
+          }
+        ],
+        "rule": {
+          "effect": "SHOW",
+          "condition": {
+            "scope": "#/properties/provideAddress",
+            "schema": {
+              "const": true
+            }
+          }
+        }
+      },
+      {
+        "type": "Category",
+        "label": "Additional",
+        "elements": [
+          {
+            "type": "Control",
+            "scope": "#/properties/vegetarianOptions/properties/vegan"
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/vegetarianOptions/properties/favoriteVegetable"
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/vegetarianOptions/properties/otherFavoriteVegetable",
+            "rule": {
+              "effect": "SHOW",
+              "condition": {
+                "scope": "#/properties/vegetarianOptions/properties/favoriteVegetable",
+                "schema": {
+                  "const": "Other"
+                }
+              }
+            }
+          }
+        ],
+        "rule": {
+          "effect": "SHOW",
+          "condition": {
+            "scope": "#/properties/vegetarian",
+            "schema": {
+              "const": true
+            }
+          }
+        }
+      }
+    ]
+  }
 """

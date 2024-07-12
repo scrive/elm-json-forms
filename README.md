@@ -14,6 +14,21 @@ Generate validating forms from JSON schemas.
 - Supports custom string formats using validation functions (similar to Json decoders).
 - Comes with default Bootstrap and Tailwind CSS themes in the `Theme` object, that can also be customised.
 
+## Unimplemented features
+
+- [ ] Layout
+  - [ ] Remove unnecessary nested formRow items for horizontal layout inside vertical layout
+- [ ] Control Example
+  - [ ] Descriptions as tooltips for Booleans
+  - [ ] Asterisks for required fields
+  - [ ] Toggle buttons for booleans
+  - [ ] Trim text
+  - [ ] Restrict text
+  - [ ] Hide required asterisk
+- [ ] Categorization Example
+  - [x] Fix multiple categorizations in one schema (in vertical layout)
+  - [ ] Rules to show and hide categories
+
 ## Warnings
 
 1. The way form fields are generated and presented is very opinionated and thus not always suitable for general case usage. This library is intended to be used for cases where you have control over how the schema is structured.

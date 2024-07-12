@@ -9,7 +9,7 @@ module Json.Schema.Form exposing
     )
 
 import Form exposing (Form(..), Msg)
-import Html exposing (Html)
+import Html exposing (Html, div)
 import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Fields
@@ -55,7 +55,7 @@ update msg state =
 
 view : State -> Html Msg
 view state =
-    Json.Schema.Form.Fields.uiSchemaView state.options [] state.uiSchema state.schema state.form
+    div [] <| Json.Schema.Form.Fields.uiSchemaView state.options [] state.uiSchema state.schema state.form
 
 
 submit : Msg

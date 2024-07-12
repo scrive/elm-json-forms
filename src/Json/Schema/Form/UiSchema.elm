@@ -1,6 +1,10 @@
 module Json.Schema.Form.UiSchema exposing
-    ( Control
+    ( Categorization
+    , Category
+    , Control
+    , HorizontalLayout
     , UiSchema(..)
+    , VerticalLayout
     , decodeStringLike
     , defaultValue
     , fromString
@@ -13,9 +17,9 @@ import Dict exposing (Dict)
 import Form.Field exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
 import Json.Schema.Definitions as Schema exposing (Schema(..))
-import Json.Decode.Pipeline as Decode
 
 
 type UiSchema
@@ -110,6 +114,8 @@ type alias Options =
     , showUnfocusedDescription : Maybe Bool
     , hideRequiredAsterisk : Maybe Bool -- TODO: implement
     , toggle : Maybe Bool -- TODO: implement
+    , variant : Maybe String -- TODO: implement
+    , showNavButtons : Maybe String -- TODO: implement
     }
 
 
@@ -210,7 +216,7 @@ decodeCategorization =
 decodeCategory : Decoder Category
 decodeCategory =
     Decode.map3 Category
-        (Decode.field "label" <| Decode.string)
+        (Decode.field "label" Decode.string)
         (Decode.field "elements" <| Decode.list decodeUiSchema)
         (Decode.maybe <| Decode.field "rule" decodeRule)
 
@@ -275,6 +281,8 @@ decodeOptions =
         |> Decode.optional "showUnfocusedDescription" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "hideRequiredAsterisk" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "toggle" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "variant" (Decode.nullable Decode.string) Nothing
+        |> Decode.optional "showNavButtons" (Decode.nullable Decode.string) Nothing
 
 
 decodeFormat : Decoder Format

@@ -30,6 +30,7 @@ type alias Model =
     { value : Value
     , focus : Maybe String
     , errors : Error
+    , categoryFocus : Dict (List Int) Int
     }
 
 
@@ -40,6 +41,7 @@ initial initialValue validation =
             { value = initialValue
             , focus = Nothing
             , errors = []
+            , categoryFocus = Dict.empty
             }
     in
     Form (updateValidate validation model)
@@ -108,6 +110,7 @@ type Msg
     | Submit
     | Validate
     | Reset Value
+    | FocusCategory (List Int) Int
 
 
 type InputType
@@ -173,23 +176,22 @@ update validation msg (Form model) =
             in
             Form (updateValidate validation newModel)
 
+        FocusCategory uiPath ix ->
+            let
+                newModel =
+                    { model | categoryFocus = Dict.insert uiPath ix model.categoryFocus }
+            in Form (updateValidate validation newModel)
+
 
 updateValue : Pointer -> FieldValue -> Value -> Value
 updateValue pointer new value =
     case pointer of
         "properties" :: key :: [] ->
-            case Decode.decodeValue (Decode.dict Decode.value) value of
-                Ok o ->
-                    Encode.dict identity identity <|
-                        case Field.asValue new of
-                            Nothing ->
-                                Dict.remove key o
-
-                            Just v ->
-                                Dict.insert key v o
-
-                Err e ->
-                    value
+            Encode.dict identity identity <| case (Decode.decodeValue (Decode.dict Decode.value) value, Field.asValue new) of
+                (Ok o, Nothing) -> Dict.remove key o
+                (Ok o, Just v) -> Dict.insert key v o
+                (Err _, Nothing) -> Dict.empty
+                (Err _, Just v) -> Dict.singleton key v
 
         "properties" :: key :: ps ->
             case Decode.decodeValue (Decode.dict Decode.value) value of
@@ -198,7 +200,7 @@ updateValue pointer new value =
                         Dict.insert key (updateValue ps new (Maybe.withDefault Encode.null <| Dict.get key o)) o
 
                 Err e ->
-                    value
+                    Encode.dict identity identity <| Dict.singleton key (updateValue ps new Encode.null)
 
         [] ->
             Maybe.withDefault Encode.null <| Field.asValue new

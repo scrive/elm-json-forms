@@ -1,6 +1,13 @@
 module Json.Schema.Form.Format exposing
-    ( Format, init
-    , withPrefix, withSuffix, withPlaceholder, withAutocompleteOff, withAutocompleteOn, withAutocomplete, withInputType
+    ( Format
+    , init
+    , withAutocomplete
+    , withAutocompleteOff
+    , withAutocompleteOn
+    , withInputType
+    , withPlaceholder
+    , withPrefix
+    , withSuffix
     , withValidation
     )
 
