@@ -1,9 +1,8 @@
 module Form.State exposing
     ( FieldState
     , FormState
-    , InputType(..)
     , Msg(..)
-    , getField
+    , fieldState
     , initial
     , update
     )
@@ -26,6 +25,27 @@ type alias FormState =
     }
 
 
+type alias FieldState =
+    { formId : String
+    , pointer : Pointer
+    , value : FieldValue
+    , error : Maybe ErrorValue
+    , hasFocus : Bool
+    , disabled : Bool
+    }
+
+
+type Msg
+    = NoOp
+    | Focus Pointer
+    | Blur
+    | Input Pointer FieldValue
+    | Submit
+    | Validate
+    | Reset Value
+    | FocusCategory (List Int) Int
+
+
 initial : String -> Value -> (Value -> Validation output) -> FormState
 initial formId initialValue validation =
     let
@@ -40,18 +60,8 @@ initial formId initialValue validation =
     updateValidations validation model
 
 
-type alias FieldState =
-    { formId : String
-    , pointer : Pointer
-    , value : FieldValue
-    , error : Maybe ErrorValue
-    , hasFocus : Bool
-    , disabled : Bool
-    }
-
-
-getField : Bool -> Pointer -> FormState -> FieldState
-getField disabled pointer form =
+fieldState : Bool -> Pointer -> FormState -> FieldState
+fieldState disabled pointer form =
     { formId = form.formId
     , pointer = pointer
     , value = Maybe.withDefault Empty <| FieldValue.pointedFieldValue pointer form.value
@@ -59,25 +69,6 @@ getField disabled pointer form =
     , hasFocus = form.focus == Just pointer
     , disabled = disabled
     }
-
-
-type Msg
-    = NoOp
-    | Focus Pointer
-    | Blur
-    | Input Pointer InputType FieldValue
-    | Submit
-    | Validate
-    | Reset Value
-    | FocusCategory (List Int) Int
-
-
-type InputType
-    = Text
-    | Textarea
-    | Select
-    | Radio
-    | Checkbox
 
 
 update : (Value -> Validation output) -> Msg -> FormState -> FormState
@@ -92,7 +83,7 @@ update validation msg model =
         Blur ->
             updateValidations validation { model | focus = Nothing }
 
-        Input pointer _ fieldValue ->
+        Input pointer fieldValue ->
             updateValidations validation
                 { model | value = FieldValue.updateValue pointer fieldValue model.value }
 

@@ -1,4 +1,4 @@
-module Json.Schema.Form.Theme exposing (Theme, tailwind)
+module Form.View.Theme exposing (Theme, tailwind)
 
 import Html exposing (Attribute)
 import Html.Attributes as Attrs

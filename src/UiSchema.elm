@@ -1,4 +1,4 @@
-module Json.Schema.Form.UiSchema exposing
+module UiSchema exposing
     ( Categorization
     , Category
     , Condition

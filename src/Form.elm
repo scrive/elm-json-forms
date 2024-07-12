@@ -10,11 +10,12 @@ import Form.State exposing (FormState, Msg)
 import Html exposing (Html, div)
 import Json.Encode as Encode
 import Json.Schema.Definitions exposing (Schema)
-import Json.Schema.Form.Fields
-import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
-import Json.Schema.Form.Validation exposing (validation)
+import Form.View
+import Form.Options exposing (Options)
+import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
+import Form.Validation exposing (validation)
 import Maybe.Extra as Maybe
+import Form.Error exposing (ErrorValue)
 
 
 type alias Form =
@@ -54,4 +55,4 @@ update msg form =
 
 view : Form -> Html Msg
 view form =
-    div [] <| Json.Schema.Form.Fields.uiSchemaView form.options { uiPath = [], disabled = False } form.uiSchema form.schema form.state
+    div [] <| Form.View.view form.options { uiPath = [], disabled = False } form.uiSchema form.schema form.state

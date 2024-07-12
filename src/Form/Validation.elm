@@ -1,4 +1,4 @@
-module Json.Schema.Form.Validation exposing (validation)
+module Form.Validation exposing (validation)
 
 import Form.Error as Error exposing (ErrorValue(..))
 import Json.Decode as Decode exposing (Value)
@@ -11,8 +11,8 @@ import Json.Schema.Definitions
         , SubSchema
         , Type(..)
         )
-import Json.Schema.Form.Regex
-import Json.Schema.Form.UiSchema exposing (unSchemata)
+import Form.Regex
+import UiSchema exposing (unSchemata)
 import Regex
 import Set
 import Validation exposing (Validation)
@@ -128,25 +128,25 @@ validateFormat format v =
     case format of
         -- TODO: custom error for different formats.
         "date-time" ->
-            validateRegex Json.Schema.Form.Regex.dateTime v
+            validateRegex Form.Regex.dateTime v
 
         "date" ->
-            validateRegex Json.Schema.Form.Regex.date v
+            validateRegex Form.Regex.date v
 
         "time" ->
-            validateRegex Json.Schema.Form.Regex.time v
+            validateRegex Form.Regex.time v
 
         "email" ->
-            validateRegex Json.Schema.Form.Regex.email v
+            validateRegex Form.Regex.email v
 
         "hostname" ->
-            validateRegex Json.Schema.Form.Regex.hostname v
+            validateRegex Form.Regex.hostname v
 
         "ipv4" ->
-            validateRegex Json.Schema.Form.Regex.ipv4 v
+            validateRegex Form.Regex.ipv4 v
 
         "ipv6" ->
-            validateRegex Json.Schema.Form.Regex.ipv6 v
+            validateRegex Form.Regex.ipv6 v
 
         _ ->
             Validation.succeed v

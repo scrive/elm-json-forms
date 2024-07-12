@@ -1,9 +1,9 @@
-module Json.Schema.Form.Fields exposing (TextFieldType(..), uiSchemaView)
+module Form.View exposing (view)
 
 import Dict
 import Form.State as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
-import Form.Input as Input
+import Form.View.Input as Input
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
     exposing
@@ -24,10 +24,10 @@ import Json.Schema.Definitions
         , SubSchema
         , Type(..)
         )
-import Json.Schema.Form.Options exposing (Options)
-import Json.Schema.Form.Theme exposing (Theme)
-import Json.Schema.Form.UiSchema as UI exposing (Effect(..), UiSchema)
-import Json.Schema.Form.Validation exposing (validation)
+import Form.Options exposing (Options)
+import Form.View.Theme exposing (Theme)
+import UiSchema as UI exposing (Effect(..), UiSchema)
+import Form.Validation exposing (validation)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import Validation
@@ -49,8 +49,8 @@ appendPathElement i st =
     { st | uiPath = List.append st.uiPath [ i ] }
 
 
-uiSchemaView : Options -> UiState -> UiSchema -> Schema -> FormState -> List (Html F.Msg)
-uiSchemaView options uiState uiSchema schema form =
+view : Options -> UiState -> UiSchema -> Schema -> FormState -> List (Html F.Msg)
+view options uiState uiSchema schema form =
     let
         ruleEffect : Maybe AppliedEffect
         ruleEffect =
@@ -131,7 +131,7 @@ horizontalLayoutView options uiState wholeSchema form hl =
             (\ix us ->
                 div
                     [ Attrs.map never options.theme.horizontalLayoutItem ]
-                    (uiSchemaView options (appendPathElement ix uiState) us wholeSchema form)
+                    (view options (appendPathElement ix uiState) us wholeSchema form)
             )
             hl.elements
     ]
@@ -143,7 +143,7 @@ verticalLayoutView options uiState wholeSchema form vl =
         (\ix us ->
             div
                 []
-                (uiSchemaView options (appendPathElement ix uiState) us wholeSchema form)
+                (view options (appendPathElement ix uiState) us wholeSchema form)
         )
         vl.elements
 
@@ -206,7 +206,7 @@ controlView options uiState wholeSchema control form =
             UI.pointToSchema wholeSchema control.scope
 
         fieldState =
-            F.getField uiState.disabled control.scope form
+            F.fieldState uiState.disabled control.scope form
 
         controlBody schema_ =
             case schema_ of

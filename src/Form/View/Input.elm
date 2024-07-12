@@ -1,5 +1,6 @@
-module Form.Input exposing
+module Form.View.Input exposing
     ( Input
+    , InputType (..)
     , baseInput
     , checkboxInput
     , floatInput
@@ -15,19 +16,26 @@ module Form.Input exposing
     , textSelectInput
     )
 
-import Form.State exposing (FieldState, InputType(..), Msg(..))
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
+import Form.State as FormState exposing (FieldState, Msg(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema
-import Json.Schema.Form.Options exposing (Options)
+import Form.Options exposing (Options)
 
 
 type alias Input =
     FieldState -> List (Attribute Msg) -> Html Msg
+
+type InputType
+    = Text
+    | Textarea
+    | Select
+    | Radio
+    | Checkbox
 
 
 baseInput : Options -> (String -> FieldValue) -> InputType -> Input
@@ -37,7 +45,7 @@ baseInput options toFieldValue inputType state attrs =
             [ id (inputElementId state.formId state.pointer)
             , type_ "text"
             , value (FieldValue.asString state.value)
-            , onInput (toFieldValue >> Input state.pointer inputType)
+            , onInput (toFieldValue >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
@@ -91,7 +99,7 @@ slider options schema toFieldValue inputType state attrs =
             [ id <| Pointer.toString state.pointer
             , type_ "range"
             , value (FieldValue.asString state.value)
-            , onInput (toFieldValue >> Input state.pointer inputType)
+            , onInput (toFieldValue >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.attribute "min" (String.fromFloat minLimit)
@@ -120,7 +128,7 @@ textArea options state attrs =
         formAttrs =
             [ id <| Pointer.toString state.pointer
             , value (FieldValue.asString state.value)
-            , onInput (String >> Input state.pointer Textarea)
+            , onInput (String >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , attribute "rows" "4"
@@ -193,7 +201,7 @@ baseSelectInput options valueList toFieldValue state attrs =
             [ id (inputElementId state.formId state.pointer)
             , on
                 "change"
-                (targetValue |> Decode.map (toFieldValue >> Input state.pointer Select))
+                (targetValue |> Decode.map (toFieldValue >> Input state.pointer))
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
@@ -237,7 +245,7 @@ checkboxInput state attrs =
         formAttrs =
             [ type_ "checkbox"
             , checked (FieldValue.asBool state.value |> Maybe.withDefault False)
-            , onCheck (Bool >> Input state.pointer Checkbox)
+            , onCheck (Bool >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
