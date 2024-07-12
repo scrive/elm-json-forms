@@ -35,7 +35,7 @@ import Test.Html.Selector exposing (attribute, checked, class, classes, selected
 options : Options
 options =
     { errors = \_ _ -> ""
-    , theme = Theme.default
+    , theme = Theme.tailwind
     }
 
 

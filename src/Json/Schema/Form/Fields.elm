@@ -110,30 +110,36 @@ controlView options uiPath wholeSchema control form =
                     case schema.type_ of
                         SingleType IntegerType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema fieldState IntField
+                                select options control schema fieldState IntField
 
                             else
-                                intInput options control.scope schema fieldState
+                                if (control.options |> Maybe.andThen (.slider)) == Just True then
+                                    intSlider options control schema fieldState
+                                else
+                                    intInput options control schema fieldState
 
                         SingleType NumberType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema fieldState NumberField
+                                select options control schema fieldState NumberField
 
                             else
-                                numberInput options control.scope schema fieldState
+                                if (control.options |> Maybe.andThen (.slider)) == Just True then
+                                    numberSlider options control schema fieldState
+                                else
+                                    numberInput options control schema fieldState
 
                         SingleType StringType ->
                             if schema.enum /= Nothing then
-                                select options control.scope schema fieldState StringField
+                                select options control schema fieldState StringField
 
                             else
                                 if (control.options |> Maybe.andThen (.multi)) == Just True then
-                                    textarea options control.scope schema fieldState
+                                    textarea options control schema fieldState
                                 else
-                                    textInput options control.scope schema fieldState
+                                    textInput options control schema fieldState
 
                         SingleType BooleanType ->
-                            checkbox options control.scope schema fieldState
+                            checkbox options control schema fieldState
 
                         _ ->
                             Html.nothing
@@ -156,8 +162,8 @@ type TextFieldType
     | StringField
 
 
-textInput : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
-textInput options path schema fieldState =
+textInput : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+textInput options control schema fieldState =
     let
         inputType : String
         inputType =
@@ -200,36 +206,52 @@ textInput options path schema fieldState =
     in
     fieldGroup (Input.textInput options fieldState [ type_ inputType ])
         options
-        path
+        control
         schema
         fieldState
 
 
 
-intInput : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
-intInput options path schema fieldState =
+intInput : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+intInput options control schema fieldState =
     fieldGroup (Input.intInput options fieldState []) options
-        path
+        control
         schema
         fieldState
 
 
 
-numberInput : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
-numberInput options path schema fieldState =
+numberInput : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+numberInput options control schema fieldState =
     fieldGroup (Input.floatInput options fieldState []) options
-        path
+        control
         schema
         fieldState
 
 
-textarea : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
-textarea options path schema state =
-    fieldGroup (Input.textArea options state []) options path schema state
+
+intSlider : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+intSlider options control schema fieldState =
+    fieldGroup (Input.intSlider options schema fieldState []) options
+        control
+        schema
+        fieldState
+
+numberSlider : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+numberSlider options control schema fieldState =
+    fieldGroup (Input.numberSlider options schema fieldState []) options
+        control
+        schema
+        fieldState
 
 
-checkbox : Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
-checkbox options path schema f =
+textarea : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+textarea options control schema state =
+    fieldGroup (Input.textArea options state []) options control schema state
+
+
+checkbox : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+checkbox options control schema f =
     let
         content : List (Html F.Msg)
         content =
@@ -239,7 +261,7 @@ checkbox options path schema f =
                     , id f.path
                     ]
                 , div [ Attrs.map never options.theme.checkboxTitle ]
-                    [ fieldTitle options.theme schema path |> Maybe.withDefault (text "") ]
+                    [ fieldTitle options.theme schema control.scope |> Maybe.withDefault (text "") ]
                 ]
             ]
 
@@ -270,8 +292,8 @@ checkbox options path schema f =
         ]
 
 
-select : Options -> Pointer -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
-select options path schema f fieldType =
+select : Options -> UI.Control -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
+select options control schema fieldState fieldType =
     let
         values : List String
         values =
@@ -280,12 +302,8 @@ select options path schema f fieldType =
         items : List ( String, String )
         items =
             List.map (\v -> ( v, v )) values
-    in
-    field options
-        schema
-        f
-        [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
-        , (case fieldType of
+
+        inputType = case fieldType of
             StringField ->
                 Input.textSelectInput
 
@@ -294,13 +312,14 @@ select options path schema f fieldType =
 
             IntField ->
                 Input.intSelectInput
-          )
-            items
-            f
-            [ Attrs.map never <| options.theme.select { withError = f.error /= Nothing }
-            , id <| Pointer.toString path ++ "-input"
-            ]
-        ]
+    in
+    fieldGroup
+        (inputType options items fieldState [])
+        options
+        control
+        schema
+        fieldState
+
 
 
 option : (SubSchema -> Maybe String) -> Schema -> ( String, Maybe SubSchema )
@@ -315,62 +334,29 @@ option attr schema =
             )
 
 
-field : Options -> SubSchema -> F.FieldState -> List (Html F.Msg) -> Html F.Msg
-field options schema f content =
+fieldGroup : Html F.Msg -> Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+fieldGroup inputField options control schema fieldState  =
     let
+        title : Html F.Msg
+        title = fieldTitle options.theme schema control.scope |> Maybe.withDefault (text "")
+
+        showDescription = Maybe.andThen (.showUnfocusedDescription) control.options == Just True || fieldState.hasFocus
+
         description : Html F.Msg
         description =
-            Maybe.withDefault Html.nothing <| fieldDescription options.theme schema
-
-        errorMessage : Html F.Msg
-        errorMessage =
-            Maybe.withDefault Html.nothing <| error options.theme options.errors f
-    in
-    div
-        [ Attrs.map never <|
-            options.theme.field
-                { withError =
-                    f.error /= Nothing
-                , withValue =
-                    f.value /= Field.Empty
-                }
-        ]
-        [ label [ for f.path, Attrs.map never options.theme.fieldLabel ]
-            [ div [ Attrs.map never options.theme.fieldInput ] content
-            , div [ Attrs.map never options.theme.fieldInputDescription ] [ description ]
-            , errorMessage
-            ]
-        ]
-
-
-
-fieldGroup : Html F.Msg -> Options -> Pointer -> SubSchema -> F.FieldState -> Html F.Msg
-fieldGroup inputField options path schema fieldState  =
-    let
-        description : Html F.Msg
-        description =
-            Maybe.withDefault Html.nothing <| fieldDescription options.theme schema
+            Maybe.withDefault Html.nothing <| if showDescription then fieldDescription options.theme schema else Nothing
 
         errorMessage : Html F.Msg
         errorMessage =
             Maybe.withDefault Html.nothing <| error options.theme options.errors fieldState
     in
     div
-        [ Attrs.map never <|
-            options.theme.field
-                { withError =
-                    fieldState.error /= Nothing
-                , withValue =
-                    fieldState.value /= Field.Empty
-                }
+        [ Attrs.map never options.theme.fieldGroup
         ]
         [ label [ for fieldState.path, Attrs.map never options.theme.fieldLabel ]
-            [ div [ Attrs.map never options.theme.fieldInput ]
-                [ fieldTitle options.theme schema path |> Maybe.withDefault (text "")
-                , div [ Attrs.map never options.theme.inputGroup ]
-                        [inputField]
-                ]
-            , div [ Attrs.map never options.theme.fieldInputDescription ] [ description ]
+            [ title
+            , inputField
+            , description
             , errorMessage
             ]
         ]
@@ -387,7 +373,7 @@ fieldTitle theme schema path =
 fieldDescription : Theme -> SubSchema -> Maybe (Html F.Msg)
 fieldDescription theme schema =
     schema.description
-        |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
+        |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription] [ text str ])
 
 
 error : Theme -> (String -> ErrorValue -> String) -> F.FieldState -> Maybe (Html F.Msg)

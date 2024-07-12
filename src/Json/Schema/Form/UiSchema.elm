@@ -103,11 +103,11 @@ type alias Options =
     , elementLabelProp : Maybe ElementLabelProp
     , format : Maybe Format
     , readonly : Maybe Bool
-    , multi : Maybe Bool -- TODO: implement
-    , slider : Maybe Bool -- TODO: implement
+    , multi : Maybe Bool
+    , slider : Maybe Bool
     , trim : Maybe Bool -- TODO: implement
     , restrict : Maybe Bool -- TODO: implement
-    , showUnfocusedDescription : Maybe Bool -- TODO: implement
+    , showUnfocusedDescription : Maybe Bool
     , hideRequiredAsterisk : Maybe Bool -- TODO: implement
     , toggle : Maybe Bool -- TODO: implement
     }

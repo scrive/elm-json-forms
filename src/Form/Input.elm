@@ -1,7 +1,7 @@
 module Form.Input exposing
     ( Input
-    , baseInput, textInput, passwordInput, textArea, checkboxInput, radioInput
-    , floatInput, floatSelectInput, intInput, intSelectInput, textSelectInput
+    , baseInput, textInput, textArea, checkboxInput, radioInput, intInput, intSlider, numberSlider
+    , floatInput, floatSelectInput, intSelectInput, textSelectInput
     )
 
 {-| Html input view helpers, wired for elm-form validation.
@@ -16,11 +16,13 @@ import Html.Attributes as Attrs
 import Form exposing (FieldState, InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
 import Form.Field as Field exposing (FieldValue(..))
+import Maybe.Extra as Maybe
 import Html exposing (..)
 import Html.Attributes as HtmlAttr exposing (..)
 import Html.Events exposing (..)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Decode as Json
+import Json.Schema.Definitions as Schema
 
 
 {-| An input renders Html from a field state and list of additional attributes.
@@ -30,8 +32,6 @@ type alias Input =
     FieldState -> List (Attribute Msg) -> Html Msg
 
 
-{-| Untyped input
--}
 baseInput : Options -> String -> (String -> FieldValue) -> InputType -> Input
 baseInput options type__ toFieldValue inputType state attrs =
     let
@@ -42,6 +42,7 @@ baseInput options type__ toFieldValue inputType state attrs =
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
+            , Attrs.map never options.theme.fieldInput
             , Attrs.map never <|
                 options.theme.txt
                     { withError = state.error /= Nothing
@@ -49,6 +50,54 @@ baseInput options type__ toFieldValue inputType state attrs =
             ]
     in
     input (formAttrs ++ attrs) []
+
+slider : Options -> Schema.SubSchema -> (String -> FieldValue) -> InputType -> Input
+slider options schema toFieldValue inputType state attrs =
+    let
+        step = Maybe.withDefault 1.0 schema.multipleOf
+
+        minimum = Maybe.withDefault 1.0 schema.minimum
+
+        maximum = Maybe.withDefault 10.0 schema.maximum
+
+        minLimit =
+            case schema.exclusiveMinimum of
+                    Just (Schema.BoolBoundary False) -> minimum
+                    Just (Schema.BoolBoundary True) -> minimum + step
+                    Just (Schema.NumberBoundary x) -> x + step
+                    _ -> minimum
+
+        maxLimit =
+            case schema.exclusiveMaximum of
+                    Just (Schema.BoolBoundary True) -> maximum - step
+                    Just (Schema.NumberBoundary x) -> x - step
+                    _ -> maximum
+
+        formAttrs =
+            [ id state.path
+            , type_ "range"
+            , value (Field.valueAsString state.value)
+            , onInput (toFieldValue >> Input state.path inputType)
+            , onFocus (Focus state.path)
+            , onBlur (Blur state.path)
+            , Attrs.attribute "min" (String.fromFloat minLimit)
+            , Attrs.attribute "max" (String.fromFloat maxLimit)
+            , Attrs.attribute "step" (String.fromFloat step)
+            , Attrs.map never <|
+                options.theme.txt
+                    { withError = state.error /= Nothing
+                    }
+            ]
+    in
+    div
+        []
+        [ div [Attrs.style "display" "flex", Attrs.class "text-sm"]
+            [ span [Attrs.style "flex-grow" "1", Attrs.class "text-left"] [text (String.fromFloat minLimit)]
+            , span [Attrs.style "flex-grow" "1", Attrs.class "text-right"] [text (String.fromFloat maxLimit)]
+            ]
+        , input (formAttrs ++ attrs) []
+        ]
+
 
 textArea : Options -> Input
 textArea options state attrs =
@@ -95,72 +144,64 @@ fromStringInput s =
         Field.String s
 
 
-{-| Text input.
--}
 textInput : Options -> Input
 textInput options =
     baseInput options "text" fromStringInput Text
 
 
-{-| Text input.
--}
 intInput : Options -> Input
 intInput options state attrs =
     baseInput options "text" fromIntInput Text state ([attribute "type" "number"] ++ attrs)
 
-
-{-| Text input.
--}
 floatInput : Options -> Input
 floatInput options state attrs =
     baseInput options "text" fromFloatInput Text state ([attribute "type" "number"] ++ attrs)
 
 
-{-| Password input.
--}
 passwordInput : Options -> Input
 passwordInput options =
     baseInput options "password" fromStringInput Text
 
+intSlider : Options -> Schema.SubSchema -> Input
+intSlider options schema =
+    slider options schema fromIntInput Text
 
-{-| Select input.
--}
-baseSelectInput : List ( String, String ) -> (String -> FieldValue) -> Input
-baseSelectInput options toFieldValue state attrs =
+numberSlider : Options -> Schema.SubSchema -> Input
+numberSlider options schema =
+    slider options schema fromFloatInput Text
+
+
+baseSelectInput : Options -> List ( String, String ) -> (String -> FieldValue) -> Input
+baseSelectInput options valueList toFieldValue state attrs =
     let
         formAttrs =
-            [ on
+            [ id state.path
+            , on
                 "change"
                 (targetValue |> Json.map (toFieldValue >> Input state.path Select))
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
+            , Attrs.map never <| options.theme.select { withError = state.error /= Nothing }
             ]
 
         buildOption ( k, v ) =
             option [ value k, selected (Field.valueAsString state.value == k) ] [ text v ]
     in
-    select (formAttrs ++ attrs) (List.map buildOption options)
+    select (formAttrs ++ attrs) (List.map buildOption valueList)
+
+textSelectInput : Options -> List ( String, String ) -> Input
+textSelectInput options valueList =
+    baseSelectInput options valueList fromStringInput
 
 
-{-| Text input.
--}
-textSelectInput : List ( String, String ) -> Input
-textSelectInput options =
-    baseSelectInput options fromStringInput
+intSelectInput : Options -> List ( String, String ) -> Input
+intSelectInput options valueList =
+    baseSelectInput options valueList fromIntInput
 
 
-{-| Text input.
--}
-intSelectInput : List ( String, String ) -> Input
-intSelectInput options =
-    baseSelectInput options fromIntInput
-
-
-{-| Text input.
--}
-floatSelectInput : List ( String, String ) -> Input
-floatSelectInput options =
-    baseSelectInput options fromFloatInput
+floatSelectInput : Options -> List ( String, String ) -> Input
+floatSelectInput options valueList =
+    baseSelectInput options valueList fromFloatInput
 
 
 {-| Checkbox input.
