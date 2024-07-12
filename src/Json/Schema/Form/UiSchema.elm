@@ -2,6 +2,7 @@ module Json.Schema.Form.UiSchema exposing
     ( Categorization
     , Category
     , Control
+    , Group
     , HorizontalLayout
     , UiSchema(..)
     , VerticalLayout
@@ -52,7 +53,7 @@ type alias VerticalLayout =
 
 
 type alias Group =
-    { label : String
+    { label : Maybe String
     , elements : List UiSchema
     , rule : Maybe Rule
     }
@@ -195,7 +196,7 @@ decodeVerticalLayout =
 decodeGroup : Decoder Group
 decodeGroup =
     Decode.map3 Group
-        (Decode.field "label" Decode.string)
+        (Decode.maybe <| Decode.field "label" Decode.string)
         (Decode.field "elements" <| Decode.list decodeUiSchema)
         (Decode.maybe <| Decode.field "rule" decodeRule)
 

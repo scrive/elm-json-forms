@@ -28,6 +28,13 @@ Generate validating forms from JSON schemas.
 - [ ] Categorization Example
   - [x] Fix multiple categorizations in one schema (in vertical layout)
   - [ ] Rules to show and hide categories
+  - [ ] Implement prev/next buttons
+  - [ ] Implement stepper variant
+- [ ] Rule example
+  - [x] Groups
+  - [x] Group labels
+  - [ ] Rule to enable/disable
+  - [ ] Rule to show/hide
 
 ## Warnings
 

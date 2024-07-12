@@ -34,7 +34,7 @@ type alias Theme =
     , fieldLabel : Attribute Never
     , fieldInput : Attribute Never
     , fieldGroup : Attribute Never
-    , group : { withError : Bool, withValue : Bool } -> Attribute Never
+    , group : Attribute Never
     , fieldTitle : Attribute Never
     , fieldDescription : Attribute Never
     , liveError : Attribute Never
@@ -43,6 +43,8 @@ type alias Theme =
     , inputGroupAppend : Attribute Never
     , inputGroupAppendContent : Attribute Never
     , inputGroup : Attribute Never
+    , label : Attribute Never
+    , groupLabel : Attribute Never
     }
 
 
@@ -94,13 +96,7 @@ tailwind =
     , fieldInput = Attrs.class "field-input mt-0 shadow-sm"
     , fieldTitle = Attrs.class "block text-sm font-medium leading-6 text-gray-900"
     , fieldDescription = Attrs.class "text-sm leading-6 text-gray-600 field-meta"
-    , group =
-        \{ withError, withValue } ->
-            Attrs.classList
-                [ ( "mb-4", True )
-                , ( "text-red-500", withError )
-                , ( "has-value", withValue )
-                ]
+    , group = Attrs.class "field-input border border-gray-300 rounded-md  p-3  my-3 shadow-sm"
     , liveError = Attrs.class "text-red-500 text-xs my-1"
     , inputGroupPrepend = Attrs.class "inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm"
     , inputGroupPrependContent = Attrs.class "text-gray-500 sm:text-sm"
@@ -109,4 +105,6 @@ tailwind =
     , inputGroup = Attrs.class "mt-2 flex shadow-sm"
     , listGroupAddItemButtonDefaultTitle = "Add"
     , listGroupRemoveItemButtonTitle = "Remove"
+    , label = Attrs.class "text-lg mt-4"
+    , groupLabel = Attrs.class "text-lg"
     }

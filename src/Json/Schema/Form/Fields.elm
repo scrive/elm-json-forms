@@ -62,13 +62,13 @@ uiSchemaView options uiPath uiSchema schema form =
             verticalLayoutView options uiPath schema form vl
 
         UI.UiGroup g ->
-            [ text "unimplemented group" ]
+            groupView options uiPath schema form g
 
         UI.UiCategorization c ->
             categorizationView options uiPath schema form c
 
         UI.UiLabel l ->
-            [ Html.h6 [ class "my-4" ] [ text l.text ] ]
+            [Html.div [ Attrs.map never <| options.theme.label ] [ text l.text ]]
 
 
 horizontalLayoutView : Options -> List Int -> Schema -> Form -> UI.HorizontalLayout -> List (Html F.Msg)
@@ -93,6 +93,17 @@ verticalLayoutView options uiPath wholeSchema form vl =
                     (uiSchemaView options (List.append uiPath [ix]) us wholeSchema form)
             )
             vl.elements
+
+
+groupView : Options -> List Int -> Schema -> Form -> UI.Group -> List (Html F.Msg)
+groupView options uiPath wholeSchema form group =
+    let
+        title = Maybe.unwrap [] (\l -> [Html.div [ Attrs.map never <| options.theme.groupLabel ] [ text l ]]) group.label
+    in
+        [ div [Attrs.map never <| options.theme.group ]
+        <| title ++ verticalLayoutView options uiPath wholeSchema form { elements = group.elements, rule = group.rule }
+        ]
+
 
 
 categorizationView : Options -> List Int -> Schema -> Form -> UI.Categorization -> List (Html F.Msg)
