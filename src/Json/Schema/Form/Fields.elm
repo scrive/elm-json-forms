@@ -1,49 +1,36 @@
 module Json.Schema.Form.Fields exposing (TextFieldType(..), schemaView, uiSchemaView)
 
-import Dict exposing (Dict)
+import Dict
 import Form as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
-import Form.Field as Field exposing (FieldValue)
 import Form.Input as Input
 import Form.Pointer as Pointer exposing (Pointer)
 import Form.Validate
-import Html exposing (Attribute, Html, button, div, label, legend, li, ol, p, span, text)
+import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
     exposing
-        ( attribute
-        , autocomplete
-        , class
-        , classList
+        ( class
         , for
         , id
-        , placeholder
-        , rows
         , style
-        , tabindex
         , type_
         )
-import Html.Attributes.Extra as Attr
-import Html.Events exposing (onClick, preventDefaultOn)
+import Html.Events exposing (onClick)
 import Html.Extra as Html
-import Html.Keyed
 import Json.Decode as Decode exposing (Value)
 import Json.Schema.Definitions
     exposing
-        ( Items(..)
-        , Schema(..)
+        ( Schema(..)
         , SingleType(..)
         , SubSchema
         , Type(..)
-        , blankSchema
         )
-import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UI exposing (Effect(..), UiSchema)
 import Json.Schema.Form.Validation exposing (validation)
 import List.Extra as List
 import Maybe.Extra as Maybe
-import String.Case
 
 
 type alias UiState =
@@ -192,12 +179,11 @@ categorizationView options uiState wholeSchema form categorization =
                         ]
                         [ text category.label ]
     in
-    [ div
+    div
         [ Attrs.map never <| options.theme.categorizationMenu
         ]
         (Maybe.values <| List.indexedMap categoryButton categorization.elements)
-    ]
-        ++ Maybe.unwrap [] (categoryView options (appendPathElement focusedCategoryIx uiState) wholeSchema form) (List.getAt focusedCategoryIx categorization.elements)
+        :: Maybe.unwrap [] (categoryView options (appendPathElement focusedCategoryIx uiState) wholeSchema form) (List.getAt focusedCategoryIx categorization.elements)
 
 
 categoryView : Options -> UiState -> Schema -> FormState -> UI.Category -> List (Html F.Msg)
@@ -436,18 +422,6 @@ select options control schema fieldState fieldType =
         fieldState
 
 
-option : (SubSchema -> Maybe String) -> Schema -> ( String, Maybe SubSchema )
-option attr schema =
-    case schema of
-        BooleanSchema _ ->
-            ( "", Nothing )
-
-        ObjectSchema schema_ ->
-            ( attr schema_ |> Maybe.withDefault ""
-            , Just schema_
-            )
-
-
 fieldGroup : Html F.Msg -> Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 fieldGroup inputField options control schema fieldState =
     let
@@ -504,44 +478,3 @@ error theme func f =
                     ]
                     [ text (func f.path err) ]
             )
-
-
-fieldset : SubSchema -> List (Html F.Msg) -> Html F.Msg
-fieldset schema content =
-    let
-        title : List (Html msg)
-        title =
-            case schema.title of
-                Just str ->
-                    [ legend [ class "text-2xl pb-2" ] [ text str ] ]
-
-                Nothing ->
-                    []
-    in
-    Html.fieldset [ tabindex -1 ] (title ++ content)
-
-
-onClickPreventDefault : msg -> Attribute msg
-onClickPreventDefault msg =
-    preventDefaultOn "click"
-        (Decode.succeed <| alwaysPreventDefault msg)
-
-
-alwaysPreventDefault : msg -> ( msg, Bool )
-alwaysPreventDefault msg =
-    ( msg, True )
-
-
-conditional : String -> F.FieldState -> List ( String, Html F.Msg ) -> Html F.Msg
-conditional className f conditions =
-    let
-        cond : ( String, b ) -> Maybe ( String, b )
-        cond ( value, html ) =
-            if Field.valueAsString f.value == value then
-                Just ( value, html )
-
-            else
-                Nothing
-    in
-    Html.Keyed.node "div" [ class className ] <|
-        List.filterMap cond conditions

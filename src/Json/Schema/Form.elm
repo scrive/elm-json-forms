@@ -9,7 +9,7 @@ module Json.Schema.Form exposing
 
 import Form exposing (FormState, Msg)
 import Html exposing (Html, div)
-import Json.Encode as Encode exposing (Value)
+import Json.Encode as Encode
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Fields
 import Json.Schema.Form.Options exposing (Options)
@@ -48,10 +48,10 @@ update msg form =
         formState =
             Form.update
                 (validation form.schema)
-                (Debug.log "message" msg)
+                msg
                 form.state
     in
-    { form | state = (\( _, a ) -> a) <| Debug.log "form" ( Encode.encode 0 <| formState.value, formState ) }
+    { form | state = (\( _, a ) -> a) <| ( Encode.encode 0 <| formState.value, formState ) }
 
 
 view : Form -> Html Msg

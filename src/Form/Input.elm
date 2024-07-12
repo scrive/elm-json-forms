@@ -13,7 +13,6 @@ module Form.Input exposing
 -}
 
 import Form exposing (FieldState, InputType(..), Msg(..))
-import Form.Error exposing (ErrorValue(..))
 import Form.Field as Field exposing (FieldValue(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
@@ -21,7 +20,6 @@ import Html.Events exposing (..)
 import Json.Decode as Json
 import Json.Schema.Definitions as Schema
 import Json.Schema.Form.Options exposing (Options)
-import Maybe.Extra as Maybe
 
 
 {-| An input renders Html from a field state and list of additional attributes.
@@ -31,12 +29,12 @@ type alias Input =
     FieldState -> List (Attribute Msg) -> Html Msg
 
 
-baseInput : Options -> String -> (String -> FieldValue) -> InputType -> Input
-baseInput options type__ toFieldValue inputType state attrs =
+baseInput : Options -> (String -> FieldValue) -> InputType -> Input
+baseInput options toFieldValue inputType state attrs =
     let
         formAttrs =
             [ id (inputElementId state.formId state.path)
-            , type_ type__
+            , type_ "text"
             , value (Field.valueAsString state.value)
             , onInput (toFieldValue >> Input state.path inputType)
             , onFocus (Focus state.path)
@@ -165,22 +163,17 @@ fromStringInput s =
 
 textInput : Options -> Input
 textInput options =
-    baseInput options "text" fromStringInput Text
+    baseInput options fromStringInput Text
 
 
 intInput : Options -> Input
 intInput options state attrs =
-    baseInput options "text" fromIntInput Text state ([ attribute "type" "number" ] ++ attrs)
+    baseInput options fromIntInput Text state (attribute "type" "number" :: attrs)
 
 
 floatInput : Options -> Input
 floatInput options state attrs =
-    baseInput options "text" fromFloatInput Text state ([ attribute "type" "number" ] ++ attrs)
-
-
-passwordInput : Options -> Input
-passwordInput options =
-    baseInput options "password" fromStringInput Text
+    baseInput options fromFloatInput Text state (attribute "type" "number" :: attrs)
 
 
 intSlider : Options -> Schema.SubSchema -> Input

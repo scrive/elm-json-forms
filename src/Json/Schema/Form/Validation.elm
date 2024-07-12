@@ -1,31 +1,21 @@
 module Json.Schema.Form.Validation exposing (validation)
 
-import Dict exposing (Dict)
 import Form.Error as Error exposing (ErrorValue(..))
-import Form.Field
 import Form.Validate as Validate exposing (Validation)
-import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
     exposing
         ( ExclusiveBoundary(..)
-        , Items(..)
         , Schema(..)
         , SingleType(..)
         , SubSchema
         , Type(..)
-        , blankSchema
         )
-import Json.Schema.Form.Format exposing (Format)
 import Json.Schema.Form.Regex
 import Json.Schema.Form.UiSchema exposing (unSchemata)
-import Maybe.Extra as Maybe
 import Regex
 import Set
-
-
-type alias Formats =
-    Dict String Format
 
 
 validation : Schema -> Value -> Validation Value
@@ -113,7 +103,7 @@ validateSingleType schema type_ value =
         NullType ->
             Result.map (always Encode.null) <| validateNull schema value
 
-        x ->
+        _ ->
             Err <| Error.error (Error.Unimplemented "type")
 
 

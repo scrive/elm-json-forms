@@ -17,8 +17,6 @@ import Form.Pointer as Pointer exposing (Pointer)
 import Form.Validate exposing (Validation)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
-import Json.Schema.Definitions as Schema exposing (Schema)
-import Set exposing (Set)
 
 
 type alias FormState =
@@ -134,20 +132,16 @@ update validation msg model =
             model
 
         Focus name ->
-            let
-                newModel =
-                    { model | focus = Just name }
-            in
-            newModel
+            { model | focus = Just name }
 
-        Blur name ->
+        Blur _ ->
             let
                 newModel =
                     { model | focus = Nothing }
             in
             updateValidate validation newModel
 
-        Input name inputType fieldValue ->
+        Input name _ fieldValue ->
             let
                 mPointer =
                     Result.toMaybe <| Pointer.fromString name
@@ -162,7 +156,7 @@ update validation msg model =
 
                 newModel =
                     { model
-                        | value = Debug.log "Update input value" newValue
+                        | value = newValue
                     }
             in
             updateValidate validation newModel
@@ -214,7 +208,7 @@ updateValue pointer new value =
                     Encode.dict identity identity <|
                         Dict.insert key (updateValue ps new (Maybe.withDefault Encode.null <| Dict.get key o)) o
 
-                Err e ->
+                Err _ ->
                     Encode.dict identity identity <| Dict.singleton key (updateValue ps new Encode.null)
 
         [] ->
@@ -227,7 +221,7 @@ updateValue pointer new value =
 updateValidate : (Value -> Validation o) -> FormState -> FormState
 updateValidate validation model =
     case validation model.value of
-        Ok output ->
+        Ok _ ->
             { model
                 | errors =
                     []

@@ -8,11 +8,8 @@ module Form.Pointer exposing
 
 -- This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
 
-import Array
-import Dict
 import Json.Decode as Decode
 import Json.Encode as Encode
-import Regex
 import String
 
 

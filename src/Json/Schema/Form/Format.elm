@@ -11,8 +11,6 @@ module Json.Schema.Form.Format exposing
     , withValidation
     )
 
-import Form.Field exposing (FieldValue)
-import Form.Input exposing (Input)
 import Form.Validate exposing (Validation)
 
 

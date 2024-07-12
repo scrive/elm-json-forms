@@ -20,10 +20,8 @@ module Form.Validate exposing
     , whenJust
     )
 
-import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue)
-import Form.Field as Field exposing (FieldValue)
-import Form.Pointer as Pointer exposing (Pointer)
+import Form.Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Value)
 import Regex exposing (Regex)
 import Result
@@ -42,11 +40,6 @@ isOk v =
 
         Err _ ->
             False
-
-
-isErr : Validation a -> Bool
-isErr =
-    not << isOk
 
 
 map : (a -> b) -> Validation a -> Validation b
@@ -176,7 +169,7 @@ oneOf validations v =
         f : (Value -> Validation a) -> Validation a -> Validation a
         f a b =
             case a v of
-                Ok x ->
+                Ok _ ->
                     a v
 
                 Err _ ->
@@ -195,7 +188,7 @@ validateAll l a =
         Ok a
 
     else
-        Err <| List.concat <| List.map errList validations
+        Err <| List.concatMap errList validations
 
 
 unless : Bool -> ErrorValue -> a -> Validation a

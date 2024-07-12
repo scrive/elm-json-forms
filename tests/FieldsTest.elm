@@ -1,11 +1,10 @@
 module FieldsTest exposing (suite)
 
-import Dict
 import Expect exposing (Expectation)
 import Form as F
 import Form.Validate
 import Html.Attributes
-import Json.Encode as Encode exposing (Value)
+import Json.Encode as Encode
 import Json.Schema.Builder
     exposing
         ( SchemaBuilder
@@ -15,8 +14,6 @@ import Json.Schema.Builder
         , withAnyOf
         , withConst
         , withDescription
-        , withItem
-        , withItems
         , withOneOf
         , withProperties
         , withTitle
@@ -27,7 +24,6 @@ import Json.Schema.Form.Fields exposing (schemaView)
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.Theme as Theme
 import Test exposing (Test, describe, test)
-import Test.Html.Event as Event
 import Test.Html.Query as Query
 import Test.Html.Selector exposing (attribute, checked, class, classes, selected, tag, text)
 
@@ -217,6 +213,7 @@ singleTypes =
                     |> withType "boolean"
                     |> isCheckbox
         ]
+
     -- , describe "array"
     --     [ describe "without item schema"
     --         [ test "should be a list" <|
@@ -418,6 +415,7 @@ isFieldset schema =
             )
 
 
+
 -- isList : SchemaBuilder -> Expectation
 -- isList schema =
 --     schema
@@ -440,22 +438,6 @@ isFieldset schema =
 --                     >> Query.count (Expect.equal 1)
 --                 ]
 --             )
-
-
-isTuple : SchemaBuilder -> Expectation
-isTuple schema =
-    schema
-        |> Expect.all
-            [ isField
-            , hasFieldDescription
-            , view
-                (Expect.all
-                    [ Query.has [ class "form-group" ]
-                    , Query.findAll [ class "form-group" ]
-                        >> Query.count (Expect.atLeast 1)
-                    ]
-                )
-            ]
 
 
 isSwitch : SchemaBuilder -> Expectation

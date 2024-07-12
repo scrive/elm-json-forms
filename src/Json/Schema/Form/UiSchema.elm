@@ -3,9 +3,15 @@ module Json.Schema.Form.UiSchema exposing
     , Category
     , Condition
     , Control
+    , ControlLabel
+    , Detail
     , Effect(..)
+    , ElementLabelProp
+    , Format
     , Group
     , HorizontalLayout
+    , Label
+    , Options
     , Rule
     , UiSchema(..)
     , VerticalLayout
@@ -19,8 +25,6 @@ module Json.Schema.Form.UiSchema exposing
     , unSchemata
     )
 
-import Dict exposing (Dict)
-import Form.Field exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
@@ -415,33 +419,10 @@ pointToSchema schema pointer =
                             Nothing
 
                         Just (Schema.Schemata props) ->
-                            Maybe.andThen (\( n, p ) -> pointToSchema p xs) <| List.head <| List.filter (\( n, p ) -> n == x) props
+                            Maybe.andThen (\( _, p ) -> pointToSchema p xs) <| List.head <| List.filter (\( n, _ ) -> n == x) props
 
         _ ->
             Nothing
-
-
-allPointers : UiSchema -> List Pointer
-allPointers uiSchema =
-    case uiSchema of
-        UiControl x ->
-            [ x.scope ]
-
-        UiHorizontalLayout x ->
-            List.concatMap allPointers x.elements
-
-        UiVerticalLayout x ->
-            List.concatMap allPointers x.elements
-
-        UiGroup x ->
-            List.concatMap allPointers x.elements
-
-        UiCategorization x ->
-            List.concatMap allPointers <|
-                List.concatMap .elements x.elements
-
-        UiLabel x ->
-            []
 
 
 getRule : UiSchema -> Maybe Rule
@@ -462,7 +443,7 @@ getRule uiSchema =
         UiCategorization x ->
             x.rule
 
-        UiLabel x ->
+        UiLabel _ ->
             Nothing
 
 
@@ -482,7 +463,7 @@ defaultedProps schema =
     Maybe.map unSchemata schema.properties
         |> Maybe.withDefault []
         |> List.filter
-            (\( k, v ) ->
+            (\( _, v ) ->
                 case v of
                     ObjectSchema o_ ->
                         List.member o_.type_ [ Schema.SingleType Schema.BooleanType, Schema.SingleType Schema.ObjectType ]
