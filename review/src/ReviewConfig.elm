@@ -15,20 +15,27 @@ import Docs.NoMissing exposing (exposedModules, onlyExposed)
 import Docs.ReviewAtDocs
 import Docs.ReviewLinksAndSections
 import Docs.UpToDateReadmeLinks
+import NoBooleanCase
 import NoConfusingPrefixOperator
 import NoDebug.Log
 import NoDebug.TodoOrToString
+import NoEmptyText
 import NoExposingEverything
 import NoImportingEverything
+import NoInconsistentAliases
+import NoLeftPizza
 import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoPrematureLetComputation
+import NoRedundantCons
 import NoSimpleLetBody
+import NoTestValuesInProductionCode
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
 import NoUnused.Exports
+import NoUnused.Modules
 import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
@@ -38,30 +45,39 @@ import Simplify
 
 config : List Rule
 config =
-    [ Docs.NoMissing.rule
-        { document = onlyExposed
-        , from = exposedModules
-        }
-    , Docs.ReviewLinksAndSections.rule
-    , Docs.ReviewAtDocs.rule
-    , Docs.UpToDateReadmeLinks.rule
-    , NoConfusingPrefixOperator.rule
-    , NoDebug.Log.rule
-    , NoDebug.TodoOrToString.rule
-        |> Rule.ignoreErrorsForDirectories [ "tests/" ]
-    , NoExposingEverything.rule
-    , NoImportingEverything.rule []
-    , NoMissingTypeAnnotation.rule
-    , NoMissingTypeAnnotationInLetIn.rule
-    , NoMissingTypeExpose.rule
-    , NoSimpleLetBody.rule
-    , NoPrematureLetComputation.rule
-    , NoUnused.CustomTypeConstructors.rule []
-    , NoUnused.CustomTypeConstructorArgs.rule
-    , NoUnused.Dependencies.rule
-    , NoUnused.Exports.rule
+    [ NoUnused.Variables.rule
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
-    , NoUnused.Variables.rule
-    , Simplify.rule Simplify.defaults
+    , NoUnused.CustomTypeConstructors.rule []
+    , NoUnused.CustomTypeConstructorArgs.rule
+    , NoUnused.Modules.rule
+    , NoUnused.Dependencies.rule
+    , NoUnused.Exports.rule
+    , NoMissingTypeAnnotation.rule
+    , NoRedundantCons.rule
+    , NoBooleanCase.rule
+    , NoDebug.Log.rule
+    , NoDebug.TodoOrToString.rule
+    , NoEmptyText.rule
+    , NoLeftPizza.rule NoLeftPizza.Redundant
+    , NoExposingEverything.rule
+    , NoTestValuesInProductionCode.rule (NoTestValuesInProductionCode.startsWith "test_")
+        |> Rule.filterErrorsForFiles (String.contains "/src/")
+    , NoInconsistentAliases.config
+        [ ( "Html.Extra", "Html" )
+        , ( "Html.Attributes", "Attrs" )
+        , ( "Html.Attributes.Extra", "Attrs" )
+        , ( "Html.Events", "Events" )
+        , ( "Html.Events.Extra", "Events" )
+        , ( "List.Extra", "List" )
+        , ( "Maybe.Extra", "Maybe" )
+        , ( "Http.Extra", "Http" )
+        , ( "Json.Encode", "Encode" )
+        , ( "Json.Encode.Extra", "Encode" )
+        , ( "Json.Decode", "Decode" )
+        , ( "Json.Decode.Pipeline", "Decode" )
+        , ( "Json.Decode.Extra", "Decode" )
+        ]
+        |> NoInconsistentAliases.noMissingAliases
+        |> NoInconsistentAliases.rule
     ]

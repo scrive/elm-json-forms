@@ -51,7 +51,7 @@ update msg form =
                 msg
                 form.state
     in
-    { form | state = (\( _, a ) -> a) <| ( Encode.encode 0 <| formState.value, formState ) }
+    { form | state = (\( _, a ) -> a) ( Encode.encode 0 formState.value, formState ) }
 
 
 view : Form -> Html Msg

@@ -77,7 +77,7 @@ uiSchemaView options uiState uiSchema schema form =
                 categorizationView options newUiState schema form c
 
             UI.UiLabel l ->
-                [ Html.div [ Attrs.map never <| options.theme.label ] [ text l.text ] ]
+                [ Html.div [ Attrs.map never options.theme.label ] [ text l.text ] ]
 
 
 applyEffect : Maybe AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
@@ -126,11 +126,11 @@ computeRule formValue mRule =
 
 horizontalLayoutView : Options -> UiState -> Schema -> FormState -> UI.HorizontalLayout -> List (Html F.Msg)
 horizontalLayoutView options uiState wholeSchema form hl =
-    [ div [ Attrs.map never <| options.theme.horizontalLayout ] <|
+    [ div [ Attrs.map never options.theme.horizontalLayout ] <|
         List.indexedMap
             (\ix us ->
                 div
-                    [ Attrs.map never <| options.theme.horizontalLayoutItem ]
+                    [ Attrs.map never options.theme.horizontalLayoutItem ]
                     (uiSchemaView options (appendPathElement ix uiState) us wholeSchema form)
             )
             hl.elements
@@ -152,12 +152,12 @@ groupView : Options -> UiState -> Schema -> FormState -> UI.Group -> List (Html 
 groupView options uiState wholeSchema form group =
     let
         title =
-            Maybe.unwrap [] (\l -> [ Html.div [ Attrs.map never <| options.theme.groupLabel ] [ text l ] ]) group.label
+            Maybe.unwrap [] (\l -> [ Html.div [ Attrs.map never options.theme.groupLabel ] [ text l ] ]) group.label
 
         contents =
             verticalLayoutView options uiState wholeSchema form { elements = group.elements, rule = group.rule }
     in
-    [ div [ Attrs.map never <| options.theme.group ] (title ++ contents)
+    [ div [ Attrs.map never options.theme.group ] (title ++ contents)
     ]
 
 
@@ -180,7 +180,7 @@ categorizationView options uiState wholeSchema form categorization =
                         [ text category.label ]
     in
     div
-        [ Attrs.map never <| options.theme.categorizationMenu
+        [ Attrs.map never options.theme.categorizationMenu
         ]
         (Maybe.values <| List.indexedMap categoryButton categorization.elements)
         :: Maybe.unwrap [] (categoryView options (appendPathElement focusedCategoryIx uiState) wholeSchema form) (List.getAt focusedCategoryIx categorization.elements)

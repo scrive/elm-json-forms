@@ -17,7 +17,7 @@ import Form.Field as Field exposing (FieldValue(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as Json
+import Json.Decode as Decode
 import Json.Schema.Definitions as Schema
 import Json.Schema.Form.Options exposing (Options)
 
@@ -193,7 +193,7 @@ baseSelectInput options valueList toFieldValue state attrs =
             [ id (inputElementId state.formId state.path)
             , on
                 "change"
-                (targetValue |> Json.map (toFieldValue >> Input state.path Select))
+                (targetValue |> Decode.map (toFieldValue >> Input state.path Select))
             , onFocus (Focus state.path)
             , onBlur (Blur state.path)
             , Attrs.disabled state.disabled
@@ -263,7 +263,7 @@ radioInput value state attrs =
             , Attrs.disabled state.disabled
             , on
                 "change"
-                (targetValue |> Json.map (String >> Input state.path Radio))
+                (targetValue |> Decode.map (String >> Input state.path Radio))
             ]
     in
     input (formAttrs ++ attrs) []

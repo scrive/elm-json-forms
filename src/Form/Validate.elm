@@ -138,15 +138,6 @@ format regex s =
         Err (Error.error Error.InvalidFormat)
 
 
-{-| Stolen to elm-validate.
--}
-validEmailPattern : Regex
-validEmailPattern =
-    "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
-        |> Regex.fromStringWith { caseInsensitive = True, multiline = False }
-        |> Maybe.withDefault Regex.never
-
-
 {-| A validation that always fails. Useful for contextual validation.
 -}
 fail : Error -> Validation a
