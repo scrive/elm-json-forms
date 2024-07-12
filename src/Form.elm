@@ -1,141 +1,57 @@
 module Form exposing
-    ( FieldState
-    , FormState
-    , InputType(..)
-    , Msg(..)
-    , getField
-    , initial
+    ( Form
+    , Msg
+    , init
     , update
+    , view
     )
 
-import Dict exposing (Dict)
-import Form.Error as Error exposing (ErrorValue, Errors)
-import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Json.Decode as Decode exposing (Value)
+import Form.State exposing (FormState, Msg)
+import Html exposing (Html, div)
 import Json.Encode as Encode
-import Json.Pointer as Pointer exposing (Pointer)
-import Validation exposing (Validation)
+import Json.Schema.Definitions exposing (Schema)
+import Json.Schema.Form.Fields
+import Json.Schema.Form.Options exposing (Options)
+import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
+import Json.Schema.Form.Validation exposing (validation)
+import Maybe.Extra as Maybe
 
 
-type alias FormState =
-    { formId : String -- Unique Form ID to disambiguate element IDs for multiple forms on the sarme page
-    , value : Value
-    , focus : Maybe Pointer
-    , errors : Errors
-    , categoryFocus : Dict (List Int) Int
+type alias Form =
+    { options : Options
+    , schema : Schema
+    , uiSchema : UiSchema
+    , state : FormState
     }
 
 
-initial : String -> Value -> (Value -> Validation output) -> FormState
-initial formId initialValue validation =
+type alias Msg =
+    Form.State.Msg
+
+
+init : String -> Options -> Schema -> Maybe UiSchema -> Form
+init id options schema mUiSchema =
     let
-        model =
-            { formId = formId
-            , value = initialValue
-            , focus = Nothing
-            , errors = []
-            , categoryFocus = Dict.empty
-            }
+        uiSchema =
+            Maybe.withDefaultLazy (\_ -> generateUiSchema schema) mUiSchema
     in
-    updateValidations validation model
+    Form options schema uiSchema <|
+        Form.State.initial id (defaultValue schema) (validation schema)
 
 
-type alias FieldState =
-    { formId : String
-    , pointer : Pointer
-    , value : FieldValue
-    , error : Maybe ErrorValue
-    , hasFocus : Bool
-    , disabled : Bool
-    }
+update : Msg -> Form -> Form
+update msg form =
+    let
+        formState : FormState
+        formState =
+            Form.State.update
+                (validation form.schema)
+                msg
+                form.state
+    in
+    { form | state = (\( _, a ) -> a) ( Encode.encode 0 formState.value, formState ) }
 
 
-getField : Bool -> Pointer -> FormState -> FieldState
-getField disabled pointer form =
-    { formId = form.formId
-    , pointer = pointer
-    , value = Maybe.withDefault Empty <| FieldValue.pointedFieldValue pointer form.value
-    , error = getErrorAt pointer form.errors
-    , hasFocus = form.focus == Just pointer
-    , disabled = disabled
-    }
-
-
-type Msg
-    = NoOp
-    | Focus Pointer
-    | Blur Pointer -- TODO: remove pointer here?
-    | Input Pointer InputType FieldValue
-    | Submit
-    | Validate
-    | Reset Value
-    | FocusCategory (List Int) Int
-
-
-type InputType
-    = Text
-    | Textarea
-    | Select
-    | Radio
-    | Checkbox
-
-
-update : (Value -> Validation output) -> Msg -> FormState -> FormState
-update validation msg model =
-    case msg of
-        NoOp ->
-            model
-
-        Focus pointer ->
-            { model | focus = Just pointer }
-
-        Blur _ ->
-            updateValidations validation { model | focus = Nothing }
-
-        Input pointer _ fieldValue ->
-            updateValidations validation
-                { model | value = FieldValue.updateValue pointer fieldValue model.value }
-
-        Submit ->
-            updateValidations validation model
-
-        Validate ->
-            updateValidations validation model
-
-        Reset value ->
-            updateValidations validation
-                { model
-                    | value = value
-                }
-
-        FocusCategory uiState ix ->
-            updateValidations validation { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
-
-
-updateValidations : (Value -> Validation o) -> FormState -> FormState
-updateValidations validation model =
-    case validation model.value of
-        Ok _ ->
-            { model
-                | errors =
-                    []
-            }
-
-        Err error ->
-            { model
-                | errors =
-                    error
-            }
-
-
-getErrorAt : Pointer -> Errors -> Maybe ErrorValue
-getErrorAt pointer =
-    List.head
-        << List.filterMap
-            (\( p, e ) ->
-                if pointer == p then
-                    Just e
-
-                else
-                    Nothing
-            )
+view : Form -> Html Msg
+view form =
+    div [] <| Json.Schema.Form.Fields.uiSchemaView form.options { uiPath = [], disabled = False } form.uiSchema form.schema form.state

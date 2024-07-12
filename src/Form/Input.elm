@@ -15,7 +15,7 @@ module Form.Input exposing
     , textSelectInput
     )
 
-import Form exposing (FieldState, InputType(..), Msg(..))
+import Form.State exposing (FieldState, InputType(..), Msg(..))
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
@@ -39,7 +39,7 @@ baseInput options toFieldValue inputType state attrs =
             , value (FieldValue.asString state.value)
             , onInput (toFieldValue >> Input state.pointer inputType)
             , onFocus (Focus state.pointer)
-            , onBlur (Blur state.pointer)
+            , onBlur Blur
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.fieldInput
@@ -93,7 +93,7 @@ slider options schema toFieldValue inputType state attrs =
             , value (FieldValue.asString state.value)
             , onInput (toFieldValue >> Input state.pointer inputType)
             , onFocus (Focus state.pointer)
-            , onBlur (Blur state.pointer)
+            , onBlur Blur
             , Attrs.attribute "min" (String.fromFloat minLimit)
             , Attrs.attribute "max" (String.fromFloat maxLimit)
             , Attrs.attribute "step" (String.fromFloat step)
@@ -122,7 +122,7 @@ textArea options state attrs =
             , value (FieldValue.asString state.value)
             , onInput (String >> Input state.pointer Textarea)
             , onFocus (Focus state.pointer)
-            , onBlur (Blur state.pointer)
+            , onBlur Blur
             , attribute "rows" "4"
             , Attrs.disabled state.disabled
             , Attrs.map never <|
@@ -195,7 +195,7 @@ baseSelectInput options valueList toFieldValue state attrs =
                 "change"
                 (targetValue |> Decode.map (toFieldValue >> Input state.pointer Select))
             , onFocus (Focus state.pointer)
-            , onBlur (Blur state.pointer)
+            , onBlur Blur
             , Attrs.disabled state.disabled
             , Attrs.map never <| options.theme.fieldInput { withError = state.error /= Nothing }
             ]
@@ -239,7 +239,7 @@ checkboxInput state attrs =
             , checked (FieldValue.asBool state.value |> Maybe.withDefault False)
             , onCheck (Bool >> Input state.pointer Checkbox)
             , onFocus (Focus state.pointer)
-            , onBlur (Blur state.pointer)
+            , onBlur Blur
             , Attrs.disabled state.disabled
             ]
     in

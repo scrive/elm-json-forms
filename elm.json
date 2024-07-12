@@ -12,6 +12,7 @@
         "Json.Schema.Form.UiSchema",
         "Form",
         "Form.Error",
+        "Form.State",
         "Form.Validate",
         "Form.Field",
         "Form.Input",

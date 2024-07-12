@@ -1,7 +1,7 @@
 module Json.Schema.Form.Fields exposing (TextFieldType(..), uiSchemaView)
 
 import Dict
-import Form as F exposing (FormState)
+import Form.State as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
 import Form.Input as Input
 import Html exposing (Html, button, div, label, span, text)
