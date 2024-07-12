@@ -2,9 +2,8 @@ module Main exposing (main)
 
 import Browser
 import Form.Error as Error exposing (ErrorValue(..))
-import Form.State as Form exposing (Form, Msg(..))
-import Form.View as Form
-import Form.View.Theme as Theme
+import Form as Form exposing (Form, Msg)
+import Form.Theme as Theme
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class)
 import Html.Events exposing (onSubmit)
@@ -137,8 +136,8 @@ viewForm title form =
     in
     div []
         [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]
-        , Html.form [ onSubmit Form.Submit ]
-            [ Form.viewXX form
+        , Html.form [ ]
+            [ Form.view form
             , let
                 json =
                     Encode.encode 4 form.state.value

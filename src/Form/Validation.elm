@@ -15,7 +15,7 @@ import Json.Schema.Definitions
 import Regex
 import Set
 import UiSchema.Internal exposing (unSchemata)
-import Validation exposing (Validation)
+import Validation exposing (Validation, error)
 
 
 validation : Schema -> Value -> Validation Value
@@ -26,7 +26,7 @@ validation schema value =
                 Validation.succeed value
 
             else
-                Validation.fail (Error.error <| Unimplemented "Boolean schemas are not implemented.")
+                Validation.fail (error <| Unimplemented "Boolean schemas are not implemented.")
 
         ObjectSchema objectSchema ->
             subSchema objectSchema value
@@ -104,14 +104,14 @@ validateSingleType schema type_ value =
             Result.map (always Encode.null) <| validateNull value
 
         _ ->
-            Err <| Error.error (Error.Unimplemented "type")
+            Err <| error (Error.Unimplemented "type")
 
 
 validateString : SubSchema -> Value -> Validation String
 validateString schema v =
     case Decode.decodeValue Decode.string v of
         Err _ ->
-            Err <| Error.error Error.InvalidString
+            Err <| error Error.InvalidString
 
         Ok s ->
             Validation.validateAll
@@ -159,7 +159,7 @@ validatePattern pat s =
             validateRegex regex s
 
         Nothing ->
-            Err (Error.error Error.InvalidFormat)
+            Err (error Error.InvalidFormat)
 
 
 validateRegex : Regex.Regex -> String -> Validation String
@@ -168,7 +168,7 @@ validateRegex regex s =
         Ok s
 
     else
-        Err (Error.error Error.InvalidFormat)
+        Err (error Error.InvalidFormat)
 
 
 
@@ -189,7 +189,7 @@ validateInt : SubSchema -> Value -> Validation Int
 validateInt schema v =
     case Decode.decodeValue Decode.int v of
         Err _ ->
-            Err <| Error.error Error.InvalidInt
+            Err <| error Error.InvalidInt
 
         Ok x ->
             Validation.validateAll
@@ -204,7 +204,7 @@ validateFloat : SubSchema -> Value -> Validation Float
 validateFloat schema v =
     case Decode.decodeValue Decode.float v of
         Err _ ->
-            Err <| Error.error Error.InvalidFloat
+            Err <| error Error.InvalidFloat
 
         Ok x ->
             Validation.validateAll
@@ -219,7 +219,7 @@ validateBool : Value -> Validation Bool
 validateBool v =
     case Decode.decodeValue Decode.bool v of
         Err _ ->
-            Err <| Error.error Error.InvalidBool
+            Err <| error Error.InvalidBool
 
         Ok x ->
             Ok x
@@ -229,7 +229,7 @@ validateNull : Value -> Validation ()
 validateNull v =
     case Decode.decodeValue (Decode.null ()) v of
         Err _ ->
-            Err <| Error.error Error.InvalidNull
+            Err <| error Error.InvalidNull
 
         Ok x ->
             Ok x

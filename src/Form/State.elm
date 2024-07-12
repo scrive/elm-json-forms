@@ -4,21 +4,18 @@ module Form.State exposing
     , FormState
     , Msg(..)
     , fieldState
-    , init
-    , initial
-    , update
+    , initState
+    , updateState
     )
 
 import Dict exposing (Dict)
 import Form.Error exposing (ErrorValue, Errors)
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
 import Form.Options exposing (Options)
-import Form.Validation exposing (validation)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
-import Maybe.Extra as Maybe
-import UiSchema.Internal exposing (UiSchema, defaultValue, generateUiSchema)
+import UiSchema.Internal exposing (UiSchema)
 import Validation exposing (Validation)
 
 
@@ -28,16 +25,6 @@ type alias Form =
     , uiSchema : UiSchema
     , state : FormState
     }
-
-
-init : String -> Options -> Schema -> Maybe UiSchema -> Form
-init id options schema mUiSchema =
-    let
-        uiSchema =
-            Maybe.withDefaultLazy (always <| generateUiSchema schema) mUiSchema
-    in
-    Form options schema uiSchema <|
-        initial id (defaultValue schema) (validation schema)
 
 
 type alias FormState =
@@ -60,18 +47,15 @@ type alias FieldState =
 
 
 type Msg
-    = NoOp
-    | Focus Pointer
+    = Focus Pointer
     | Blur
     | Input Pointer FieldValue
-    | Submit
-    | Validate
     | Reset Value
     | FocusCategory (List Int) Int
 
 
-initial : String -> Value -> (Value -> Validation output) -> FormState
-initial formId initialValue validation =
+initState : String -> Value -> (Value -> Validation output) -> FormState
+initState formId initialValue validation =
     let
         model =
             { formId = formId
@@ -95,23 +79,9 @@ fieldState disabled pointer form =
     }
 
 
-update : Msg -> Form -> Form
-update msg form =
-    { form
-        | state =
-            updateState
-                (validation form.schema)
-                msg
-                form.state
-    }
-
-
 updateState : (Value -> Validation output) -> Msg -> FormState -> FormState
 updateState validation msg model =
     case msg of
-        NoOp ->
-            model
-
         Focus pointer ->
             { model | focus = Just pointer }
 
@@ -121,12 +91,6 @@ updateState validation msg model =
         Input pointer fieldValue ->
             updateValidations validation
                 { model | value = FieldValue.updateValue pointer fieldValue model.value }
-
-        Submit ->
-            updateValidations validation model
-
-        Validate ->
-            updateValidations validation model
 
         Reset value ->
             updateValidations validation

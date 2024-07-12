@@ -1,7 +1,6 @@
 module Form.Error exposing
     ( ErrorValue(..)
     , Errors
-    , error
     , getErrors
     )
 
@@ -37,11 +36,6 @@ type ErrorValue
     | LongerStringThan Int
     | NotIncludedIn (List Value)
     | Unimplemented String
-
-
-error : ErrorValue -> Errors
-error e =
-    [ ( [], e ) ]
 
 
 getErrors : Errors -> List ( String, ErrorValue )

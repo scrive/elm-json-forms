@@ -3,9 +3,9 @@ module Form.View exposing (view)
 import Dict
 import Form.Error exposing (ErrorValue)
 import Form.Options exposing (Options)
-import Form.State as F exposing (Form, FormState, Msg)
+import Form.State as F exposing (Form, FormState)
+import Form.Theme exposing (Theme)
 import Form.View.Input as Input
-import Form.View.Theme exposing (Theme)
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
 import Html.Events exposing (onClick)
@@ -31,13 +31,8 @@ walkState i uiSchema st =
     { st | uiPath = List.append st.uiPath [ i ], uiSchema = uiSchema }
 
 
-view : Form -> Html Msg
-view form =
-    div [] <| viewImpl form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
-
-
-viewImpl : Form -> UiState -> List (Html F.Msg)
-viewImpl form uiState =
+view : Form -> UiState -> List (Html F.Msg)
+view form uiState =
     let
         ruleEffect : Maybe Rule.AppliedEffect
         ruleEffect =
@@ -87,7 +82,7 @@ horizontalLayoutView form uiState hl =
             (\ix us ->
                 div
                     [ Attrs.map never form.options.theme.horizontalLayoutItem ]
-                    (viewImpl form (walkState ix us uiState))
+                    (view form (walkState ix us uiState))
             )
             hl.elements
     ]
@@ -99,7 +94,7 @@ verticalLayoutView form uiState vl =
         (\ix us ->
             div
                 []
-                (viewImpl form (walkState ix us uiState))
+                (view form (walkState ix us uiState))
         )
         vl.elements
 
@@ -142,7 +137,7 @@ categorizationView form uiState categorization =
         [ Attrs.map never form.options.theme.categorizationMenu
         ]
         (Maybe.values <| List.indexedMap categoryButton categorization.elements)
-        :: Maybe.unwrap [] (\cat -> viewImpl form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
+        :: Maybe.unwrap [] (\cat -> view form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
 
 
 controlView : Options -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg

@@ -1,7 +1,6 @@
 module Form.View.Input exposing
     ( Input
     , InputType(..)
-    , baseInput
     , checkboxInput
     , floatInput
     , floatSelectInput
@@ -33,10 +32,6 @@ type alias Input =
 
 type InputType
     = Text
-    | Textarea
-    | Select
-    | Radio
-    | Checkbox
 
 
 baseInput : Options -> (String -> FieldValue) -> InputType -> Input

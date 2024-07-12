@@ -1,6 +1,6 @@
 module Validation exposing
     ( Validation
-    , andMap
+    , error
     , fail
     , isOk
     , mapErrorPointers
@@ -9,6 +9,7 @@ module Validation exposing
     , unless
     , validateAll
     , whenJust
+    , andMap
     )
 
 -- Inspired by https://hackage.haskell.org/package/validation-selective
@@ -63,7 +64,7 @@ oneOf validations v =
                 Err _ ->
                     b
     in
-    List.foldl f (Err (Error.error Error.Empty)) validations
+    List.foldl f (Err (error Error.Empty)) validations
 
 
 validateAll : List (a -> Validation b) -> a -> Validation a
@@ -110,4 +111,9 @@ unless p e a =
         Ok a
 
     else
-        Err <| Error.error e
+        Err <| error e
+
+
+error : ErrorValue -> Errors
+error e =
+    [ ( [], e ) ]

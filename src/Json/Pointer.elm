@@ -1,12 +1,10 @@
 module Json.Pointer exposing
     ( Pointer
     , decode
-    , encode
     , fromString
     , pointedValue
     , toString
     )
-
 
 {-| This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
 -}
@@ -57,11 +55,6 @@ unescape string =
         |> String.join "/"
         |> String.split "~0"
         |> String.join "~"
-
-
-encode : Pointer -> Encode.Value
-encode p =
-    Encode.string (toString p)
 
 
 toString : Pointer -> String
