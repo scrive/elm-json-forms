@@ -18,6 +18,7 @@
         "Form.Validate",
         "Json.Pointer",
         "UiSchema",
+        "UiSchema.Rule",
         "Validation"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",

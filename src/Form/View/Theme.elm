@@ -21,6 +21,7 @@ type alias Theme =
     , checkboxRow : Attribute Never
     , checkboxInput : { withError : Bool } -> Attribute Never
     , group : Attribute Never
+    , disabledElems : Attribute Never
     }
 
 
@@ -61,4 +62,5 @@ tailwind =
                 , ( isInvalid, withError )
                 ]
     , group = Attrs.class "field-input border border-gray-300 rounded-md  p-3  my-3 shadow-sm"
+    , disabledElems = Attrs.class "opacity-50"
     }

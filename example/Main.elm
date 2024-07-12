@@ -774,10 +774,6 @@ categorizationExample1UiSchema =
           {
             "type": "HorizontalLayout",
             "elements": [
-          {
-            "type": "Control",
-            "scope": "#/properties/provideAddress"
-          },
               {
                 "type": "Control",
                 "scope": "#/properties/address/properties/street"

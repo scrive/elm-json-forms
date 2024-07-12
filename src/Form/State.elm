@@ -1,6 +1,6 @@
 module Form.State exposing
-    ( Form
-    , FieldState
+    ( FieldState
+    , Form
     , FormState
     , Msg(..)
     , fieldState
@@ -10,17 +10,16 @@ module Form.State exposing
     )
 
 import Dict exposing (Dict)
-import Form.Error as Error exposing (ErrorValue, Errors)
+import Form.Error exposing (ErrorValue, Errors)
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Json.Decode as Decode exposing (Value)
-import Json.Encode as Encode
-import Maybe.Extra as Maybe
-import Json.Pointer as Pointer exposing (Pointer)
-import Validation exposing (Validation)
 import Form.Options exposing (Options)
-import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
-import Json.Schema.Definitions exposing (Schema)
 import Form.Validation exposing (validation)
+import Json.Decode exposing (Value)
+import Json.Pointer exposing (Pointer)
+import Json.Schema.Definitions exposing (Schema)
+import Maybe.Extra as Maybe
+import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
+import Validation exposing (Validation)
 
 
 type alias Form =
@@ -29,6 +28,7 @@ type alias Form =
     , uiSchema : UiSchema
     , state : FormState
     }
+
 
 init : String -> Options -> Schema -> Maybe UiSchema -> Form
 init id options schema mUiSchema =
@@ -94,13 +94,16 @@ fieldState disabled pointer form =
     , disabled = disabled
     }
 
+
 update : Msg -> Form -> Form
 update msg form =
-    { form | state =
-        updateState
+    { form
+        | state =
+            updateState
                 (validation form.schema)
                 msg
-                form.state }
+                form.state
+    }
 
 
 updateState : (Value -> Validation output) -> Msg -> FormState -> FormState

@@ -1,207 +1,148 @@
-module Form.View exposing (view_, view)
+module Form.View exposing (view, view_)
 
 import Dict
 import Form.Error exposing (ErrorValue)
 import Form.Options exposing (Options)
 import Form.State as F exposing (Form, FormState, Msg)
-import Form.Validation exposing (validation)
 import Form.View.Input as Input
 import Form.View.Theme exposing (Theme)
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
-    exposing
-        ( class
-        , for
-        , id
-        , style
-        , type_
-        )
 import Html.Events exposing (onClick)
 import Html.Extra as Html
-import Json.Decode as Decode exposing (Value)
+import Json.Decode as Decode
 import Json.Pointer as Pointer exposing (Pointer)
-import Json.Schema.Definitions
-    exposing
-        ( Schema(..)
-        , SingleType(..)
-        , SubSchema
-        , Type(..)
-        )
+import Json.Schema.Definitions exposing (Schema(..), SingleType(..), SubSchema, Type(..))
 import List.Extra as List
 import Maybe.Extra as Maybe
-import UiSchema as UI exposing (Effect(..), UiSchema)
-import Validation
+import UiSchema as UI exposing (UiSchema)
+import UiSchema.Rule as Rule
 
 
 type alias UiState =
     { disabled : Bool
     , uiPath : List Int
+    , uiSchema : UiSchema
     }
 
 
-type AppliedEffect
-    = Hidden
-    | Disabled
-
-
-appendPathElement : Int -> UiState -> UiState
-appendPathElement i st =
-    { st | uiPath = List.append st.uiPath [ i ] }
+walkState : Int -> UiSchema -> UiState -> UiState
+walkState i uiSchema st =
+    { st | uiPath = List.append st.uiPath [ i ], uiSchema = uiSchema }
 
 
 view_ : Form -> Html Msg
 view_ form =
-    div [] <| view form.options { uiPath = [], disabled = False } form.uiSchema form.schema form.state
+    div [] <| view form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
 
 
-view : Options -> UiState -> UiSchema -> Schema -> FormState -> List (Html F.Msg)
-view options uiState uiSchema schema state =
+view : Form -> UiState -> List (Html F.Msg)
+view form uiState =
     let
-        ruleEffect : Maybe AppliedEffect
+        ruleEffect : Maybe Rule.AppliedEffect
         ruleEffect =
-            computeRule state.value (UI.getRule uiSchema)
+            Rule.computeRule form.state.value (UI.getRule uiState.uiSchema)
 
         newUiState =
-            { uiState | disabled = ruleEffect == Just Disabled }
+            { uiState | disabled = ruleEffect == Just Rule.Disabled }
     in
-    applyEffect ruleEffect <|
-        case uiSchema of
+    applyEffect form.options.theme ruleEffect <|
+        case uiState.uiSchema of
             UI.UiControl c ->
-                [ controlView options newUiState schema c state ]
+                [ controlView form.options newUiState form.schema c form.state ]
 
             UI.UiHorizontalLayout hl ->
-                horizontalLayoutView options newUiState schema state hl
+                horizontalLayoutView form newUiState hl
 
             UI.UiVerticalLayout vl ->
-                verticalLayoutView options newUiState schema state vl
+                verticalLayoutView form newUiState vl
 
             UI.UiGroup g ->
-                groupView options newUiState schema state g
+                groupView form newUiState g
 
             UI.UiCategorization c ->
-                categorizationView options newUiState schema state c
+                categorizationView form newUiState c
 
             UI.UiLabel l ->
-                [ Html.div [ Attrs.map never options.theme.label ] [ text l.text ] ]
+                [ Html.div [ Attrs.map never form.options.theme.label ] [ text l.text ] ]
 
 
-applyEffect : Maybe AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
-applyEffect effect x =
+applyEffect : Theme -> Maybe Rule.AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
+applyEffect theme effect x =
     case effect of
-        Just Hidden ->
+        Just Rule.Hidden ->
             []
 
-        Just Disabled ->
-            [ div [ Attrs.class "opacity-50" ] x ]
+        Just Rule.Disabled ->
+            [ div [ Attrs.map never theme.disabledElems ] x ]
 
         Nothing ->
             x
 
 
-computeRule : Value -> Maybe UI.Rule -> Maybe AppliedEffect
-computeRule formValue mRule =
-    let
-        condition rule =
-            case Pointer.pointedValue rule.condition.scope formValue of
-                Nothing ->
-                    False
-
-                Just v ->
-                    Validation.isOk <| validation rule.condition.schema v
-
-        go rule =
-            case ( rule.effect, condition rule ) of
-                ( EffectDisable, True ) ->
-                    Just Disabled
-
-                ( EffectEnable, False ) ->
-                    Just Disabled
-
-                ( EffectShow, False ) ->
-                    Just Hidden
-
-                ( EffectHide, True ) ->
-                    Just Hidden
-
-                _ ->
-                    Nothing
-    in
-    Maybe.andThen go mRule
-
-
-horizontalLayoutView : Options -> UiState -> Schema -> FormState -> UI.HorizontalLayout -> List (Html F.Msg)
-horizontalLayoutView options uiState wholeSchema form hl =
-    [ div [ Attrs.map never options.theme.horizontalLayout ] <|
+horizontalLayoutView : Form -> UiState -> UI.HorizontalLayout -> List (Html F.Msg)
+horizontalLayoutView form uiState hl =
+    [ div [ Attrs.map never form.options.theme.horizontalLayout ] <|
         List.indexedMap
             (\ix us ->
                 div
-                    [ Attrs.map never options.theme.horizontalLayoutItem ]
-                    (view options (appendPathElement ix uiState) us wholeSchema form)
+                    [ Attrs.map never form.options.theme.horizontalLayoutItem ]
+                    (view form (walkState ix us uiState))
             )
             hl.elements
     ]
 
 
-verticalLayoutView : Options -> UiState -> Schema -> FormState -> UI.VerticalLayout -> List (Html F.Msg)
-verticalLayoutView options uiState wholeSchema form vl =
+verticalLayoutView : Form -> UiState -> UI.VerticalLayout -> List (Html F.Msg)
+verticalLayoutView form uiState vl =
     List.indexedMap
         (\ix us ->
             div
                 []
-                (view options (appendPathElement ix uiState) us wholeSchema form)
+                (view form (walkState ix us uiState))
         )
         vl.elements
 
 
-groupView : Options -> UiState -> Schema -> FormState -> UI.Group -> List (Html F.Msg)
-groupView options uiState wholeSchema form group =
+groupView : Form -> UiState -> UI.Group -> List (Html F.Msg)
+groupView form uiState group =
     let
         title =
-            Maybe.unwrap [] (\l -> [ Html.div [ Attrs.map never options.theme.groupLabel ] [ text l ] ]) group.label
+            Maybe.unwrap [] (\l -> [ Html.div [ Attrs.map never form.options.theme.groupLabel ] [ text l ] ]) group.label
 
         contents =
-            verticalLayoutView options uiState wholeSchema form { elements = group.elements, rule = group.rule }
+            verticalLayoutView form uiState { elements = group.elements, rule = group.rule }
     in
-    [ div [ Attrs.map never options.theme.group ] (title ++ contents)
+    [ div [ Attrs.map never form.options.theme.group ] (title ++ contents)
     ]
 
 
-categorizationView : Options -> UiState -> Schema -> FormState -> UI.Categorization -> List (Html F.Msg)
-categorizationView options uiState wholeSchema form categorization =
+categorizationView : Form -> UiState -> UI.Categorization -> List (Html F.Msg)
+categorizationView form uiState categorization =
     let
         focusedCategoryIx =
-            Maybe.withDefault 0 <| Dict.get uiState.uiPath form.categoryFocus
+            Maybe.withDefault 0 <| Dict.get uiState.uiPath form.state.categoryFocus
 
         categoryButton ix category =
-            if computeRule form.value category.rule == Just Hidden then
+            if Rule.computeRule form.state.value category.rule == Just Rule.Hidden then
                 Nothing
 
             else
                 Just <|
                     button
-                        [ Attrs.map never <| options.theme.categorizationMenuItem { focus = focusedCategoryIx == ix }
+                        [ Attrs.map never <| form.options.theme.categorizationMenuItem { focus = focusedCategoryIx == ix }
                         , onClick <| F.FocusCategory uiState.uiPath ix
                         ]
                         [ text category.label ]
+
+        categoryUiState cat =
+            walkState focusedCategoryIx (UI.UiVerticalLayout { elements = cat.elements, rule = cat.rule }) uiState
     in
     div
-        [ Attrs.map never options.theme.categorizationMenu
+        [ Attrs.map never form.options.theme.categorizationMenu
         ]
         (Maybe.values <| List.indexedMap categoryButton categorization.elements)
-        :: Maybe.unwrap [] (categoryView options (appendPathElement focusedCategoryIx uiState) wholeSchema form) (List.getAt focusedCategoryIx categorization.elements)
-
-
-categoryView : Options -> UiState -> Schema -> FormState -> UI.Category -> List (Html F.Msg)
-categoryView options uiState wholeSchema form category =
-    let
-        ruleEffect =
-            computeRule form.value category.rule
-
-        newUiState =
-            { uiState | disabled = ruleEffect == Just Disabled }
-    in
-    applyEffect ruleEffect <|
-        verticalLayoutView options newUiState wholeSchema form { elements = category.elements, rule = category.rule }
+        :: Maybe.unwrap [] (\cat -> view form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
 
 
 controlView : Options -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg
@@ -259,7 +200,7 @@ controlView options uiState wholeSchema control form =
     Html.viewMaybe
         (\cs ->
             div
-                [ id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
+                [ Attrs.id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
                 , Attrs.map never options.theme.fieldGroup
                 ]
                 [ controlBody cs ]
@@ -315,7 +256,7 @@ textInput options control schema fieldState =
                 _ ->
                     "text"
     in
-    fieldGroup (Input.textInput options fieldState [ type_ inputType ])
+    fieldGroup (Input.textInput options fieldState [ Attrs.type_ inputType ])
         options
         control
         schema
@@ -371,7 +312,7 @@ checkbox options control schema fieldState =
             div [ Attrs.map never options.theme.checkboxRow ]
                 [ Input.checkboxInput fieldState
                     [ Attrs.map never <| options.theme.checkboxInput { withError = fieldState.error /= Nothing }
-                    , id (Input.inputElementId fieldState.formId fieldState.pointer)
+                    , Attrs.id (Input.inputElementId fieldState.formId fieldState.pointer)
                     ]
                 , Html.viewMaybe identity <| fieldLabel options.theme control.label schema control.scope
                 ]
@@ -384,7 +325,7 @@ checkbox options control schema fieldState =
         errorMessage =
             Html.viewMaybe identity <| error options.theme options.errors fieldState
     in
-    label [ for (Input.inputElementId fieldState.formId fieldState.pointer) ]
+    label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
         [ inputField
         , description
         , errorMessage
@@ -444,7 +385,7 @@ fieldGroup inputField options control schema fieldState =
         errorMessage =
             Html.viewMaybe identity <| error options.theme options.errors fieldState
     in
-    label [ for (Input.inputElementId fieldState.formId fieldState.pointer) ]
+    label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
         [ Html.viewMaybe identity title
         , inputField
         , description
@@ -457,7 +398,6 @@ fieldLabel theme label schema pointer =
     let
         fallback =
             schema.title
-                -- If it does not have a title, derive from property name, unCamelCasing it
                 |> Maybe.orElse (List.last pointer |> Maybe.map UI.fieldNameToTitle)
                 |> Maybe.withDefault ""
 
@@ -491,7 +431,6 @@ error theme func f =
             (\err ->
                 div
                     [ Attrs.map never theme.fieldError
-                    , style "display" "block"
                     ]
                     [ text (func f.pointer err) ]
             )

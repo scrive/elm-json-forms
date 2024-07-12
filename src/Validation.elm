@@ -14,12 +14,10 @@ module Validation exposing
 -- Inspired by https://hackage.haskell.org/package/validation-selective
 
 import Form.Error as Error exposing (ErrorValue, Errors)
-import Json.Decode as Decode exposing (Value)
+import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
-import Regex exposing (Regex)
 import Result
 import Result.Extra as Result
-import String
 
 
 type alias Validation output =
@@ -39,11 +37,6 @@ succeed =
 isOk : Validation a -> Bool
 isOk =
     Result.isOk
-
-
-map : (a -> b) -> Validation a -> Validation b
-map =
-    Result.map
 
 
 whenJust : Maybe b -> (b -> a -> Validation a) -> a -> Validation a
