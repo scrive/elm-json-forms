@@ -1,6 +1,6 @@
 {
     "type": "package",
-    "name": "scrive/elm-json-forms",
+    "name": "potocpav/elm-json-forms",
     "summary": "JSON Forms Implementation in Elm.",
     "license": "MIT",
     "version": "1.0.0",
