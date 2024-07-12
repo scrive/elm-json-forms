@@ -3,7 +3,7 @@ module UiSchema.Rule exposing (AppliedEffect(..), computeRule)
 import Form.Validation exposing (validation)
 import Json.Decode exposing (Value)
 import Json.Pointer as Pointer
-import UiSchema as UI exposing (Effect(..))
+import UiSchema.Internal as UI exposing (Effect(..))
 import Validation
 
 

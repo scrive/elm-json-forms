@@ -1,4 +1,4 @@
-module Form.View exposing (view, view_)
+module Form.View exposing (view)
 
 import Dict
 import Form.Error exposing (ErrorValue)
@@ -15,7 +15,7 @@ import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema(..), SingleType(..), SubSchema, Type(..))
 import List.Extra as List
 import Maybe.Extra as Maybe
-import UiSchema as UI exposing (UiSchema)
+import UiSchema.Internal as UI exposing (UiSchema)
 import UiSchema.Rule as Rule
 
 
@@ -31,13 +31,13 @@ walkState i uiSchema st =
     { st | uiPath = List.append st.uiPath [ i ], uiSchema = uiSchema }
 
 
-view_ : Form -> Html Msg
-view_ form =
-    div [] <| view form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
+view : Form -> Html Msg
+view form =
+    div [] <| viewImpl form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
 
 
-view : Form -> UiState -> List (Html F.Msg)
-view form uiState =
+viewImpl : Form -> UiState -> List (Html F.Msg)
+viewImpl form uiState =
     let
         ruleEffect : Maybe Rule.AppliedEffect
         ruleEffect =
@@ -87,7 +87,7 @@ horizontalLayoutView form uiState hl =
             (\ix us ->
                 div
                     [ Attrs.map never form.options.theme.horizontalLayoutItem ]
-                    (view form (walkState ix us uiState))
+                    (viewImpl form (walkState ix us uiState))
             )
             hl.elements
     ]
@@ -99,7 +99,7 @@ verticalLayoutView form uiState vl =
         (\ix us ->
             div
                 []
-                (view form (walkState ix us uiState))
+                (viewImpl form (walkState ix us uiState))
         )
         vl.elements
 
@@ -142,7 +142,7 @@ categorizationView form uiState categorization =
         [ Attrs.map never form.options.theme.categorizationMenu
         ]
         (Maybe.values <| List.indexedMap categoryButton categorization.elements)
-        :: Maybe.unwrap [] (\cat -> view form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
+        :: Maybe.unwrap [] (\cat -> viewImpl form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
 
 
 controlView : Options -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg

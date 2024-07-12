@@ -7,7 +7,9 @@ module Json.Pointer exposing
     , toString
     )
 
--- This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
+
+{-| This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
+-}
 
 import Dict
 import Json.Decode as Decode

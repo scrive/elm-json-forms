@@ -14,7 +14,7 @@ import Json.Schema.Definitions
         )
 import Regex
 import Set
-import UiSchema exposing (unSchemata)
+import UiSchema.Internal exposing (unSchemata)
 import Validation exposing (Validation)
 
 

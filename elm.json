@@ -1,25 +1,15 @@
 {
     "type": "package",
-    "name": "scrive/json-schema-form",
-    "summary": "Generate validating forms from JSON schemas.",
+    "name": "scrive/elm-json-forms",
+    "summary": "JSON Forms Implementation in Elm.",
     "license": "MIT",
-    "version": "2.0.0",
+    "version": "1.0.0",
     "exposed-modules": [
-        "Json.Schema.Form",
-        "Form",
         "Form.Error",
-        "Form.Field",
-        "Form.View.Input",
+        "Form.View",
         "Form.View.Theme",
-        "Form.Init",
-        "Form.Options",
-        "Form.Regex",
         "Form.State",
-        "Form.Validate",
-        "Json.Pointer",
-        "UiSchema",
-        "UiSchema.Rule",
-        "Validation"
+        "UiSchema"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

@@ -18,7 +18,7 @@ import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
 import Maybe.Extra as Maybe
-import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
+import UiSchema.Internal exposing (UiSchema, defaultValue, generateUiSchema)
 import Validation exposing (Validation)
 
 
