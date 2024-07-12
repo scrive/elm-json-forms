@@ -1,8 +1,10 @@
 module Form.State exposing
-    ( FieldState
+    ( Form
+    , FieldState
     , FormState
     , Msg(..)
     , fieldState
+    , init
     , initial
     , update
     )
@@ -12,8 +14,30 @@ import Form.Error as Error exposing (ErrorValue, Errors)
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
+import Maybe.Extra as Maybe
 import Json.Pointer as Pointer exposing (Pointer)
 import Validation exposing (Validation)
+import Form.Options exposing (Options)
+import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
+import Json.Schema.Definitions exposing (Schema)
+import Form.Validation exposing (validation)
+
+
+type alias Form =
+    { options : Options
+    , schema : Schema
+    , uiSchema : UiSchema
+    , state : FormState
+    }
+
+init : String -> Options -> Schema -> Maybe UiSchema -> Form
+init id options schema mUiSchema =
+    let
+        uiSchema =
+            Maybe.withDefaultLazy (always <| generateUiSchema schema) mUiSchema
+    in
+    Form options schema uiSchema <|
+        initial id (defaultValue schema) (validation schema)
 
 
 type alias FormState =
@@ -70,9 +94,17 @@ fieldState disabled pointer form =
     , disabled = disabled
     }
 
+update : Msg -> Form -> Form
+update msg form =
+    { form | state =
+        updateState
+                (validation form.schema)
+                msg
+                form.state }
 
-update : (Value -> Validation output) -> Msg -> FormState -> FormState
-update validation msg model =
+
+updateState : (Value -> Validation output) -> Msg -> FormState -> FormState
+updateState validation msg model =
     case msg of
         NoOp ->
             model

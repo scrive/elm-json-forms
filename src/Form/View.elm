@@ -1,9 +1,9 @@
-module Form.View exposing (view)
+module Form.View exposing (view_, view)
 
 import Dict
 import Form.Error exposing (ErrorValue)
 import Form.Options exposing (Options)
-import Form.State as F exposing (FormState)
+import Form.State as F exposing (Form, FormState, Msg)
 import Form.Validation exposing (validation)
 import Form.View.Input as Input
 import Form.View.Theme exposing (Theme)
@@ -49,12 +49,17 @@ appendPathElement i st =
     { st | uiPath = List.append st.uiPath [ i ] }
 
 
+view_ : Form -> Html Msg
+view_ form =
+    div [] <| view form.options { uiPath = [], disabled = False } form.uiSchema form.schema form.state
+
+
 view : Options -> UiState -> UiSchema -> Schema -> FormState -> List (Html F.Msg)
-view options uiState uiSchema schema form =
+view options uiState uiSchema schema state =
     let
         ruleEffect : Maybe AppliedEffect
         ruleEffect =
-            computeRule form.value (UI.getRule uiSchema)
+            computeRule state.value (UI.getRule uiSchema)
 
         newUiState =
             { uiState | disabled = ruleEffect == Just Disabled }
@@ -62,19 +67,19 @@ view options uiState uiSchema schema form =
     applyEffect ruleEffect <|
         case uiSchema of
             UI.UiControl c ->
-                [ controlView options newUiState schema c form ]
+                [ controlView options newUiState schema c state ]
 
             UI.UiHorizontalLayout hl ->
-                horizontalLayoutView options newUiState schema form hl
+                horizontalLayoutView options newUiState schema state hl
 
             UI.UiVerticalLayout vl ->
-                verticalLayoutView options newUiState schema form vl
+                verticalLayoutView options newUiState schema state vl
 
             UI.UiGroup g ->
-                groupView options newUiState schema form g
+                groupView options newUiState schema state g
 
             UI.UiCategorization c ->
-                categorizationView options newUiState schema form c
+                categorizationView options newUiState schema state c
 
             UI.UiLabel l ->
                 [ Html.div [ Attrs.map never options.theme.label ] [ text l.text ] ]

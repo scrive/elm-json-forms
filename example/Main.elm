@@ -1,7 +1,6 @@
 module Main exposing (main)
 
 import Browser
-import Form exposing (InputType(..), Msg(..))
 import Form.Error as Error exposing (ErrorValue(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class)
@@ -9,9 +8,11 @@ import Html.Events exposing (onSubmit)
 import Json.Encode as Encode
 import Json.Schema
 import Json.Schema.Definitions exposing (Schema)
-import Json.Schema.Form exposing (Form, Msg)
-import Json.Schema.Form.Theme as Theme
-import Json.Schema.Form.UiSchema as UiSchema exposing (UiSchema)
+import Form.State as Form exposing (Form, Msg(..))
+import Form.View.Theme as Theme
+import Form.View as Form
+-- import Form.View.Input exposing (InputType(..))
+import UiSchema exposing (UiSchema)
 import List.Extra as List
 
 
@@ -92,7 +93,7 @@ init =
             (\formSpecRes ->
                 case formSpecRes of
                     Ok fs ->
-                        Json.Schema.Form.init
+                        Form.init
                             fs.title
                             { errors = always errorString
                             , theme = Theme.tailwind
@@ -115,7 +116,7 @@ update msg state =
             List.indexedMap
                 (\i f ->
                     if msg.formId == i then
-                        Json.Schema.Form.update msg.msg f
+                        Form.update msg.msg f
 
                     else
                         f
@@ -137,8 +138,8 @@ viewForm title form =
     in
     div []
         [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]
-        , Html.form [ onSubmit Json.Schema.Form.submit ]
-            [ Json.Schema.Form.view form
+        , Html.form [ onSubmit Form.Submit ]
+            [ Form.view_ form
             , let
                 json =
                     Encode.encode 4 form.state.value
