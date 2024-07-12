@@ -534,7 +534,6 @@ controlExample2Schema =
   "properties": {
     "multilineString": {
       "type": "string",
-      "maxLength": 5,
       "description": "Multiline Example"
     },
     "slider": {
