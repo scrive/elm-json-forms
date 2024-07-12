@@ -361,29 +361,29 @@ textarea options control schema state =
 checkbox : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 checkbox options control schema fieldState =
     let
-        content : List (Html F.Msg)
-        content =
-            [ div [ Attrs.map never options.theme.checkboxWrapper ]
+        inputField : Html F.Msg
+        inputField =
+            div [ Attrs.map never options.theme.checkboxRow ]
                 [ Input.checkboxInput fieldState
                     [ Attrs.map never <| options.theme.checkboxInput { withError = fieldState.error /= Nothing }
                     , id (Input.inputElementId fieldState.formId fieldState.path)
                     ]
-                , div [ Attrs.map never options.theme.checkboxTitle ]
-                    [ Html.viewMaybe identity <| fieldTitle options.theme control.label schema control.scope ]
+                , Html.viewMaybe identity <| fieldLabel options.theme control.label schema control.scope
                 ]
-            ]
 
-        description : List (Html F.Msg)
+
+        description : Html F.Msg
         description =
-            Maybe.values [ fieldDescription options.theme schema ]
+            Html.viewMaybe identity <| fieldDescription options.theme schema
 
-        feedback : List (Html F.Msg)
-        feedback =
-            Maybe.values [ error options.theme options.errors fieldState ]
+        errorMessage : Html F.Msg
+        errorMessage =
+            Html.viewMaybe identity <| error options.theme options.errors fieldState
     in
-    label [ for (Input.inputElementId fieldState.formId fieldState.path), class "form-check-label" ]
-        [ div [ class "field-input" ] (content ++ feedback)
-        , div [ class "field-meta" ] description
+    label [ for (Input.inputElementId fieldState.formId fieldState.path) ]
+        [ inputField
+        , description
+        , errorMessage
         ]
 
 
@@ -422,14 +422,14 @@ fieldGroup inputField options control schema fieldState =
     let
         title : Maybe (Html F.Msg)
         title =
-            fieldTitle options.theme control.label schema control.scope
+            fieldLabel options.theme control.label schema control.scope
 
         showDescription =
             Maybe.andThen .showUnfocusedDescription control.options == Just True || fieldState.hasFocus
 
         description : Html F.Msg
         description =
-            Maybe.withDefault Html.nothing <|
+            Html.viewMaybe identity <|
                 if showDescription then
                     fieldDescription options.theme schema
 
@@ -438,9 +438,9 @@ fieldGroup inputField options control schema fieldState =
 
         errorMessage : Html F.Msg
         errorMessage =
-            Maybe.withDefault Html.nothing <| error options.theme options.errors fieldState
+            Html.viewMaybe identity <| error options.theme options.errors fieldState
     in
-    label [ for (Input.inputElementId fieldState.formId fieldState.path), Attrs.map never options.theme.fieldLabel ]
+    label [ for (Input.inputElementId fieldState.formId fieldState.path)]
         [ Html.viewMaybe identity title
         , inputField
         , description
@@ -448,15 +448,15 @@ fieldGroup inputField options control schema fieldState =
         ]
 
 
-fieldTitle : Theme -> Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe (Html F.Msg)
-fieldTitle theme label schema path =
+fieldLabel : Theme -> Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe (Html F.Msg)
+fieldLabel theme label schema path =
     let
         fallback = schema.title
             -- If it does not have a title, derive from property name, unCamelCasing it
             |> Maybe.orElse (List.last path |> Maybe.map UI.fieldNameToTitle)
             |> Maybe.withDefault ""
 
-        render str = span [ Attrs.map never theme.fieldTitle ] [ text str ]
+        render str = span [ Attrs.map never theme.fieldLabel ] [ text str ]
 
     in case label of
             Just (UI.StringLabel s) -> Just <| render s
@@ -478,7 +478,7 @@ error theme func f =
         |> Maybe.map
             (\err ->
                 div
-                    [ Attrs.map never theme.liveError
+                    [ Attrs.map never theme.fieldError
                     , style "display" "block"
                     ]
                     [ text (func f.path err) ]

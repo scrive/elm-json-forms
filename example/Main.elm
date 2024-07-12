@@ -163,52 +163,55 @@ errorString _ error =
             "is a required property"
 
         NotConst v ->
-            "Field must be equal to " ++ Encode.encode 0 v ++ "."
+          case Encode.encode 0 v of
+            "true" -> "must be checked"
+            "false" -> "must be unchecked"
+            s -> "must be equal to " ++ s
 
         InvalidString ->
-            "This field is required."
+            "field is required"
 
         InvalidEmail ->
-            "That is not a valid email address."
+            "not a valid email address"
 
         InvalidFormat ->
-            "That is not the correct format."
+            "not the correct format"
 
         InvalidInt ->
-            "That is not a valid number."
+            "not a valid number"
 
         InvalidFloat ->
-            "That is not a valid decimal number."
+            "not a valid decimal number"
 
         InvalidBool ->
-            "That is not a valid option."
+            "not a valid option"
 
         InvalidNull ->
-            "That is not a valid option."
+            "not a valid option"
 
         LessIntThan n ->
-            "Can not be smaller than " ++ String.fromInt n ++ "."
+            "can not be smaller than " ++ String.fromInt n
 
         LessEqualIntThan n ->
-            "Can not be smaller or equal than " ++ String.fromInt n ++ "."
+            "can not be smaller or equal than " ++ String.fromInt n
 
         GreaterIntThan n ->
-            "Can not be greater than " ++ String.fromInt n ++ "."
+            "can not be greater than " ++ String.fromInt n
 
         GreaterEqualIntThan n ->
-            "Can not be greater or equal than " ++ String.fromInt n ++ "."
+            "can not be greater or equal than " ++ String.fromInt n
 
         LessFloatThan n ->
-            "Can not be smaller than " ++ String.fromFloat n ++ "."
+            "can not be smaller than " ++ String.fromFloat n
 
         LessEqualFloatThan n ->
-            "Can not be smaller or equal than " ++ String.fromFloat n ++ "."
+            "can not be smaller or equal than " ++ String.fromFloat n
 
         GreaterFloatThan n ->
-            "Can not be greater than " ++ String.fromFloat n ++ "."
+            "can not be greater than " ++ String.fromFloat n
 
         GreaterEqualFloatThan n ->
-            "Can not be greater or equal than " ++ String.fromFloat n ++ "."
+            "can not be greater or equal than " ++ String.fromFloat n
 
         ShorterStringThan n ->
             "must NOT have fewer than " ++ String.fromInt n ++ " characters"
@@ -217,16 +220,16 @@ errorString _ error =
             "must NOT have more than " ++ String.fromInt n ++ " characters"
 
         NotMultipleOfInt n ->
-            "Must be a multiple of " ++ String.fromInt n ++ "."
+            "must be a multiple of " ++ String.fromInt n ++ "."
 
         NotMultipleOfFloat n ->
-            "Must be a multiple of " ++ String.fromFloat n ++ "."
+            "must be a multiple of " ++ String.fromFloat n ++ "."
 
         NotIncludedIn _ ->
-            "Is not a valid selection from the list."
+            "is not a valid selection from the list."
 
         Unimplemented s ->
-            "Unimplemented: " ++ s
+            "unimplemented: " ++ s
 
 
 testingSchema : String
@@ -444,7 +447,8 @@ controlExample1Schema =
     },
     "boolean": {
       "type": "boolean",
-      "description": "Boolean description as a tooltip"
+      "description": "Boolean description as a tooltip",
+      "const": true
     },
     "number": {
       "type": "number"
