@@ -369,7 +369,7 @@ checkbox options control schema fieldState =
                     , id (Input.inputElementId fieldState.formId fieldState.path)
                     ]
                 , div [ Attrs.map never options.theme.checkboxTitle ]
-                    [ fieldTitle options.theme schema control.scope |> Maybe.withDefault (text "") ]
+                    [ Html.viewMaybe identity <| fieldTitle options.theme control.label schema control.scope ]
                 ]
             ]
 
@@ -420,9 +420,9 @@ select options control schema fieldState fieldType =
 fieldGroup : Html F.Msg -> Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 fieldGroup inputField options control schema fieldState =
     let
-        title : Html F.Msg
+        title : Maybe (Html F.Msg)
         title =
-            fieldTitle options.theme schema control.scope |> Maybe.withDefault (text "")
+            fieldTitle options.theme control.label schema control.scope
 
         showDescription =
             Maybe.andThen .showUnfocusedDescription control.options == Just True || fieldState.hasFocus
@@ -441,19 +441,29 @@ fieldGroup inputField options control schema fieldState =
             Maybe.withDefault Html.nothing <| error options.theme options.errors fieldState
     in
     label [ for (Input.inputElementId fieldState.formId fieldState.path), Attrs.map never options.theme.fieldLabel ]
-        [ title
+        [ Html.viewMaybe identity title
         , inputField
         , description
         , errorMessage
         ]
 
 
-fieldTitle : Theme -> SubSchema -> Pointer -> Maybe (Html F.Msg)
-fieldTitle theme schema path =
-    schema.title
-        -- If it does not have a title, derive from property name, unCamelCasing it
-        |> Maybe.orElse (List.last path |> Maybe.map UI.fieldNameToTitle)
-        |> Maybe.map (\str -> span [ Attrs.map never theme.fieldTitle ] [ text str ])
+fieldTitle : Theme -> Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe (Html F.Msg)
+fieldTitle theme label schema path =
+    let
+        fallback = schema.title
+            -- If it does not have a title, derive from property name, unCamelCasing it
+            |> Maybe.orElse (List.last path |> Maybe.map UI.fieldNameToTitle)
+            |> Maybe.withDefault ""
+
+        render str = span [ Attrs.map never theme.fieldTitle ] [ text str ]
+
+    in case label of
+            Just (UI.StringLabel s) -> Just <| render s
+            Just (UI.BoolLabel False) -> Nothing
+            Just (UI.BoolLabel True) -> Just <| render fallback
+            Nothing -> Just <| render fallback
+
 
 
 fieldDescription : Theme -> SubSchema -> Maybe (Html F.Msg)

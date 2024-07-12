@@ -12,7 +12,6 @@ module Form.Validate exposing
     , maxLength
     , maybe
     , minLength
-    , nonEmpty
     , oneOf
     , succeed
     , unless
@@ -93,16 +92,6 @@ maybe : Validation a -> Validation (Maybe a)
 maybe =
     Ok << Result.toMaybe
 
-
-{-| Fails if `String.isEmpty`.
--}
-nonEmpty : String -> String -> Validation String
-nonEmpty path s =
-    if String.isEmpty s then
-        Err (Error.error Error.Empty)
-
-    else
-        Ok s
 
 
 {-| Min length for String.

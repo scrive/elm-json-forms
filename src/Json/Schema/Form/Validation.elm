@@ -46,7 +46,7 @@ subSchema schema =
 
                 NullableType type_ ->
                     Validate.oneOf
-                        [ \v -> Result.map (always Encode.null) <| validateNull schema v
+                        [ \v -> Result.map (always Encode.null) <| validateNull v
                         , validateSingleType schema type_
                         ]
 
@@ -95,13 +95,13 @@ validateSingleType schema type_ value =
             Result.map Encode.float <| validateFloat schema value
 
         BooleanType ->
-            Result.map Encode.bool <| validateBool schema value
+            Result.map Encode.bool <| validateBool value
 
         StringType ->
             Result.map Encode.string <| validateString schema value
 
         NullType ->
-            Result.map (always Encode.null) <| validateNull schema value
+            Result.map (always Encode.null) <| validateNull value
 
         _ ->
             Err <| Error.error (Error.Unimplemented "type")
@@ -215,8 +215,8 @@ validateFloat schema v =
                 x
 
 
-validateBool : SubSchema -> Value -> Validation Bool
-validateBool schema v =
+validateBool : Value -> Validation Bool
+validateBool v =
     case Decode.decodeValue Decode.bool v of
         Err _ ->
             Err <| Error.error Error.InvalidBool
@@ -225,8 +225,8 @@ validateBool schema v =
             Ok x
 
 
-validateNull : SubSchema -> Value -> Validation ()
-validateNull schema v =
+validateNull : Value -> Validation ()
+validateNull v =
     case Decode.decodeValue (Decode.null ()) v of
         Err _ ->
             Err <| Error.error Error.InvalidNull

@@ -3,7 +3,7 @@ module Json.Schema.Form.UiSchema exposing
     , Category
     , Condition
     , Control
-    , ControlLabel
+    , ControlLabel (..)
     , Detail
     , Effect(..)
     , ElementLabelProp
@@ -113,10 +113,10 @@ type alias Condition =
 
 
 type alias Options =
-    { detail : Maybe Detail
+    { format : Maybe Format
     , showSortButtons : Maybe Bool
+    , detail : Maybe Detail
     , elementLabelProp : Maybe ElementLabelProp
-    , format : Maybe Format
     , readonly : Maybe Bool
     , multi : Maybe Bool
     , slider : Maybe Bool
@@ -280,10 +280,10 @@ decodeCondition =
 decodeOptions : Decoder Options
 decodeOptions =
     Decode.succeed Options
-        |> Decode.optional "detail" (Decode.nullable decodeDetail) Nothing
-        |> Decode.optional "showSortButtons" (Decode.nullable Decode.bool) Nothing
-        |> Decode.optional "elementLabelProp" (Decode.nullable decodeElementLabelProp) Nothing
         |> Decode.optional "format" (Decode.nullable decodeFormat) Nothing
+        |> Decode.optional "showSortButtons" (Decode.nullable Decode.bool) Nothing
+        |> Decode.optional "detail" (Decode.nullable decodeDetail) Nothing
+        |> Decode.optional "elementLabelProp" (Decode.nullable decodeElementLabelProp) Nothing
         |> Decode.optional "readonly" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "multi" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "slider" (Decode.nullable Decode.bool) Nothing
