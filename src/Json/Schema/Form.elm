@@ -18,7 +18,7 @@ import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, generateUiSch
 import Json.Schema.Form.Validation exposing (validation)
 
 
-type alias State =
+type alias State = -- TODO: rename to Form
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema
@@ -30,14 +30,14 @@ type alias Msg =
     Form.Msg
 
 
-init : Options -> Schema -> Maybe UiSchema -> State
-init options schema mUiSchema =
+init : String -> Options -> Schema -> Maybe UiSchema -> State
+init id options schema mUiSchema =
     let
         uiSchema =
             Maybe.withDefault (generateUiSchema schema) mUiSchema
     in
     State options schema uiSchema <|
-        Form.initial (defaultValue schema) (validation schema)
+        Form.initial id (defaultValue schema) (validation schema)
 
 
 update : Msg -> State -> State

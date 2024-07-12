@@ -41,7 +41,7 @@ options =
 
 form : F.Form
 form =
-    F.initial (Encode.object []) Form.Validate.succeed
+    F.initial "form" (Encode.object []) Form.Validate.succeed
 
 
 view : (Query.Single F.Msg -> Expectation) -> SchemaBuilder -> Expectation

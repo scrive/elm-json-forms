@@ -239,7 +239,7 @@ controlView options uiState wholeSchema control form =
     Html.viewMaybe
         (\cs ->
             div
-                [ id (Pointer.toString control.scope)
+                [ id (Input.inputElementGroupId (F.getFormId form) (Pointer.toString control.scope))
                 , Attrs.map never options.theme.fieldGroup
                 ]
                 [ controlBody cs ]
@@ -356,7 +356,7 @@ checkbox options control schema fieldState =
             [ div [ Attrs.map never options.theme.checkboxWrapper ]
                 [ Input.checkboxInput fieldState
                     [ Attrs.map never <| options.theme.checkboxInput { withError = fieldState.error /= Nothing }
-                    , id (fieldState.path ++ "-input")
+                    , id (Input.inputElementId fieldState.formId fieldState.path)
                     ]
                 , div [ Attrs.map never options.theme.checkboxTitle ]
                     [ fieldTitle options.theme schema control.scope |> Maybe.withDefault (text "") ]
@@ -371,7 +371,7 @@ checkbox options control schema fieldState =
         feedback =
             Maybe.values [ error options.theme options.errors fieldState ]
     in
-    label [ for (fieldState.path ++ "-input"), class "form-check-label" ]
+    label [ for (Input.inputElementId fieldState.formId fieldState.path), class "form-check-label" ]
         [ div [ class "field-input" ] (content ++ feedback)
         , div [ class "field-meta" ] description
         ]
@@ -442,7 +442,7 @@ fieldGroup inputField options control schema fieldState =
         errorMessage =
             Maybe.withDefault Html.nothing <| error options.theme options.errors fieldState
     in
-    label [ for (fieldState.path ++ "-input"), Attrs.map never options.theme.fieldLabel ]
+    label [ for (Input.inputElementId fieldState.formId fieldState.path), Attrs.map never options.theme.fieldLabel ]
         [ title
         , inputField
         , description

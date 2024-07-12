@@ -16,6 +16,7 @@ Generate validating forms from JSON schemas.
 
 ## Unimplemented features
 
+- [x] Fix multiple forms on the same page sharing IDs
 - [x] Layout
   - [x] Remove unnecessary nested formRow items for horizontal layout inside vertical layout
 - [ ] Control Example
@@ -36,6 +37,7 @@ Generate validating forms from JSON schemas.
   - [x] Rule to enable/disable
   - [x] Rule to show/hide
 - [x] Layout example
+- [x] Generate UI Schema example
 
 ## Warnings
 

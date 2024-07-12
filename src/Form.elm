@@ -7,6 +7,7 @@ module Form exposing
     , getField
     , getFocus
     , getValue
+    , getFormId
     , initial
     , update
     , getPointedValue
@@ -24,23 +25,25 @@ import Json.Schema.Definitions as Schema exposing (Schema)
 import Set exposing (Set)
 
 
-type Form
+type Form  -- TODO: rename to State
     = Form Model
 
 
 type alias Model =
-    { value : Value
+    { formId : String -- Unique Form ID to disambiguate element IDs for multiple forms on the sarme page
+    , value : Value
     , focus : Maybe String
     , errors : Error
     , categoryFocus : Dict (List Int) Int
     }
 
 
-initial : Value -> (Value -> Validation output) -> Form
-initial initialValue validation =
+initial : String -> Value -> (Value -> Validation output) -> Form
+initial formId initialValue validation =
     let
         model =
-            { value = initialValue
+            { formId = formId
+            , value = initialValue
             , focus = Nothing
             , errors = []
             , categoryFocus = Dict.empty
@@ -50,7 +53,8 @@ initial initialValue validation =
 
 
 type alias FieldState =
-    { path : String
+    { formId : String
+    , path : String
     , value : FieldValue
     , error : Maybe ErrorValue
     , hasFocus : Bool
@@ -108,7 +112,8 @@ getPointedValue pointer value =
 
 getField : Bool -> String -> Form -> FieldState
 getField disabled path form =
-    { path = path
+    { formId = getFormId form
+    , path = path
     , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getPointedFieldValue pointer (getValue form)) |> Maybe.withDefault Empty
     , error = getErrorAt path form
     , hasFocus = getFocus form == Just path
@@ -266,3 +271,7 @@ getErrorAt path (Form model) =
 getFocus : Form -> Maybe String
 getFocus (Form model) =
     model.focus
+
+getFormId : Form -> String
+getFormId (Form model) =
+    model.formId

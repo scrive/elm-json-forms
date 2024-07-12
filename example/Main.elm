@@ -87,6 +87,8 @@ init =
             , formSpec "Layout Example: Group" layoutExampleSchema (Just layoutExample3UiSchema)
             , formSpec "Layout Example: Nested layouts" layoutExampleSchema (Just layoutExample4UiSchema)
 
+            , formSpec "Generate UI Schema Example" generateUiSchemaExampleSchema Nothing
+
             , formSpec "Testing Schema" testingSchema Nothing
             ]
     in
@@ -96,6 +98,7 @@ init =
                 case formSpecRes of
                     Ok fs ->
                         Json.Schema.Form.init
+                            fs.title
                             { errors = errorString
                             , theme = Theme.tailwind
                             }
@@ -1070,6 +1073,48 @@ layoutExample4UiSchema =
         }
       ]
     }
+  ]
+}
+"""
+
+generateUiSchemaExampleSchema : String
+generateUiSchemaExampleSchema =
+    """
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "vegetarian": {
+      "type": "boolean"
+    },
+    "birthDate": {
+      "type": "string"
+    },
+    "personalData": {
+      "type": "object",
+      "properties": {
+        "age": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "age"
+      ]
+    },
+    "postalCode": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "name",
+    "vegetarian",
+    "birthDate",
+    "personalData",
+    "postalCode"
   ]
 }
 """

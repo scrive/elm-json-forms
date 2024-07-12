@@ -1,6 +1,6 @@
 module Form.Input exposing
     ( Input
-    , baseInput, textInput, textArea, checkboxInput, radioInput
+    , baseInput, textInput, textArea, checkboxInput, radioInput, inputElementId, inputElementGroupId
     , floatInput, floatSelectInput, intInput, intSelectInput, intSlider, numberSlider, textSelectInput
     )
 
@@ -35,7 +35,7 @@ baseInput : Options -> String -> (String -> FieldValue) -> InputType -> Input
 baseInput options type__ toFieldValue inputType state attrs =
     let
         formAttrs =
-            [ id (state.path ++ "-input")
+            [ id (inputElementId state.formId state.path)
             , type_ type__
             , value (Field.valueAsString state.value)
             , onInput (toFieldValue >> Input state.path inputType)
@@ -197,7 +197,7 @@ baseSelectInput : Options -> List ( String, String ) -> (String -> FieldValue) -
 baseSelectInput options valueList toFieldValue state attrs =
     let
         formAttrs =
-            [ id (state.path ++ "-input")
+            [ id (inputElementId state.formId state.path)
             , on
                 "change"
                 (targetValue |> Json.map (toFieldValue >> Input state.path Select))
@@ -227,6 +227,12 @@ floatSelectInput : Options -> List ( String, String ) -> Input
 floatSelectInput options valueList =
     baseSelectInput options valueList fromFloatInput
 
+
+inputElementId : String -> String -> String
+inputElementId formId path = formId ++ "-" ++ path ++ "-input"
+
+inputElementGroupId : String -> String -> String
+inputElementGroupId formId path = formId ++ "-" ++ path
 
 {-| Checkbox input.
 -}
