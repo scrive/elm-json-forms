@@ -1,4 +1,4 @@
-module Json.Schema.Form.Fields exposing (TextFieldType(..), schemaView, uiSchemaView)
+module Json.Schema.Form.Fields exposing (TextFieldType(..), uiSchemaView)
 
 import Dict
 import Form as F exposing (FormState)
@@ -260,11 +260,6 @@ controlView options uiState wholeSchema control form =
                 [ controlBody cs ]
         )
         mControlSchema
-
-
-schemaView : Options -> Pointer -> Schema -> FormState -> Html F.Msg
-schemaView options path schema form =
-    Html.nothing
 
 
 type TextFieldType
