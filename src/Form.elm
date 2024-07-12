@@ -1,7 +1,7 @@
 module Form exposing
     ( FieldState
-    , InputType(..)
     , FormState
+    , InputType(..)
     , Msg(..)
     , getErrors
     , getField

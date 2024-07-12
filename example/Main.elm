@@ -5,13 +5,13 @@ import Dict
 import Form exposing (InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
 import Form.Field as Field exposing (FieldValue)
-import Html  exposing (..)
+import Html exposing (..)
 import Html.Attributes as Attrs exposing (class, disabled, style)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode as Encode exposing (bool, float, int, list, string)
 import Json.Schema
 import Json.Schema.Definitions as Schema exposing (Schema)
-import Json.Schema.Form exposing (Msg, Form)
+import Json.Schema.Form exposing (Form, Msg)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UiSchema exposing (UiSchema)
 import List.Extra as List
@@ -81,14 +81,11 @@ init =
             , formSpec "Control Example 2" controlExample2Schema (Just controlExample2UiSchema)
             , formSpec "Categorization Example 1" categorizationExample1Schema (Just categorizationExample1UiSchema)
             , formSpec "Rule Example" ruleExampleSchema (Just ruleExampleUiSchema)
-
             , formSpec "Layout Example: Horizontal layout" layoutExampleSchema (Just layoutExample1UiSchema)
             , formSpec "Layout Example: Vertical layout" layoutExampleSchema (Just layoutExample2UiSchema)
             , formSpec "Layout Example: Group" layoutExampleSchema (Just layoutExample3UiSchema)
             , formSpec "Layout Example: Nested layouts" layoutExampleSchema (Just layoutExample4UiSchema)
-
             , formSpec "Generate UI Schema Example" generateUiSchemaExampleSchema Nothing
-
             , formSpec "Testing Schema" testingSchema Nothing
             ]
     in
@@ -187,7 +184,6 @@ errorString path error =
 
         InvalidBool ->
             "That is not a valid option."
-
 
         InvalidNull ->
             "That is not a valid option."
@@ -848,6 +844,7 @@ categorizationExample1UiSchema =
   }
 """
 
+
 ruleExampleSchema : String
 ruleExampleSchema =
     """
@@ -947,6 +944,7 @@ ruleExampleUiSchema =
 }
 """
 
+
 layoutExampleSchema : String
 layoutExampleSchema =
     """
@@ -1007,6 +1005,7 @@ layoutExample2UiSchema =
   ]
 }
 """
+
 
 layoutExample3UiSchema : String
 layoutExample3UiSchema =
@@ -1075,6 +1074,7 @@ layoutExample4UiSchema =
   ]
 }
 """
+
 
 generateUiSchemaExampleSchema : String
 generateUiSchemaExampleSchema =

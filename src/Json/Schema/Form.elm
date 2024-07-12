@@ -1,6 +1,6 @@
 module Json.Schema.Form exposing
-    ( Msg
-    , Form
+    ( Form
+    , Msg
     , init
     , submit
     , update
