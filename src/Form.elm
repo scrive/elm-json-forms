@@ -6,16 +6,16 @@ module Form exposing
     , view
     )
 
+import Form.Error exposing (ErrorValue)
+import Form.Options exposing (Options)
 import Form.State exposing (FormState, Msg)
+import Form.Validation exposing (validation)
+import Form.View
 import Html exposing (Html, div)
 import Json.Encode as Encode
 import Json.Schema.Definitions exposing (Schema)
-import Form.View
-import Form.Options exposing (Options)
-import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
-import Form.Validation exposing (validation)
 import Maybe.Extra as Maybe
-import Form.Error exposing (ErrorValue)
+import UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
 
 
 type alias Form =

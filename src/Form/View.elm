@@ -1,9 +1,12 @@
 module Form.View exposing (view)
 
 import Dict
-import Form.State as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
+import Form.Options exposing (Options)
+import Form.State as F exposing (FormState)
+import Form.Validation exposing (validation)
 import Form.View.Input as Input
+import Form.View.Theme exposing (Theme)
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
     exposing
@@ -24,12 +27,9 @@ import Json.Schema.Definitions
         , SubSchema
         , Type(..)
         )
-import Form.Options exposing (Options)
-import Form.View.Theme exposing (Theme)
-import UiSchema as UI exposing (Effect(..), UiSchema)
-import Form.Validation exposing (validation)
 import List.Extra as List
 import Maybe.Extra as Maybe
+import UiSchema as UI exposing (Effect(..), UiSchema)
 import Validation
 
 

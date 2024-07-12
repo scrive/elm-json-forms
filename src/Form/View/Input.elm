@@ -1,6 +1,6 @@
 module Form.View.Input exposing
     ( Input
-    , InputType (..)
+    , InputType(..)
     , baseInput
     , checkboxInput
     , floatInput
@@ -17,6 +17,7 @@ module Form.View.Input exposing
     )
 
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
+import Form.Options exposing (Options)
 import Form.State as FormState exposing (FieldState, Msg(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
@@ -24,11 +25,11 @@ import Html.Events exposing (..)
 import Json.Decode as Decode
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema
-import Form.Options exposing (Options)
 
 
 type alias Input =
     FieldState -> List (Attribute Msg) -> Html Msg
+
 
 type InputType
     = Text
