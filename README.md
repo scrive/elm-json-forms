@@ -38,6 +38,7 @@ Generate validating forms from JSON schemas.
   - [x] Rule to show/hide
 - [x] Layout example
 - [x] Generate UI Schema example
+  - [x] Fix groups
 
 ## Warnings
 

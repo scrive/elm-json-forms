@@ -13,6 +13,7 @@ import Html exposing (Html, div)
 import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
 import Json.Schema.Form.Fields
+import Maybe.Extra as Maybe
 import Json.Schema.Form.Options exposing (Options)
 import Json.Schema.Form.UiSchema exposing (UiSchema, defaultValue, generateUiSchema)
 import Json.Schema.Form.Validation exposing (validation)
@@ -34,7 +35,7 @@ init : String -> Options -> Schema -> Maybe UiSchema -> State
 init id options schema mUiSchema =
     let
         uiSchema =
-            Maybe.withDefault (generateUiSchema schema) mUiSchema
+            Maybe.withDefaultLazy (\_ -> generateUiSchema schema) mUiSchema
     in
     State options schema uiSchema <|
         Form.initial id (defaultValue schema) (validation schema)

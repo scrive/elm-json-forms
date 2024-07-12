@@ -15,6 +15,7 @@ module Json.Schema.Form.UiSchema exposing
     , generateUiSchema
     , pointToSchema
     , unSchemata
+    , fieldNameToTitle
     , getRule
     )
 
@@ -23,6 +24,7 @@ import Form.Field exposing (FieldValue(..))
 import Form.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
+import String.Case
 import Json.Encode as Encode
 import Json.Schema.Definitions as Schema exposing (Schema(..))
 
@@ -335,51 +337,53 @@ decodeDetail =
             )
 
 
+fieldNameToTitle : String -> String
+fieldNameToTitle = String.Case.convertCase " " True True
+
 generateUiSchema : Schema -> UiSchema
 generateUiSchema schema =
-    Debug.log "UI Schema" <|
-        UiVerticalLayout
-            { elements =
-                generateControlPointers schema []
-                    |> List.map
-                        (\p ->
-                            UiControl
-                                { scope = p
-                                , label = Nothing
-                                , options = Nothing
-                                , rule = Nothing
-                                }
-                        )
-            , rule = Nothing
-            }
+    let
+        go : Maybe String -> Schema -> Pointer -> Maybe UiSchema
+        go mName s p =
 
+                case s of
+                    Schema.BooleanSchema _ ->
+                        Nothing
 
-generateControlPointers : Schema -> Pointer -> List Pointer
-generateControlPointers s p =
-    Debug.log "genUiSchema pointers" <|
-        case s of
-            Schema.BooleanSchema _ ->
-                []
+                    Schema.ObjectSchema o ->
+                        case o.type_ of
+                            Schema.SingleType t ->
+                                case t of
+                                    Schema.ObjectType ->
+                                        let
+                                            elements = List.filterMap (\(name, x) -> go (Just name) x (List.append p [ "properties", name ])) (Maybe.withDefault [] <| Maybe.map unSchemata o.properties)
+                                        in Just <| case mName of
+                                            Nothing -> UiVerticalLayout
+                                                { elements = elements
+                                                , rule = Nothing
+                                                }
+                                            Just name -> UiGroup
+                                                { label = Just (fieldNameToTitle name)
+                                                , elements = elements
+                                                , rule = Nothing
+                                                }
 
-            Schema.ObjectSchema o ->
-                case o.type_ of
-                    Schema.SingleType t ->
-                        case t of
-                            Schema.ObjectType ->
-                                List.concatMap
-                                    (\( name, schema ) -> List.map (List.append [ "properties", name ]) <| generateControlPointers schema p)
-                                <|
-                                    Maybe.withDefault [] <|
-                                        Maybe.map unSchemata o.properties
+                                    Schema.NullType ->
+                                        Nothing
 
-                            Schema.NullType ->
-                                []
+                                    _ ->
+                                        Just <| UiControl
+                                        { scope = p
+                                        , label = Nothing
+                                        , options = Nothing
+                                        , rule = Nothing
+                                        }
 
                             _ ->
-                                [ p ]
+                                Nothing
 
-                    _ ->
-                        []
+    in
+        Maybe.withDefault (UiVerticalLayout { elements = [], rule = Nothing }) <| go Nothing schema []
 
 
 unSchemata : Schema.Schemata -> List ( String, Schema )

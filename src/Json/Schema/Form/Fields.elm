@@ -454,7 +454,7 @@ fieldTitle : Theme -> SubSchema -> Pointer -> Maybe (Html F.Msg)
 fieldTitle theme schema path =
     schema.title
         -- If it does not have a title, derive from property name, unCamelCasing it
-        |> Maybe.orElse (List.last path |> Maybe.map (String.Case.convertCase " " True True))
+        |> Maybe.orElse (List.last path |> Maybe.map UI.fieldNameToTitle)
         |> Maybe.map (\str -> span [ Attrs.map never theme.fieldTitle ] [ text str ])
 
 
