@@ -19,7 +19,6 @@ import Maybe.Extra as Maybe
 
 
 type alias Form =
-    -- TODO: rename to Form
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema

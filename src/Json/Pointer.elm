@@ -1,15 +1,17 @@
-module Form.Pointer exposing
+module Json.Pointer exposing
     ( Pointer
     , decode
     , encode
     , fromString
     , toString
+    , pointedValue
     )
 
 -- This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
 
 import Json.Decode as Decode
 import Json.Encode as Encode
+import Dict
 import String
 
 
@@ -72,3 +74,20 @@ escape string =
         |> String.join "~0"
         |> String.split "/"
         |> String.join "~1"
+
+pointedValue : Pointer -> Encode.Value -> Maybe Encode.Value
+pointedValue pointer value =
+    case pointer of
+        "properties" :: key :: ps ->
+            case Decode.decodeValue (Decode.dict Decode.value) value of
+                Ok dict ->
+                    Maybe.andThen (pointedValue ps) <| Dict.get key dict
+
+                Err _ ->
+                    Nothing
+
+        [] ->
+            Just value
+
+        _ ->
+            Nothing

@@ -1,7 +1,7 @@
 module Json.Schema.Form.Validation exposing (validation)
 
 import Form.Error as Error exposing (ErrorValue(..))
-import Form.Validate as Validate exposing (Validation)
+import Validation exposing (Validation)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
@@ -23,10 +23,10 @@ validation schema value =
     case schema of
         BooleanSchema bool ->
             if bool then
-                Validate.succeed value
+                Validation.succeed value
 
             else
-                Validate.fail (Error.error <| Unimplemented "Boolean schemas are not implemented.")
+                Validation.fail (Error.error <| Unimplemented "Boolean schemas are not implemented.")
 
         ObjectSchema objectSchema ->
             subSchema objectSchema value
@@ -42,20 +42,20 @@ subSchema schema =
                     validateSingleType schema type_
 
                 AnyType ->
-                    Validate.succeed
+                    Validation.succeed
 
                 NullableType type_ ->
-                    Validate.oneOf
+                    Validation.oneOf
                         [ \v -> Result.map (always Encode.null) <| validateNull v
                         , validateSingleType schema type_
                         ]
 
                 UnionType types ->
-                    Validate.oneOf <| List.map (\type_ -> validateSingleType schema type_) types
+                    Validation.oneOf <| List.map (\type_ -> validateSingleType schema type_) types
     in
-    Validate.validateAll
-        [ Validate.whenJust schema.const validateConst
-        , Validate.whenJust schema.enum validateEnum
+    Validation.validateAll
+        [ Validation.whenJust schema.const validateConst
+        , Validation.whenJust schema.enum validateEnum
         , typeValidations
         ]
 
@@ -75,7 +75,7 @@ validateSingleType schema type_ value =
                     Result.toMaybe <| Decode.decodeValue (Decode.field key Decode.value) value
 
                 validateKey key propSchema =
-                    Validate.mapErrorPointers (List.append [ "properties", key ]) <|
+                    Validation.mapErrorPointers (List.append [ "properties", key ]) <|
                         case ( mValue key, Set.member key requiredKeys ) of
                             ( Nothing, True ) ->
                                 Err [ ( [], Empty ) ]
@@ -86,7 +86,7 @@ validateSingleType schema type_ value =
                             ( Just val, _ ) ->
                                 validation propSchema val
             in
-            Validate.validateAll (List.map (\( key, propSchema ) _ -> validateKey key propSchema) propList) value
+            Validation.validateAll (List.map (\( key, propSchema ) _ -> validateKey key propSchema) propList) value
 
         IntegerType ->
             Result.map Encode.int <| validateInt schema value
@@ -114,11 +114,11 @@ validateString schema v =
             Err <| Error.error Error.InvalidString
 
         Ok s ->
-            Validate.validateAll
-                [ Validate.whenJust schema.minLength validateMinLength
-                , Validate.whenJust schema.maxLength validateMaxLength
-                , Validate.whenJust schema.pattern validatePattern -- TODO: check specs if this is correct
-                , Validate.whenJust schema.format validateFormat -- TODO: check specs if this is correct
+            Validation.validateAll
+                [ Validation.whenJust schema.minLength validateMinLength
+                , Validation.whenJust schema.maxLength validateMaxLength
+                , Validation.whenJust schema.pattern validatePattern -- TODO: check specs if this is correct
+                , Validation.whenJust schema.format validateFormat -- TODO: check specs if this is correct
                 ]
                 s
 
@@ -149,7 +149,7 @@ validateFormat format v =
             validateRegex Json.Schema.Form.Regex.ipv6 v
 
         _ ->
-            Validate.succeed v
+            Validation.succeed v
 
 
 validatePattern : String -> String -> Validation String
@@ -177,12 +177,12 @@ validateRegex regex s =
 
 validateMinLength : Int -> String -> Validation String
 validateMinLength i s =
-    Validate.unless (String.length s >= i) (Error.ShorterStringThan i) s
+    Validation.unless (String.length s >= i) (Error.ShorterStringThan i) s
 
 
 validateMaxLength : Int -> String -> Validation String
 validateMaxLength i s =
-    Validate.unless (String.length s <= i) (Error.LongerStringThan i) s
+    Validation.unless (String.length s <= i) (Error.LongerStringThan i) s
 
 
 validateInt : SubSchema -> Value -> Validation Int
@@ -192,10 +192,10 @@ validateInt schema v =
             Err <| Error.error Error.InvalidInt
 
         Ok x ->
-            Validate.validateAll
-                [ Validate.whenJust (minimum schema) boundedInt
-                , Validate.whenJust (maximum schema) boundedInt
-                , Validate.whenJust (Maybe.map round schema.multipleOf) multipleOfInt
+            Validation.validateAll
+                [ Validation.whenJust (minimum schema) boundedInt
+                , Validation.whenJust (maximum schema) boundedInt
+                , Validation.whenJust (Maybe.map round schema.multipleOf) multipleOfInt
                 ]
                 x
 
@@ -207,10 +207,10 @@ validateFloat schema v =
             Err <| Error.error Error.InvalidFloat
 
         Ok x ->
-            Validate.validateAll
-                [ Validate.whenJust (minimum schema) boundedFloat
-                , Validate.whenJust (maximum schema) boundedFloat
-                , Validate.whenJust schema.multipleOf multipleOfFloat
+            Validation.validateAll
+                [ Validation.whenJust (minimum schema) boundedFloat
+                , Validation.whenJust (maximum schema) boundedFloat
+                , Validation.whenJust schema.multipleOf multipleOfFloat
                 ]
                 x
 
@@ -237,17 +237,17 @@ validateNull v =
 
 validateConst : Value -> Value -> Validation Value
 validateConst a b =
-    Validate.unless (a == b) (Error.NotConst a) b
+    Validation.unless (a == b) (Error.NotConst a) b
 
 
 validateEnum : List Value -> Value -> Validation Value
 validateEnum l a =
-    Validate.unless (List.member a l) (Error.NotIncludedIn l) a
+    Validation.unless (List.member a l) (Error.NotIncludedIn l) a
 
 
 multipleOfInt : Int -> Int -> Validation Int
 multipleOfInt p a =
-    Validate.unless (modBy p a == 0) (Error.NotMultipleOfInt p) a
+    Validation.unless (modBy p a == 0) (Error.NotMultipleOfInt p) a
 
 
 multipleOfFloat : Float -> Float -> Validation Float
@@ -257,7 +257,7 @@ multipleOfFloat p a =
             -- rough check that sort-of works with common values
             abs (toFloat (round (a / p)) - (a / p)) < 1.0e-10
     in
-    Validate.unless isMultiple (Error.NotMultipleOfFloat p) a
+    Validation.unless isMultiple (Error.NotMultipleOfFloat p) a
 
 
 boundedInt : Comparison -> Int -> Validation Int
@@ -270,16 +270,16 @@ boundedFloat cmp a =
     a
         |> (case cmp of
                 LT x ->
-                    Validate.unless (a < x) <| Error.GreaterEqualFloatThan x
+                    Validation.unless (a < x) <| Error.GreaterEqualFloatThan x
 
                 LE x ->
-                    Validate.unless (a <= x) <| Error.GreaterFloatThan x
+                    Validation.unless (a <= x) <| Error.GreaterFloatThan x
 
                 GT x ->
-                    Validate.unless (a > x) <| Error.LessEqualFloatThan x
+                    Validation.unless (a > x) <| Error.LessEqualFloatThan x
 
                 GE x ->
-                    Validate.unless (a >= x) <| Error.LessFloatThan x
+                    Validation.unless (a >= x) <| Error.LessFloatThan x
            )
 
 

@@ -1,4 +1,4 @@
-module Form.Validate exposing
+module Validation exposing
     ( Validation
     , andMap
     , bool
@@ -20,7 +20,7 @@ module Form.Validate exposing
     )
 
 import Form.Error as Error exposing (Error, ErrorValue)
-import Form.Pointer exposing (Pointer)
+import Json.Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Value)
 import Regex exposing (Regex)
 import Result

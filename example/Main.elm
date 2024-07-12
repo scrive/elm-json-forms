@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Form exposing (InputType(..), Msg(..))
-import Form.Error exposing (ErrorValue(..))
+import Form.Error as Error exposing (ErrorValue(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class)
 import Html.Events exposing (onSubmit)
@@ -133,7 +133,7 @@ viewForm : String -> Form -> Html Msg
 viewForm title form =
     let
         anyErrors =
-            not <| List.isEmpty <| Form.getErrors form.state
+            not <| List.isEmpty <| Error.getErrors form.state.errors
     in
     div []
         [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]

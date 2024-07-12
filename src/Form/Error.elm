@@ -1,7 +1,12 @@
-module Form.Error exposing (Error, ErrorValue(..), error)
+module Form.Error exposing
+    ( Error
+    , ErrorValue(..)
+    , error
+    , getErrors
+    )
 
 
-import Form.Pointer exposing (Pointer)
+import Json.Pointer as Pointer exposing (Pointer)
 import Json.Decode exposing (Value)
 
 
@@ -38,3 +43,8 @@ type ErrorValue
 error : ErrorValue -> Error
 error e =
     [ ( [], e ) ]
+
+
+getErrors : Error -> List ( String, ErrorValue )
+getErrors errors =
+    List.map (\( p, e ) -> ( Pointer.toString p, e )) errors

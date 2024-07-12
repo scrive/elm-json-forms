@@ -1,22 +1,19 @@
 module Json.Schema.Form.Theme exposing (Theme, tailwind)
 
-{-| Theme allows you to set styling of generated Form elements
-
-@docs Theme, tailwind
-
--}
 
 import Html exposing (Attribute)
 import Html.Attributes as Attrs
 
 
-{-| Record, that holds the styling of elements
+{-| Styling of elements
 -}
 type alias Theme =
-    { categorizationMenu : Attribute Never
-    , categorizationMenuItem : { focus : Bool } -> Attribute Never
-    , label : Attribute Never
+    { horizontalLayout : Attribute Never
+    , horizontalLayoutItem : Attribute Never
     , groupLabel : Attribute Never
+    , label : Attribute Never
+    , categorizationMenu : Attribute Never
+    , categorizationMenuItem : { focus : Bool } -> Attribute Never
 
     , fieldGroup : Attribute Never
     , fieldLabel : Attribute Never
@@ -27,8 +24,6 @@ type alias Theme =
     , checkboxRow : Attribute Never
     , checkboxInput : { withError : Bool } -> Attribute Never
 
-    , horizontalLayout : Attribute Never
-    , horizontalLayoutItem : Attribute Never
     , group : Attribute Never
     }
 
@@ -39,7 +34,11 @@ tailwind =
         isInvalid =
             "border-1 border-red-500"
     in
-    { categorizationMenu = Attrs.class "flex my-4 bg-indigo-500 font-bold shadow-sm rounded-md ring-1"
+    { horizontalLayout = Attrs.class "flex space-x-4"
+    , horizontalLayoutItem = Attrs.class "max-w-full flex-grow"
+    , label = Attrs.class "text-lg mt-4"
+    , groupLabel = Attrs.class "text-lg"
+    , categorizationMenu = Attrs.class "flex my-4 bg-indigo-500 font-bold shadow-sm rounded-md ring-1"
     , categorizationMenuItem =
         \{ focus } ->
             Attrs.classList
@@ -47,8 +46,6 @@ tailwind =
                 , ( "text-white", focus )
                 , ( "text-white/60", not focus )
                 ]
-    , label = Attrs.class "text-lg mt-4"
-    , groupLabel = Attrs.class "text-lg"
 
     , fieldGroup = Attrs.class "my-4"
     , fieldInput =
@@ -70,7 +67,5 @@ tailwind =
                 , ( isInvalid, withError )
                 ]
 
-    , horizontalLayout = Attrs.class "flex space-x-4"
-    , horizontalLayoutItem = Attrs.class "max-w-full flex-grow"
     , group = Attrs.class "field-input border border-gray-300 rounded-md  p-3  my-3 shadow-sm"
     }

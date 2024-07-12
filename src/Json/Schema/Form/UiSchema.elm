@@ -25,7 +25,7 @@ module Json.Schema.Form.UiSchema exposing
     , unSchemata
     )
 
-import Form.Pointer as Pointer exposing (Pointer)
+import Json.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode

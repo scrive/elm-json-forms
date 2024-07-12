@@ -4,8 +4,8 @@ import Dict
 import Form as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
 import Form.Input as Input
-import Form.Pointer as Pointer exposing (Pointer)
-import Form.Validate
+import Json.Pointer as Pointer exposing (Pointer)
+import Validation
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
     exposing
@@ -97,12 +97,12 @@ computeRule : Value -> Maybe UI.Rule -> Maybe AppliedEffect
 computeRule formValue mRule =
     let
         condition rule =
-            case F.getPointedValue rule.condition.scope formValue of
+            case Pointer.pointedValue rule.condition.scope formValue of
                 Nothing ->
                     False
 
                 Just v ->
-                    Form.Validate.isOk <| validation rule.condition.schema v
+                    Validation.isOk <| validation rule.condition.schema v
 
         go rule =
             case ( rule.effect, condition rule ) of

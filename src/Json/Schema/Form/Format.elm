@@ -11,7 +11,7 @@ module Json.Schema.Form.Format exposing
     , withValidation
     )
 
-import Form.Validate exposing (Validation)
+import Validation exposing (Validation)
 
 
 {-| A custom format.
@@ -35,7 +35,7 @@ init =
     , placeholder = Nothing
     , autocomplete = Nothing
     , inputType = Nothing
-    , validation = Form.Validate.succeed
+    , validation = Validation.succeed
     }
 
 

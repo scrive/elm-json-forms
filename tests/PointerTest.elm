@@ -1,7 +1,7 @@
 module PointerTest exposing (suite)
 
 import Expect
-import Form.Pointer as Pointer
+import Json.Pointer as Pointer
 import Test exposing (Test, describe, test)
 
 

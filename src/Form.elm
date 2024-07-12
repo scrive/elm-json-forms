@@ -3,9 +3,7 @@ module Form exposing
     , FormState
     , InputType(..)
     , Msg(..)
-    , getErrors
     , getField
-    , getPointedValue
     , initial
     , update
     )
@@ -13,8 +11,8 @@ module Form exposing
 import Dict exposing (Dict)
 import Form.Error as Error exposing (Error, ErrorValue)
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Form.Pointer as Pointer exposing (Pointer)
-import Form.Validate exposing (Validation)
+import Json.Pointer as Pointer exposing (Pointer)
+import Validation exposing (Validation)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 
@@ -52,54 +50,12 @@ type alias FieldState =
     }
 
 
-toFieldValue : Value -> Maybe FieldValue
-toFieldValue value =
-    case
-        Decode.decodeValue
-            (Decode.oneOf
-                [ Decode.map FieldValue.Int Decode.int
-                , Decode.map FieldValue.Number Decode.float
-                , Decode.map FieldValue.String Decode.string
-                , Decode.map FieldValue.Bool Decode.bool
-                ]
-            )
-            value
-    of
-        Ok fv ->
-            Just fv
-
-        Err _ ->
-            Nothing
-
-
-getPointedFieldValue : Pointer -> Value -> Maybe FieldValue
-getPointedFieldValue pointer value =
-    Maybe.andThen toFieldValue (getPointedValue pointer value)
-
-
-getPointedValue : Pointer -> Value -> Maybe Value
-getPointedValue pointer value =
-    case pointer of
-        "properties" :: key :: ps ->
-            case Decode.decodeValue (Decode.dict Decode.value) value of
-                Ok dict ->
-                    Maybe.andThen (getPointedValue ps) <| Dict.get key dict
-
-                Err _ ->
-                    Nothing
-
-        [] ->
-            Just value
-
-        _ ->
-            Nothing
-
 
 getField : Bool -> String -> FormState -> FieldState
 getField disabled path form =
     { formId = form.formId
     , path = path
-    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getPointedFieldValue pointer form.value) |> Maybe.withDefault Empty
+    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> FieldValue.pointedFieldValue pointer form.value) |> Maybe.withDefault Empty
     , error = getErrorAt path form
     , hasFocus = form.focus == Just path
     , disabled = disabled
@@ -152,7 +108,7 @@ update validation msg model =
                             model.value
 
                         Just pointer ->
-                            updateValue pointer fieldValue model.value
+                            FieldValue.updateValue pointer fieldValue model.value
 
                 newModel =
                     { model
@@ -184,40 +140,6 @@ update validation msg model =
             updateValidate validation newModel
 
 
-updateValue : Pointer -> FieldValue -> Value -> Value
-updateValue pointer new value =
-    case pointer of
-        "properties" :: key :: [] ->
-            Encode.dict identity identity <|
-                case ( Decode.decodeValue (Decode.dict Decode.value) value, FieldValue.asValue new ) of
-                    ( Ok o, Nothing ) ->
-                        Dict.remove key o
-
-                    ( Ok o, Just v ) ->
-                        Dict.insert key v o
-
-                    ( Err _, Nothing ) ->
-                        Dict.empty
-
-                    ( Err _, Just v ) ->
-                        Dict.singleton key v
-
-        "properties" :: key :: ps ->
-            case Decode.decodeValue (Decode.dict Decode.value) value of
-                Ok o ->
-                    Encode.dict identity identity <|
-                        Dict.insert key (updateValue ps new (Maybe.withDefault Encode.null <| Dict.get key o)) o
-
-                Err _ ->
-                    Encode.dict identity identity <| Dict.singleton key (updateValue ps new Encode.null)
-
-        [] ->
-            Maybe.withDefault Encode.null <| FieldValue.asValue new
-
-        _ ->
-            value
-
-
 updateValidate : (Value -> Validation o) -> FormState -> FormState
 updateValidate validation model =
     case validation model.value of
@@ -232,11 +154,6 @@ updateValidate validation model =
                 | errors =
                     error
             }
-
-
-getErrors : FormState -> List ( String, Error.ErrorValue )
-getErrors model =
-    List.map (\( p, e ) -> ( Pointer.toString p, e )) model.errors
 
 
 getErrorAt : String -> FormState -> Maybe ErrorValue
