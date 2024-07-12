@@ -57,11 +57,11 @@ import Dict
 import Html exposing (..)
 import Html.Events exposing (onSubmit)
 import Json.Schema
-import Json.Schema.Form exposing (Msg, State)
+import Json.Schema.Form exposing (Msg, StateXXX)
 import Json.Schema.Form.Theme as Theme
 
 
-main : Program () State Msg
+main : Program () StateXXX Msg
 main =
     Browser.sandbox { init = init, update = update, view = view }
 
@@ -81,7 +81,7 @@ schema =
   """
 
 
-init : State
+init : StateXXX
 init =
     case Json.Schema.fromString schema of
         Ok schema_ ->
@@ -97,12 +97,12 @@ init =
             Debug.todo error
 
 
-update : Msg -> State -> State
+update : Msg -> StateXXX -> StateXXX
 update msg state =
     Json.Schema.Form.update msg state
 
 
-view : State -> Html Msg
+view : StateXXX -> Html Msg
 view state =
     form [ onSubmit Json.Schema.Form.submit ]
         [ Json.Schema.Form.view state

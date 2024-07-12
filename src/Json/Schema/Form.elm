@@ -1,14 +1,13 @@
 module Json.Schema.Form exposing
     ( Msg
-    , State
-    , getOutput
+    , Form
     , init
     , submit
     , update
     , view
     )
 
-import Form exposing (Form(..), Msg)
+import Form exposing (FormState, Msg)
 import Html exposing (Html, div)
 import Json.Encode as Encode exposing (Value)
 import Json.Schema.Definitions exposing (Schema)
@@ -19,12 +18,12 @@ import Json.Schema.Form.Validation exposing (validation)
 import Maybe.Extra as Maybe
 
 
-type alias State =
+type alias Form =
     -- TODO: rename to Form
     { options : Options
     , schema : Schema
     , uiSchema : UiSchema
-    , form : Form
+    , state : FormState
     }
 
 
@@ -32,49 +31,34 @@ type alias Msg =
     Form.Msg
 
 
-init : String -> Options -> Schema -> Maybe UiSchema -> State
+init : String -> Options -> Schema -> Maybe UiSchema -> Form
 init id options schema mUiSchema =
     let
         uiSchema =
             Maybe.withDefaultLazy (\_ -> generateUiSchema schema) mUiSchema
     in
-    State options schema uiSchema <|
+    Form options schema uiSchema <|
         Form.initial id (defaultValue schema) (validation schema)
 
 
-update : Msg -> State -> State
-update msg state =
+update : Msg -> Form -> Form
+update msg form =
     let
-        form : Form
-        form =
+        formState : FormState
+        formState =
             Form.update
-                (validation state.schema)
+                (validation form.schema)
                 (Debug.log "message" msg)
-                state.form
+                form.state
     in
-    { state | form = (\( _, a ) -> a) <| Debug.log "form" ( Encode.encode 0 <| Form.getValue form, form ) }
+    { form | state = (\( _, a ) -> a) <| Debug.log "form" ( Encode.encode 0 <| formState.value, formState ) }
 
 
-view : State -> Html Msg
-view state =
-    div [] <| Json.Schema.Form.Fields.uiSchemaView state.options { uiPath = [], disabled = False } state.uiSchema state.schema state.form
+view : Form -> Html Msg
+view form =
+    div [] <| Json.Schema.Form.Fields.uiSchemaView form.options { uiPath = [], disabled = False } form.uiSchema form.schema form.state
 
 
 submit : Msg
 submit =
     Form.Submit
-
-
-getOutput : State -> Maybe Value
-getOutput state =
-    let
-        form =
-            case state.form of
-                Form f ->
-                    f
-    in
-    if form.errors == [] then
-        Just form.value
-
-    else
-        Nothing

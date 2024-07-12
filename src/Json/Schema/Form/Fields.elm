@@ -1,7 +1,7 @@
 module Json.Schema.Form.Fields exposing (TextFieldType(..), schemaView, uiSchemaView)
 
 import Dict exposing (Dict)
-import Form as F
+import Form as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
 import Form.Field as Field exposing (FieldValue)
 import Form.Input as Input
@@ -46,10 +46,6 @@ import Maybe.Extra as Maybe
 import String.Case
 
 
-type alias Form =
-    F.Form
-
-
 type alias UiState =
     { disabled : Bool
     , uiPath : List Int
@@ -66,12 +62,12 @@ appendPathElement i st =
     { st | uiPath = List.append st.uiPath [ i ] }
 
 
-uiSchemaView : Options -> UiState -> UiSchema -> Schema -> Form -> List (Html F.Msg)
+uiSchemaView : Options -> UiState -> UiSchema -> Schema -> FormState -> List (Html F.Msg)
 uiSchemaView options uiState uiSchema schema form =
     let
         ruleEffect : Maybe AppliedEffect
         ruleEffect =
-            computeRule (F.getValue form) (UI.getRule uiSchema)
+            computeRule form.value (UI.getRule uiSchema)
 
         newUiState =
             { uiState | disabled = ruleEffect == Just Disabled }
@@ -141,7 +137,7 @@ computeRule formValue mRule =
     Maybe.andThen go mRule
 
 
-horizontalLayoutView : Options -> UiState -> Schema -> Form -> UI.HorizontalLayout -> List (Html F.Msg)
+horizontalLayoutView : Options -> UiState -> Schema -> FormState -> UI.HorizontalLayout -> List (Html F.Msg)
 horizontalLayoutView options uiState wholeSchema form hl =
     [ div [ Attrs.map never <| options.theme.horizontalLayout ] <|
         List.indexedMap
@@ -154,7 +150,7 @@ horizontalLayoutView options uiState wholeSchema form hl =
     ]
 
 
-verticalLayoutView : Options -> UiState -> Schema -> Form -> UI.VerticalLayout -> List (Html F.Msg)
+verticalLayoutView : Options -> UiState -> Schema -> FormState -> UI.VerticalLayout -> List (Html F.Msg)
 verticalLayoutView options uiState wholeSchema form vl =
     List.indexedMap
         (\ix us ->
@@ -165,7 +161,7 @@ verticalLayoutView options uiState wholeSchema form vl =
         vl.elements
 
 
-groupView : Options -> UiState -> Schema -> Form -> UI.Group -> List (Html F.Msg)
+groupView : Options -> UiState -> Schema -> FormState -> UI.Group -> List (Html F.Msg)
 groupView options uiState wholeSchema form group =
     let
         title =
@@ -178,14 +174,14 @@ groupView options uiState wholeSchema form group =
     ]
 
 
-categorizationView : Options -> UiState -> Schema -> Form -> UI.Categorization -> List (Html F.Msg)
+categorizationView : Options -> UiState -> Schema -> FormState -> UI.Categorization -> List (Html F.Msg)
 categorizationView options uiState wholeSchema form categorization =
     let
         focusedCategoryIx =
-            Maybe.withDefault 0 <| Dict.get uiState.uiPath (F.getCategoryFocus form)
+            Maybe.withDefault 0 <| Dict.get uiState.uiPath form.categoryFocus
 
         categoryButton ix category =
-            if computeRule (F.getValue form) category.rule == Just Hidden then
+            if computeRule form.value category.rule == Just Hidden then
                 Nothing
 
             else
@@ -204,11 +200,11 @@ categorizationView options uiState wholeSchema form categorization =
         ++ Maybe.unwrap [] (categoryView options (appendPathElement focusedCategoryIx uiState) wholeSchema form) (List.getAt focusedCategoryIx categorization.elements)
 
 
-categoryView : Options -> UiState -> Schema -> Form -> UI.Category -> List (Html F.Msg)
+categoryView : Options -> UiState -> Schema -> FormState -> UI.Category -> List (Html F.Msg)
 categoryView options uiState wholeSchema form category =
     let
         ruleEffect =
-            computeRule (F.getValue form) category.rule
+            computeRule form.value category.rule
 
         newUiState =
             { uiState | disabled = ruleEffect == Just Disabled }
@@ -217,7 +213,7 @@ categoryView options uiState wholeSchema form category =
         verticalLayoutView options newUiState wholeSchema form { elements = category.elements, rule = category.rule }
 
 
-controlView : Options -> UiState -> Schema -> UI.Control -> Form -> Html F.Msg
+controlView : Options -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg
 controlView options uiState wholeSchema control form =
     let
         mControlSchema =
@@ -272,7 +268,7 @@ controlView options uiState wholeSchema control form =
     Html.viewMaybe
         (\cs ->
             div
-                [ id (Input.inputElementGroupId (F.getFormId form) (Pointer.toString control.scope))
+                [ id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
                 , Attrs.map never options.theme.fieldGroup
                 ]
                 [ controlBody cs ]
@@ -280,7 +276,7 @@ controlView options uiState wholeSchema control form =
         mControlSchema
 
 
-schemaView : Options -> Pointer -> Schema -> Form -> Html F.Msg
+schemaView : Options -> Pointer -> Schema -> FormState -> Html F.Msg
 schemaView options path schema form =
     Html.nothing
 

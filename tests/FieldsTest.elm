@@ -39,7 +39,7 @@ options =
     }
 
 
-form : F.Form
+form : F.FormState
 form =
     F.initial "form" (Encode.object []) Form.Validate.succeed
 

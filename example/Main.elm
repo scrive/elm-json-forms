@@ -5,20 +5,20 @@ import Dict
 import Form exposing (InputType(..), Msg(..))
 import Form.Error exposing (ErrorValue(..))
 import Form.Field as Field exposing (FieldValue)
-import Html exposing (..)
+import Html  exposing (..)
 import Html.Attributes as Attrs exposing (class, disabled, style)
 import Html.Events exposing (onClick, onSubmit)
 import Json.Encode as Encode exposing (bool, float, int, list, string)
 import Json.Schema
 import Json.Schema.Definitions as Schema exposing (Schema)
-import Json.Schema.Form exposing (Msg, State)
+import Json.Schema.Form exposing (Msg, Form)
 import Json.Schema.Form.Theme as Theme exposing (Theme)
 import Json.Schema.Form.UiSchema as UiSchema exposing (UiSchema)
 import List.Extra as List
 
 
 type alias MainState =
-    { forms : List State
+    { forms : List Form
     , titles : List String
     }
 
@@ -134,19 +134,19 @@ view state =
     div [] <| List.indexedMap (\i ( title, form ) -> Html.map (\m -> { formId = i, msg = m }) (viewForm title form)) (List.zip state.titles state.forms)
 
 
-viewForm : String -> State -> Html Msg
-viewForm title state =
+viewForm : String -> Form -> Html Msg
+viewForm title form =
     let
         anyErrors =
-            not <| List.isEmpty <| Form.getErrors state.form
+            not <| List.isEmpty <| Form.getErrors form.state
     in
     div []
         [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]
-        , form [ onSubmit Json.Schema.Form.submit ]
-            [ Json.Schema.Form.view state
+        , Html.form [ onSubmit Json.Schema.Form.submit ]
+            [ Json.Schema.Form.view form
             , let
                 json =
-                    Encode.encode 4 <| Form.getValue state.form
+                    Encode.encode 4 <| form.state.value
               in
               pre
                 [ if anyErrors then

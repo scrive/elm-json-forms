@@ -1,15 +1,11 @@
 module Form exposing
     ( FieldState
-    , Form(..)
     , InputType(..)
+    , FormState
     , Msg(..)
-    , getCategoryFocus
     , getErrors
     , getField
-    , getFocus
-    , getFormId
     , getPointedValue
-    , getValue
     , initial
     , update
     )
@@ -25,13 +21,7 @@ import Json.Schema.Definitions as Schema exposing (Schema)
 import Set exposing (Set)
 
 
-type
-    Form
-    -- TODO: rename to State
-    = Form Model
-
-
-type alias Model =
+type alias FormState =
     { formId : String -- Unique Form ID to disambiguate element IDs for multiple forms on the sarme page
     , value : Value
     , focus : Maybe String
@@ -40,7 +30,7 @@ type alias Model =
     }
 
 
-initial : String -> Value -> (Value -> Validation output) -> Form
+initial : String -> Value -> (Value -> Validation output) -> FormState
 initial formId initialValue validation =
     let
         model =
@@ -51,7 +41,7 @@ initial formId initialValue validation =
             , categoryFocus = Dict.empty
             }
     in
-    Form (updateValidate validation model)
+    updateValidate validation model
 
 
 type alias FieldState =
@@ -62,16 +52,6 @@ type alias FieldState =
     , hasFocus : Bool
     , disabled : Bool
     }
-
-
-getValue : Form -> Value
-getValue (Form form) =
-    form.value
-
-
-getCategoryFocus : Form -> Dict (List Int) Int
-getCategoryFocus (Form form) =
-    form.categoryFocus
 
 
 toFieldValue : Value -> Maybe FieldValue
@@ -117,13 +97,13 @@ getPointedValue pointer value =
             Nothing
 
 
-getField : Bool -> String -> Form -> FieldState
+getField : Bool -> String -> FormState -> FieldState
 getField disabled path form =
-    { formId = getFormId form
+    { formId = form.formId
     , path = path
-    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getPointedFieldValue pointer (getValue form)) |> Maybe.withDefault Empty
+    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> getPointedFieldValue pointer form.value) |> Maybe.withDefault Empty
     , error = getErrorAt path form
-    , hasFocus = getFocus form == Just path
+    , hasFocus = form.focus == Just path
     , disabled = disabled
     }
 
@@ -147,25 +127,25 @@ type InputType
     | Checkbox
 
 
-update : (Value -> Validation output) -> Msg -> Form -> Form
-update validation msg (Form model) =
+update : (Value -> Validation output) -> Msg -> FormState -> FormState
+update validation msg model =
     case msg of
         NoOp ->
-            Form model
+            model
 
         Focus name ->
             let
                 newModel =
                     { model | focus = Just name }
             in
-            Form newModel
+            newModel
 
         Blur name ->
             let
                 newModel =
                     { model | focus = Nothing }
             in
-            Form (updateValidate validation newModel)
+            updateValidate validation newModel
 
         Input name inputType fieldValue ->
             let
@@ -185,13 +165,13 @@ update validation msg (Form model) =
                         | value = Debug.log "Update input value" newValue
                     }
             in
-            Form (updateValidate validation newModel)
+            updateValidate validation newModel
 
         Submit ->
-            Form (updateValidate validation model)
+            updateValidate validation model
 
         Validate ->
-            Form (updateValidate validation model)
+            updateValidate validation model
 
         Reset value ->
             let
@@ -200,14 +180,14 @@ update validation msg (Form model) =
                         | value = value
                     }
             in
-            Form (updateValidate validation newModel)
+            updateValidate validation newModel
 
         FocusCategory uiState ix ->
             let
                 newModel =
                     { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
             in
-            Form (updateValidate validation newModel)
+            updateValidate validation newModel
 
 
 updateValue : Pointer -> FieldValue -> Value -> Value
@@ -244,7 +224,7 @@ updateValue pointer new value =
             value
 
 
-updateValidate : (Value -> Validation o) -> Model -> Model
+updateValidate : (Value -> Validation o) -> FormState -> FormState
 updateValidate validation model =
     case validation model.value of
         Ok output ->
@@ -260,13 +240,13 @@ updateValidate validation model =
             }
 
 
-getErrors : Form -> List ( String, Error.ErrorValue )
-getErrors (Form model) =
+getErrors : FormState -> List ( String, Error.ErrorValue )
+getErrors model =
     List.map (\( p, e ) -> ( Pointer.toString p, e )) model.errors
 
 
-getErrorAt : String -> Form -> Maybe ErrorValue
-getErrorAt path (Form model) =
+getErrorAt : String -> FormState -> Maybe ErrorValue
+getErrorAt path model =
     List.head <|
         case Pointer.fromString path of
             Ok pointer ->
@@ -282,13 +262,3 @@ getErrorAt path (Form model) =
 
             Err _ ->
                 []
-
-
-getFocus : Form -> Maybe String
-getFocus (Form model) =
-    model.focus
-
-
-getFormId : Form -> String
-getFormId (Form model) =
-    model.formId

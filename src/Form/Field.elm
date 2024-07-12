@@ -9,8 +9,6 @@ import Json.Encode as Encode exposing (Value)
 import String
 
 
-{-| Form field. Can either be a group of named fields, or a final field.
--}
 type FieldValue
     = String String
     | Int Int
