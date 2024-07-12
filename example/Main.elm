@@ -1,8 +1,8 @@
 module Main exposing (main)
 
 import Browser
+import Form exposing (Form, Msg)
 import Form.Error as Error exposing (ErrorValue(..))
-import Form as Form exposing (Form, Msg)
 import Form.Theme as Theme
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class)
@@ -136,7 +136,7 @@ viewForm title form =
     in
     div []
         [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]
-        , Html.form [ ]
+        , Html.form []
             [ Form.view form
             , let
                 json =

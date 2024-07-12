@@ -1,5 +1,6 @@
 module Validation exposing
     ( Validation
+    , andMap
     , error
     , fail
     , isOk
@@ -9,7 +10,6 @@ module Validation exposing
     , unless
     , validateAll
     , whenJust
-    , andMap
     )
 
 -- Inspired by https://hackage.haskell.org/package/validation-selective

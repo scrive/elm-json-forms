@@ -3,11 +3,11 @@ module Form.Theme exposing (Theme, tailwind)
 {-| Form appearance
 
 @docs Theme, tailwind
+
 -}
 
 import Html exposing (Attribute)
 import Html.Attributes as Attrs
-
 
 
 {-| Form appearance definition
@@ -34,6 +34,7 @@ type alias Theme =
 {-| Default form styling using TailWind
 
 You can modify this according to your needs.
+
 -}
 tailwind : Theme
 tailwind =

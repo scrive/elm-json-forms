@@ -8,7 +8,7 @@ import Form.Theme exposing (Theme)
 import Form.View.Input as Input
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, preventDefaultOn)
 import Html.Extra as Html
 import Json.Decode as Decode
 import Json.Pointer as Pointer exposing (Pointer)
@@ -112,6 +112,12 @@ groupView form uiState group =
     ]
 
 
+onClickPreventDefault : msg -> Html.Attribute msg
+onClickPreventDefault msg =
+    preventDefaultOn "click"
+        (Decode.succeed <| ( msg, True ))
+
+
 categorizationView : Form -> UiState -> UI.Categorization -> List (Html F.Msg)
 categorizationView form uiState categorization =
     let
@@ -126,7 +132,7 @@ categorizationView form uiState categorization =
                 Just <|
                     button
                         [ Attrs.map never <| form.options.theme.categorizationMenuItem { focus = focusedCategoryIx == ix }
-                        , onClick <| F.FocusCategory uiState.uiPath ix
+                        , onClickPreventDefault <| F.FocusCategory uiState.uiPath ix
                         ]
                         [ text category.label ]
 

@@ -1,14 +1,8 @@
-module Form exposing
-    ( Form
-    , Msg
-    , init
-    , view
-    , update
-    )
+module Form exposing (Form, Msg, init, update, view)
 
 {-| JSON Forms implementation with validations.
 
-Documentation for the original TypeScript library can be found here: https://jsonforms.io/
+Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
 @docs Form, Msg, init, update, view
 
@@ -46,6 +40,7 @@ init id options schema mUiSchema =
     in
     Form.State.Form options schema uiSchema <|
         Form.State.initState id (defaultValue schema) (validation schema)
+
 
 {-| View the form
 -}

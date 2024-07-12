@@ -16,13 +16,13 @@ module UiSchema.Internal exposing
     , UiSchema(..)
     , VerticalLayout
     , decodeStringLike
+    , decodeUiSchema
     , defaultValue
     , fieldNameToTitle
     , generateUiSchema
     , getRule
     , pointToSchema
     , unSchemata
-    , decodeUiSchema
     )
 
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -144,6 +144,7 @@ type Detail
     | DetailGenerated
     | DetailRegistered
     | DetailInlined UiSchema
+
 
 decodeUiSchema : Decoder UiSchema
 decodeUiSchema =

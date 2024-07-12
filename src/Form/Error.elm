@@ -1,12 +1,9 @@
-module Form.Error exposing
-    ( Errors
-    , ErrorValue (..)
-    , getErrors
-    )
+module Form.Error exposing (Errors, ErrorValue(..), getErrors)
 
 {-| Form field error handling
 
 @docs Errors, ErrorValue, getErrors
+
 -}
 
 import Json.Decode exposing (Value)
