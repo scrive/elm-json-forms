@@ -1,16 +1,15 @@
 module Form.Error exposing
-    ( Error
-    , ErrorValue(..)
+    ( ErrorValue(..)
+    , Errors
     , error
     , getErrors
     )
 
-
-import Json.Pointer as Pointer exposing (Pointer)
 import Json.Decode exposing (Value)
+import Json.Pointer as Pointer exposing (Pointer)
 
 
-type alias Error =
+type alias Errors =
     List ( Pointer, ErrorValue )
 
 
@@ -40,11 +39,11 @@ type ErrorValue
     | Unimplemented String
 
 
-error : ErrorValue -> Error
+error : ErrorValue -> Errors
 error e =
     [ ( [], e ) ]
 
 
-getErrors : Error -> List ( String, ErrorValue )
+getErrors : Errors -> List ( String, ErrorValue )
 getErrors errors =
     List.map (\( p, e ) -> ( Pointer.toString p, e )) errors

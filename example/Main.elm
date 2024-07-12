@@ -94,7 +94,7 @@ init =
                     Ok fs ->
                         Json.Schema.Form.init
                             fs.title
-                            { errors = errorString
+                            { errors = always errorString
                             , theme = Theme.tailwind
                             }
                             fs.schema
@@ -156,17 +156,22 @@ viewForm title form =
         ]
 
 
-errorString : String -> ErrorValue -> String
-errorString _ error =
+errorString : ErrorValue -> String
+errorString error =
     case error of
         Empty ->
             "is a required property"
 
         NotConst v ->
-          case Encode.encode 0 v of
-            "true" -> "must be checked"
-            "false" -> "must be unchecked"
-            s -> "must be equal to " ++ s
+            case Encode.encode 0 v of
+                "true" ->
+                    "must be checked"
+
+                "false" ->
+                    "must be unchecked"
+
+                s ->
+                    "must be equal to " ++ s
 
         InvalidString ->
             "field is required"

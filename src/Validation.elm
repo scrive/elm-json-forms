@@ -19,16 +19,18 @@ module Validation exposing
     , whenJust
     )
 
-import Form.Error as Error exposing (Error, ErrorValue)
-import Json.Pointer exposing (Pointer)
+-- Inspired by https://hackage.haskell.org/package/validation-selective
+
+import Form.Error as Error exposing (ErrorValue, Errors)
 import Json.Decode as Decode exposing (Value)
+import Json.Pointer exposing (Pointer)
 import Regex exposing (Regex)
 import Result
 import String
 
 
 type alias Validation output =
-    Result Error output
+    Result Errors output
 
 
 isOk : Validation a -> Bool
@@ -56,7 +58,7 @@ andMap aValidation partialValidation =
             Err (List.append (errList partialResult) (errList aResult))
 
 
-mapError : (Error -> Error) -> Validation a -> Validation a
+mapError : (Errors -> Errors) -> Validation a -> Validation a
 mapError =
     Result.mapError
 
@@ -66,7 +68,7 @@ mapErrorPointers f =
     mapError (\l -> List.map (\( p, e ) -> ( f p, e )) l)
 
 
-errList : Validation a -> Error
+errList : Validation a -> Errors
 errList res =
     case res of
         Ok _ ->
@@ -91,7 +93,6 @@ bool =
 maybe : Validation a -> Validation (Maybe a)
 maybe =
     Ok << Result.toMaybe
-
 
 
 {-| Min length for String.
@@ -129,7 +130,7 @@ format regex s =
 
 {-| A validation that always fails. Useful for contextual validation.
 -}
-fail : Error -> Validation a
+fail : Errors -> Validation a
 fail error =
     Err error
 

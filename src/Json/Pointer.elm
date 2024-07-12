@@ -3,15 +3,15 @@ module Json.Pointer exposing
     , decode
     , encode
     , fromString
-    , toString
     , pointedValue
+    , toString
     )
 
 -- This module implements JSON Pointer as per [RFC 6901](https://tools.ietf.org/html/rfc6901).
 
+import Dict
 import Json.Decode as Decode
 import Json.Encode as Encode
-import Dict
 import String
 
 
@@ -74,6 +74,7 @@ escape string =
         |> String.join "~0"
         |> String.split "/"
         |> String.join "~1"
+
 
 pointedValue : Pointer -> Encode.Value -> Maybe Encode.Value
 pointedValue pointer value =

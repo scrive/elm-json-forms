@@ -4,8 +4,6 @@ import Dict
 import Form as F exposing (FormState)
 import Form.Error exposing (ErrorValue)
 import Form.Input as Input
-import Json.Pointer as Pointer exposing (Pointer)
-import Validation
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
     exposing
@@ -18,6 +16,7 @@ import Html.Attributes as Attrs
 import Html.Events exposing (onClick)
 import Html.Extra as Html
 import Json.Decode as Decode exposing (Value)
+import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions
     exposing
         ( Schema(..)
@@ -31,6 +30,7 @@ import Json.Schema.Form.UiSchema as UI exposing (Effect(..), UiSchema)
 import Json.Schema.Form.Validation exposing (validation)
 import List.Extra as List
 import Maybe.Extra as Maybe
+import Validation
 
 
 type alias UiState =
@@ -206,7 +206,7 @@ controlView options uiState wholeSchema control form =
             UI.pointToSchema wholeSchema control.scope
 
         fieldState =
-            F.getField uiState.disabled (Pointer.toString control.scope) form
+            F.getField uiState.disabled control.scope form
 
         controlBody schema_ =
             case schema_ of
@@ -366,11 +366,10 @@ checkbox options control schema fieldState =
             div [ Attrs.map never options.theme.checkboxRow ]
                 [ Input.checkboxInput fieldState
                     [ Attrs.map never <| options.theme.checkboxInput { withError = fieldState.error /= Nothing }
-                    , id (Input.inputElementId fieldState.formId fieldState.path)
+                    , id (Input.inputElementId fieldState.formId fieldState.pointer)
                     ]
                 , Html.viewMaybe identity <| fieldLabel options.theme control.label schema control.scope
                 ]
-
 
         description : Html F.Msg
         description =
@@ -380,7 +379,7 @@ checkbox options control schema fieldState =
         errorMessage =
             Html.viewMaybe identity <| error options.theme options.errors fieldState
     in
-    label [ for (Input.inputElementId fieldState.formId fieldState.path) ]
+    label [ for (Input.inputElementId fieldState.formId fieldState.pointer) ]
         [ inputField
         , description
         , errorMessage
@@ -440,7 +439,7 @@ fieldGroup inputField options control schema fieldState =
         errorMessage =
             Html.viewMaybe identity <| error options.theme options.errors fieldState
     in
-    label [ for (Input.inputElementId fieldState.formId fieldState.path)]
+    label [ for (Input.inputElementId fieldState.formId fieldState.pointer) ]
         [ Html.viewMaybe identity title
         , inputField
         , description
@@ -449,21 +448,29 @@ fieldGroup inputField options control schema fieldState =
 
 
 fieldLabel : Theme -> Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe (Html F.Msg)
-fieldLabel theme label schema path =
+fieldLabel theme label schema pointer =
     let
-        fallback = schema.title
-            -- If it does not have a title, derive from property name, unCamelCasing it
-            |> Maybe.orElse (List.last path |> Maybe.map UI.fieldNameToTitle)
-            |> Maybe.withDefault ""
+        fallback =
+            schema.title
+                -- If it does not have a title, derive from property name, unCamelCasing it
+                |> Maybe.orElse (List.last pointer |> Maybe.map UI.fieldNameToTitle)
+                |> Maybe.withDefault ""
 
-        render str = span [ Attrs.map never theme.fieldLabel ] [ text str ]
+        render str =
+            span [ Attrs.map never theme.fieldLabel ] [ text str ]
+    in
+    case label of
+        Just (UI.StringLabel s) ->
+            Just <| render s
 
-    in case label of
-            Just (UI.StringLabel s) -> Just <| render s
-            Just (UI.BoolLabel False) -> Nothing
-            Just (UI.BoolLabel True) -> Just <| render fallback
-            Nothing -> Just <| render fallback
+        Just (UI.BoolLabel False) ->
+            Nothing
 
+        Just (UI.BoolLabel True) ->
+            Just <| render fallback
+
+        Nothing ->
+            Just <| render fallback
 
 
 fieldDescription : Theme -> SubSchema -> Maybe (Html F.Msg)
@@ -472,7 +479,7 @@ fieldDescription theme schema =
         |> Maybe.map (\str -> div [ Attrs.map never theme.fieldDescription ] [ text str ])
 
 
-error : Theme -> (String -> ErrorValue -> String) -> F.FieldState -> Maybe (Html F.Msg)
+error : Theme -> (Pointer -> ErrorValue -> String) -> F.FieldState -> Maybe (Html F.Msg)
 error theme func f =
     f.error
         |> Maybe.map
@@ -481,5 +488,5 @@ error theme func f =
                     [ Attrs.map never theme.fieldError
                     , style "display" "block"
                     ]
-                    [ text (func f.path err) ]
+                    [ text (func f.pointer err) ]
             )

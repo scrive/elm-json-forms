@@ -1,6 +1,5 @@
 module Json.Schema.Form.Theme exposing (Theme, tailwind)
 
-
 import Html exposing (Attribute)
 import Html.Attributes as Attrs
 
@@ -14,16 +13,13 @@ type alias Theme =
     , label : Attribute Never
     , categorizationMenu : Attribute Never
     , categorizationMenuItem : { focus : Bool } -> Attribute Never
-
     , fieldGroup : Attribute Never
     , fieldLabel : Attribute Never
     , fieldInput : { withError : Bool } -> Attribute Never
     , fieldDescription : Attribute Never
     , fieldError : Attribute Never
-
     , checkboxRow : Attribute Never
     , checkboxInput : { withError : Bool } -> Attribute Never
-
     , group : Attribute Never
     }
 
@@ -46,7 +42,6 @@ tailwind =
                 , ( "text-white", focus )
                 , ( "text-white/60", not focus )
                 ]
-
     , fieldGroup = Attrs.class "my-4"
     , fieldInput =
         \{ withError } ->
@@ -58,7 +53,6 @@ tailwind =
     , fieldLabel = Attrs.class "block text-sm leading-6 text-gray-900"
     , fieldDescription = Attrs.class "text-sm leading-6 text-gray-600 field-meta"
     , fieldError = Attrs.class "text-red-500 text-xs my-1"
-
     , checkboxRow = Attrs.class "flex items-center"
     , checkboxInput =
         \{ withError } ->
@@ -66,6 +60,5 @@ tailwind =
                 [ ( "h-4 w-4 mr-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600", True )
                 , ( isInvalid, withError )
                 ]
-
     , group = Attrs.class "field-input border border-gray-300 rounded-md  p-3  my-3 shadow-sm"
     }

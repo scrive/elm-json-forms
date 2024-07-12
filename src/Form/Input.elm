@@ -1,8 +1,6 @@
 module Form.Input exposing
     ( Input
     , baseInput
-    , textInput
-    , textArea
     , checkboxInput
     , floatInput
     , floatSelectInput
@@ -12,6 +10,8 @@ module Form.Input exposing
     , intSelectInput
     , intSlider
     , numberSlider
+    , textArea
+    , textInput
     , textSelectInput
     )
 
@@ -21,6 +21,7 @@ import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
+import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema
 import Json.Schema.Form.Options exposing (Options)
 
@@ -33,12 +34,12 @@ baseInput : Options -> (String -> FieldValue) -> InputType -> Input
 baseInput options toFieldValue inputType state attrs =
     let
         formAttrs =
-            [ id (inputElementId state.formId state.path)
+            [ id (inputElementId state.formId state.pointer)
             , type_ "text"
             , value (FieldValue.asString state.value)
-            , onInput (toFieldValue >> Input state.path inputType)
-            , onFocus (Focus state.path)
-            , onBlur (Blur state.path)
+            , onInput (toFieldValue >> Input state.pointer inputType)
+            , onFocus (Focus state.pointer)
+            , onBlur (Blur state.pointer)
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.fieldInput
@@ -87,12 +88,12 @@ slider options schema toFieldValue inputType state attrs =
                     maximum
 
         formAttrs =
-            [ id state.path
+            [ id <| Pointer.toString state.pointer
             , type_ "range"
             , value (FieldValue.asString state.value)
-            , onInput (toFieldValue >> Input state.path inputType)
-            , onFocus (Focus state.path)
-            , onBlur (Blur state.path)
+            , onInput (toFieldValue >> Input state.pointer inputType)
+            , onFocus (Focus state.pointer)
+            , onBlur (Blur state.pointer)
             , Attrs.attribute "min" (String.fromFloat minLimit)
             , Attrs.attribute "max" (String.fromFloat maxLimit)
             , Attrs.attribute "step" (String.fromFloat step)
@@ -117,11 +118,11 @@ textArea : Options -> Input
 textArea options state attrs =
     let
         formAttrs =
-            [ id state.path
+            [ id <| Pointer.toString state.pointer
             , value (FieldValue.asString state.value)
-            , onInput (String >> Input state.path Textarea)
-            , onFocus (Focus state.path)
-            , onBlur (Blur state.path)
+            , onInput (String >> Input state.pointer Textarea)
+            , onFocus (Focus state.pointer)
+            , onBlur (Blur state.pointer)
             , attribute "rows" "4"
             , Attrs.disabled state.disabled
             , Attrs.map never <|
@@ -189,12 +190,12 @@ baseSelectInput : Options -> List ( String, String ) -> (String -> FieldValue) -
 baseSelectInput options valueList toFieldValue state attrs =
     let
         formAttrs =
-            [ id (inputElementId state.formId state.path)
+            [ id (inputElementId state.formId state.pointer)
             , on
                 "change"
-                (targetValue |> Decode.map (toFieldValue >> Input state.path Select))
-            , onFocus (Focus state.path)
-            , onBlur (Blur state.path)
+                (targetValue |> Decode.map (toFieldValue >> Input state.pointer Select))
+            , onFocus (Focus state.pointer)
+            , onBlur (Blur state.pointer)
             , Attrs.disabled state.disabled
             , Attrs.map never <| options.theme.fieldInput { withError = state.error /= Nothing }
             ]
@@ -220,9 +221,9 @@ floatSelectInput options valueList =
     baseSelectInput options valueList fromFloatInput
 
 
-inputElementId : String -> String -> String
-inputElementId formId path =
-    formId ++ "-" ++ path ++ "-input"
+inputElementId : String -> Pointer -> String
+inputElementId formId pointer =
+    formId ++ "-" ++ Pointer.toString pointer ++ "-input"
 
 
 inputElementGroupId : String -> String -> String
@@ -236,9 +237,9 @@ checkboxInput state attrs =
         formAttrs =
             [ type_ "checkbox"
             , checked (FieldValue.asBool state.value |> Maybe.withDefault False)
-            , onCheck (Bool >> Input state.path Checkbox)
-            , onFocus (Focus state.path)
-            , onBlur (Blur state.path)
+            , onCheck (Bool >> Input state.pointer Checkbox)
+            , onFocus (Focus state.pointer)
+            , onBlur (Blur state.pointer)
             , Attrs.disabled state.disabled
             ]
     in

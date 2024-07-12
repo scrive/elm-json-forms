@@ -1,7 +1,6 @@
 module Json.Schema.Form.Validation exposing (validation)
 
 import Form.Error as Error exposing (ErrorValue(..))
-import Validation exposing (Validation)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
@@ -16,6 +15,7 @@ import Json.Schema.Form.Regex
 import Json.Schema.Form.UiSchema exposing (unSchemata)
 import Regex
 import Set
+import Validation exposing (Validation)
 
 
 validation : Schema -> Value -> Validation Value

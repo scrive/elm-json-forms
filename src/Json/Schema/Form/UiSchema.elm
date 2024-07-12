@@ -3,7 +3,7 @@ module Json.Schema.Form.UiSchema exposing
     , Category
     , Condition
     , Control
-    , ControlLabel (..)
+    , ControlLabel(..)
     , Detail
     , Effect(..)
     , ElementLabelProp
@@ -25,10 +25,10 @@ module Json.Schema.Form.UiSchema exposing
     , unSchemata
     )
 
-import Json.Pointer as Pointer exposing (Pointer)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
+import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema exposing (Schema(..))
 import String.Case
 

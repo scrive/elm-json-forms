@@ -6,11 +6,12 @@ module Form.FieldValue exposing
     , updateValue
     )
 
-import Json.Encode as Encode exposing (Value)
+import Dict
 import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import Json.Pointer as Pointer exposing (Pointer)
 import String
-import Dict
+
 
 type FieldValue
     = String String
@@ -70,6 +71,7 @@ asBool fv =
         _ ->
             Nothing
 
+
 toFieldValue : Value -> Maybe FieldValue
 toFieldValue value =
     case
@@ -88,6 +90,7 @@ toFieldValue value =
 
         Err _ ->
             Nothing
+
 
 pointedFieldValue : Pointer -> Value -> Maybe FieldValue
 pointedFieldValue pointer value =

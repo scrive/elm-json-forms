@@ -9,19 +9,19 @@ module Form exposing
     )
 
 import Dict exposing (Dict)
-import Form.Error as Error exposing (Error, ErrorValue)
+import Form.Error as Error exposing (ErrorValue, Errors)
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Json.Pointer as Pointer exposing (Pointer)
-import Validation exposing (Validation)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
+import Json.Pointer as Pointer exposing (Pointer)
+import Validation exposing (Validation)
 
 
 type alias FormState =
     { formId : String -- Unique Form ID to disambiguate element IDs for multiple forms on the sarme page
     , value : Value
-    , focus : Maybe String
-    , errors : Error
+    , focus : Maybe Pointer
+    , errors : Errors
     , categoryFocus : Dict (List Int) Int
     }
 
@@ -37,12 +37,12 @@ initial formId initialValue validation =
             , categoryFocus = Dict.empty
             }
     in
-    updateValidate validation model
+    updateValidations validation model
 
 
 type alias FieldState =
     { formId : String
-    , path : String
+    , pointer : Pointer
     , value : FieldValue
     , error : Maybe ErrorValue
     , hasFocus : Bool
@@ -50,23 +50,22 @@ type alias FieldState =
     }
 
 
-
-getField : Bool -> String -> FormState -> FieldState
-getField disabled path form =
+getField : Bool -> Pointer -> FormState -> FieldState
+getField disabled pointer form =
     { formId = form.formId
-    , path = path
-    , value = Result.toMaybe (Pointer.fromString path) |> Maybe.andThen (\pointer -> FieldValue.pointedFieldValue pointer form.value) |> Maybe.withDefault Empty
-    , error = getErrorAt path form
-    , hasFocus = form.focus == Just path
+    , pointer = pointer
+    , value = Maybe.withDefault Empty <| FieldValue.pointedFieldValue pointer form.value
+    , error = getErrorAt pointer form.errors
+    , hasFocus = form.focus == Just pointer
     , disabled = disabled
     }
 
 
 type Msg
     = NoOp
-    | Focus String
-    | Blur String
-    | Input String InputType FieldValue
+    | Focus Pointer
+    | Blur Pointer -- TODO: remove pointer here?
+    | Input Pointer InputType FieldValue
     | Submit
     | Validate
     | Reset Value
@@ -87,61 +86,34 @@ update validation msg model =
         NoOp ->
             model
 
-        Focus name ->
-            { model | focus = Just name }
+        Focus pointer ->
+            { model | focus = Just pointer }
 
         Blur _ ->
-            let
-                newModel =
-                    { model | focus = Nothing }
-            in
-            updateValidate validation newModel
+            updateValidations validation { model | focus = Nothing }
 
-        Input name _ fieldValue ->
-            let
-                mPointer =
-                    Result.toMaybe <| Pointer.fromString name
-
-                newValue =
-                    case mPointer of
-                        Nothing ->
-                            model.value
-
-                        Just pointer ->
-                            FieldValue.updateValue pointer fieldValue model.value
-
-                newModel =
-                    { model
-                        | value = newValue
-                    }
-            in
-            updateValidate validation newModel
+        Input pointer _ fieldValue ->
+            updateValidations validation
+                { model | value = FieldValue.updateValue pointer fieldValue model.value }
 
         Submit ->
-            updateValidate validation model
+            updateValidations validation model
 
         Validate ->
-            updateValidate validation model
+            updateValidations validation model
 
         Reset value ->
-            let
-                newModel =
-                    { model
-                        | value = value
-                    }
-            in
-            updateValidate validation newModel
+            updateValidations validation
+                { model
+                    | value = value
+                }
 
         FocusCategory uiState ix ->
-            let
-                newModel =
-                    { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
-            in
-            updateValidate validation newModel
+            updateValidations validation { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
 
 
-updateValidate : (Value -> Validation o) -> FormState -> FormState
-updateValidate validation model =
+updateValidations : (Value -> Validation o) -> FormState -> FormState
+updateValidations validation model =
     case validation model.value of
         Ok _ ->
             { model
@@ -156,20 +128,14 @@ updateValidate validation model =
             }
 
 
-getErrorAt : String -> FormState -> Maybe ErrorValue
-getErrorAt path model =
-    List.head <|
-        case Pointer.fromString path of
-            Ok pointer ->
-                List.filterMap
-                    (\( p, e ) ->
-                        if pointer == p then
-                            Just e
+getErrorAt : Pointer -> Errors -> Maybe ErrorValue
+getErrorAt pointer =
+    List.head
+        << List.filterMap
+            (\( p, e ) ->
+                if pointer == p then
+                    Just e
 
-                        else
-                            Nothing
-                    )
-                    model.errors
-
-            Err _ ->
-                []
+                else
+                    Nothing
+            )
