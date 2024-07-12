@@ -81,6 +81,12 @@ init =
             , formSpec "Control Example 2" controlExample2Schema (Just controlExample2UiSchema)
             , formSpec "Categorization Example 1" categorizationExample1Schema (Just categorizationExample1UiSchema)
             , formSpec "Rule Example" ruleExampleSchema (Just ruleExampleUiSchema)
+
+            , formSpec "Layout Example: Horizontal layout" layoutExampleSchema (Just layoutExample1UiSchema)
+            , formSpec "Layout Example: Vertical layout" layoutExampleSchema (Just layoutExample2UiSchema)
+            , formSpec "Layout Example: Group" layoutExampleSchema (Just layoutExample3UiSchema)
+            , formSpec "Layout Example: Nested layouts" layoutExampleSchema (Just layoutExample4UiSchema)
+
             , formSpec "Testing Schema" testingSchema Nothing
             ]
     in
@@ -839,6 +845,7 @@ categorizationExample1UiSchema =
     ]
   }
 """
+
 ruleExampleSchema : String
 ruleExampleSchema =
     """
@@ -931,6 +938,135 @@ ruleExampleUiSchema =
               }
             }
           }
+        }
+      ]
+    }
+  ]
+}
+"""
+
+layoutExampleSchema : String
+layoutExampleSchema =
+    """
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Please enter your name"
+    },
+    "birthDate": {
+      "type": "string",
+      "format": "date"
+    }
+  }
+}
+"""
+
+
+layoutExample1UiSchema : String
+layoutExample1UiSchema =
+    """
+{
+  "type": "HorizontalLayout",
+  "elements": [
+    {
+      "type": "Control",
+      "label": "Name",
+      "scope": "#/properties/name"
+    },
+    {
+      "type": "Control",
+      "label": "Birth Date",
+      "scope": "#/properties/birthDate"
+    }
+  ]
+}
+"""
+
+
+layoutExample2UiSchema : String
+layoutExample2UiSchema =
+    """
+{
+  "type": "VerticalLayout",
+  "elements": [
+    {
+      "type": "Control",
+      "label": "Name",
+      "scope": "#/properties/name"
+    },
+    {
+      "type": "Control",
+      "label": "Birth Date",
+      "scope": "#/properties/birthDate"
+    }
+  ]
+}
+"""
+
+layoutExample3UiSchema : String
+layoutExample3UiSchema =
+    """
+{
+  "type": "Group",
+  "label": "My Group",
+  "elements": [
+    {
+      "type": "Control",
+      "label": "Name",
+      "scope": "#/properties/name"
+    },
+    {
+      "type": "Control",
+      "label": "Birth Date",
+      "scope": "#/properties/birthDate"
+    }
+  ]
+}
+"""
+
+
+layoutExample4UiSchema : String
+layoutExample4UiSchema =
+    """
+{
+  "type": "Group",
+  "label": "My Group",
+  "elements": [
+    {
+      "type": "HorizontalLayout",
+      "elements": [
+        {
+          "type": "VerticalLayout",
+          "elements": [
+            {
+              "type": "Control",
+              "label": "Name",
+              "scope": "#/properties/name"
+            },
+            {
+              "type": "Control",
+              "label": "Birth Date",
+              "scope": "#/properties/birthDate"
+            }
+          ]
+        },
+        {
+          "type": "VerticalLayout",
+          "elements": [
+            {
+              "type": "Control",
+              "label": "Name",
+              "scope": "#/properties/name"
+            },
+            {
+              "type": "Control",
+              "label": "Birth Date",
+              "scope": "#/properties/birthDate"
+            }
+          ]
         }
       ]
     }

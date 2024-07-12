@@ -35,6 +35,7 @@ Generate validating forms from JSON schemas.
   - [x] Group labels
   - [x] Rule to enable/disable
   - [x] Rule to show/hide
+- [x] Layout example
 
 ## Warnings
 
