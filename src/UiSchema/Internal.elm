@@ -15,6 +15,7 @@ module UiSchema.Internal exposing
     , Rule
     , UiSchema(..)
     , VerticalLayout
+    , emptyOptions
     , decodeStringLike
     , decodeUiSchema
     , defaultValue
@@ -127,6 +128,24 @@ type alias Options =
     , toggle : Maybe Bool -- TODO: implement
     , variant : Maybe String -- TODO: implement
     , showNavButtons : Maybe String -- TODO: implement
+    }
+
+emptyOptions : Options
+emptyOptions =
+    { format = Nothing
+    , showSortButtons = Nothing
+    , detail = Nothing
+    , elementLabelProp = Nothing
+    , readonly = Nothing
+    , multi = Nothing
+    , slider = Nothing
+    , trim = Nothing
+    , restrict = Nothing
+    , showUnfocusedDescription = Nothing
+    , hideRequiredAsterisk = Nothing
+    , toggle = Nothing
+    , variant = Nothing
+    , showNavButtons = Nothing
     }
 
 

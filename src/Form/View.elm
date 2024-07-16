@@ -2,7 +2,7 @@ module Form.View exposing (view)
 
 import Dict
 import Form.Error exposing (ErrorValue)
-import Form.Options exposing (Options)
+import Form.Settings exposing (Settings)
 import Form.State as F exposing (Form, FormState)
 import Form.Theme exposing (Theme)
 import Form.View.Input as Input
@@ -41,10 +41,10 @@ view form uiState =
         newUiState =
             { uiState | disabled = ruleEffect == Just Rule.Disabled }
     in
-    applyEffect form.options.theme ruleEffect <|
+    applyEffect form.settings.theme ruleEffect <|
         case uiState.uiSchema of
             UI.UiControl c ->
-                [ controlView form.options newUiState form.schema c form.state ]
+                [ controlView form.settings newUiState form.schema c form.state ]
 
             UI.UiHorizontalLayout hl ->
                 horizontalLayoutView form newUiState hl
@@ -59,7 +59,7 @@ view form uiState =
                 categorizationView form newUiState c
 
             UI.UiLabel l ->
-                [ Html.div [ Attrs.map never form.options.theme.label ] [ text l.text ] ]
+                [ Html.div [ Attrs.map never form.settings.theme.label ] [ text l.text ] ]
 
 
 applyEffect : Theme -> Maybe Rule.AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
@@ -77,11 +77,11 @@ applyEffect theme effect x =
 
 horizontalLayoutView : Form -> UiState -> UI.HorizontalLayout -> List (Html F.Msg)
 horizontalLayoutView form uiState hl =
-    [ div [ Attrs.map never form.options.theme.horizontalLayout ] <|
+    [ div [ Attrs.map never form.settings.theme.horizontalLayout ] <|
         List.indexedMap
             (\ix us ->
                 div
-                    [ Attrs.map never form.options.theme.horizontalLayoutItem ]
+                    [ Attrs.map never form.settings.theme.horizontalLayoutItem ]
                     (view form (walkState ix us uiState))
             )
             hl.elements
@@ -103,12 +103,12 @@ groupView : Form -> UiState -> UI.Group -> List (Html F.Msg)
 groupView form uiState group =
     let
         title =
-            Maybe.unwrap [] (\l -> [ Html.div [ Attrs.map never form.options.theme.groupLabel ] [ text l ] ]) group.label
+            Maybe.unwrap [] (\l -> [ Html.div [ Attrs.map never form.settings.theme.groupLabel ] [ text l ] ]) group.label
 
         contents =
             verticalLayoutView form uiState { elements = group.elements, rule = group.rule }
     in
-    [ div [ Attrs.map never form.options.theme.group ] (title ++ contents)
+    [ div [ Attrs.map never form.settings.theme.group ] (title ++ contents)
     ]
 
 
@@ -131,7 +131,7 @@ categorizationView form uiState categorization =
             else
                 Just <|
                     button
-                        [ Attrs.map never <| form.options.theme.categorizationMenuItem { focus = focusedCategoryIx == ix }
+                        [ Attrs.map never <| form.settings.theme.categorizationMenuItem { focus = focusedCategoryIx == ix }
                         , onClickPreventDefault <| F.FocusCategory uiState.uiPath ix
                         ]
                         [ text category.label ]
@@ -140,14 +140,14 @@ categorizationView form uiState categorization =
             walkState focusedCategoryIx (UI.UiVerticalLayout { elements = cat.elements, rule = cat.rule }) uiState
     in
     div
-        [ Attrs.map never form.options.theme.categorizationMenu
+        [ Attrs.map never form.settings.theme.categorizationMenu
         ]
         (Maybe.values <| List.indexedMap categoryButton categorization.elements)
         :: Maybe.unwrap [] (\cat -> view form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
 
 
-controlView : Options -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg
-controlView options uiState wholeSchema control form =
+controlView : Settings -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg
+controlView settings uiState wholeSchema control form =
     let
         mControlSchema =
             UI.pointToSchema wholeSchema control.scope
@@ -164,36 +164,36 @@ controlView options uiState wholeSchema control form =
                     case schema.type_ of
                         SingleType IntegerType ->
                             if schema.enum /= Nothing then
-                                select options control schema fieldState IntField
+                                select settings control schema fieldState IntField
 
                             else if (control.options |> Maybe.andThen .slider) == Just True then
-                                intSlider options control schema fieldState
+                                intSlider settings control schema fieldState
 
                             else
-                                intInput options control schema fieldState
+                                intInput settings control schema fieldState
 
                         SingleType NumberType ->
                             if schema.enum /= Nothing then
-                                select options control schema fieldState NumberField
+                                select settings control schema fieldState NumberField
 
                             else if (control.options |> Maybe.andThen .slider) == Just True then
-                                numberSlider options control schema fieldState
+                                numberSlider settings control schema fieldState
 
                             else
-                                numberInput options control schema fieldState
+                                numberInput settings control schema fieldState
 
                         SingleType StringType ->
                             if schema.enum /= Nothing then
-                                select options control schema fieldState StringField
+                                select settings control schema fieldState StringField
 
                             else if (control.options |> Maybe.andThen .multi) == Just True then
-                                textarea options control schema fieldState
+                                textarea settings control schema fieldState
 
                             else
-                                textInput options control schema fieldState
+                                textInput settings control schema fieldState
 
                         SingleType BooleanType ->
-                            checkbox options control schema fieldState
+                            checkbox settings control schema fieldState
 
                         _ ->
                             Html.nothing
@@ -202,7 +202,7 @@ controlView options uiState wholeSchema control form =
         (\cs ->
             div
                 [ Attrs.id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
-                , Attrs.map never options.theme.fieldGroup
+                , Attrs.map never settings.theme.fieldGroup
                 ]
                 [ controlBody cs ]
         )
@@ -215,8 +215,8 @@ type TextFieldType
     | StringField
 
 
-textInput : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-textInput options control schema fieldState =
+textInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+textInput settings control schema fieldState =
     let
         inputType : String
         inputType =
@@ -256,75 +256,77 @@ textInput options control schema fieldState =
 
                 _ ->
                     "text"
+
+        options = Maybe.withDefault UI.emptyOptions control.options
     in
-    fieldGroup (Input.textInput options fieldState [ Attrs.type_ inputType ])
-        options
+    fieldGroup (Input.textInput settings options fieldState [ Attrs.type_ inputType ])
+        settings
         control
         schema
         fieldState
 
 
-intInput : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-intInput options control schema fieldState =
-    fieldGroup (Input.intInput options fieldState [])
-        options
+intInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+intInput settings control schema fieldState =
+    fieldGroup (Input.intInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState [])
+        settings
         control
         schema
         fieldState
 
 
-numberInput : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-numberInput options control schema fieldState =
-    fieldGroup (Input.floatInput options fieldState [])
-        options
+numberInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+numberInput settings control schema fieldState =
+    fieldGroup (Input.floatInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState [])
+        settings
         control
         schema
         fieldState
 
 
-intSlider : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-intSlider options control schema fieldState =
-    fieldGroup (Input.intSlider options schema fieldState [])
-        options
+intSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+intSlider settings control schema fieldState =
+    fieldGroup (Input.intSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState [])
+        settings
         control
         schema
         fieldState
 
 
-numberSlider : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-numberSlider options control schema fieldState =
-    fieldGroup (Input.numberSlider options schema fieldState [])
-        options
+numberSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+numberSlider settings control schema fieldState =
+    fieldGroup (Input.numberSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState [])
+        settings
         control
         schema
         fieldState
 
 
-textarea : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-textarea options control schema state =
-    fieldGroup (Input.textArea options state []) options control schema state
+textarea : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+textarea settings control schema state =
+    fieldGroup (Input.textArea settings (Maybe.withDefault UI.emptyOptions control.options) state []) settings control schema state
 
 
-checkbox : Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-checkbox options control schema fieldState =
+checkbox : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+checkbox settings control schema fieldState =
     let
         inputField : Html F.Msg
         inputField =
-            div [ Attrs.map never options.theme.checkboxRow ]
+            div [ Attrs.map never settings.theme.checkboxRow ]
                 [ Input.checkboxInput fieldState
-                    [ Attrs.map never <| options.theme.checkboxInput { invalid = fieldState.error /= Nothing }
+                    [ Attrs.map never <| settings.theme.checkboxInput { invalid = fieldState.error /= Nothing }
                     , Attrs.id (Input.inputElementId fieldState.formId fieldState.pointer)
                     ]
-                , Html.viewMaybe identity <| fieldLabel options.theme control.label schema control.scope
+                , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
                 ]
 
         description : Html F.Msg
         description =
-            Html.viewMaybe identity <| fieldDescription options.theme schema
+            Html.viewMaybe identity <| fieldDescription settings.theme schema
 
         errorMessage : Html F.Msg
         errorMessage =
-            Html.viewMaybe identity <| error options.theme options.errors fieldState
+            Html.viewMaybe identity <| error settings.theme settings.errors fieldState
     in
     label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
         [ inputField
@@ -333,8 +335,8 @@ checkbox options control schema fieldState =
         ]
 
 
-select : Options -> UI.Control -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
-select options control schema fieldState fieldType =
+select : Settings -> UI.Control -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
+select settings control schema fieldState fieldType =
     let
         values : List String
         values =
@@ -356,19 +358,19 @@ select options control schema fieldState fieldType =
                     Input.intSelectInput
     in
     fieldGroup
-        (inputType options items fieldState [])
-        options
+        (inputType settings items fieldState [])
+        settings
         control
         schema
         fieldState
 
 
-fieldGroup : Html F.Msg -> Options -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-fieldGroup inputField options control schema fieldState =
+fieldGroup : Html F.Msg -> Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+fieldGroup inputField settings control schema fieldState =
     let
         title : Maybe (Html F.Msg)
         title =
-            fieldLabel options.theme control.label schema control.scope
+            fieldLabel settings.theme control.label schema control.scope
 
         showDescription =
             Maybe.andThen .showUnfocusedDescription control.options == Just True || fieldState.hasFocus
@@ -377,14 +379,14 @@ fieldGroup inputField options control schema fieldState =
         description =
             Html.viewMaybe identity <|
                 if showDescription then
-                    fieldDescription options.theme schema
+                    fieldDescription settings.theme schema
 
                 else
                     Nothing
 
         errorMessage : Html F.Msg
         errorMessage =
-            Html.viewMaybe identity <| error options.theme options.errors fieldState
+            Html.viewMaybe identity <| error settings.theme settings.errors fieldState
     in
     label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
         [ Html.viewMaybe identity title

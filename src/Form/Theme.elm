@@ -21,11 +21,14 @@ type alias Theme =
     , categorizationMenuItem : { focus : Bool } -> Attribute Never
     , fieldGroup : Attribute Never
     , fieldLabel : Attribute Never
-    , fieldInput : { invalid : Bool } -> Attribute Never
     , fieldDescription : Attribute Never
     , fieldError : Attribute Never
     , checkboxRow : Attribute Never
+    , textInput : { trim : Bool, invalid : Bool } -> Attribute Never
+    , textArea : { trim : Bool, invalid : Bool } -> Attribute Never
+    , selectInput : { trim : Bool, invalid : Bool } -> Attribute Never
     , checkboxInput : { invalid : Bool } -> Attribute Never
+    , sliderInput : { trim : Bool } -> Attribute Never
     , group : Attribute Never
     , disabledElems : Attribute Never
     }
@@ -38,40 +41,52 @@ You can modify this according to your needs.
 -}
 tailwind : Theme
 tailwind =
-    let
-        ifInvalid =
-            "border-1 border-red-500"
-    in
     { horizontalLayout = Attrs.class "flex space-x-4"
-    , horizontalLayoutItem = Attrs.class "max-w-full flex-grow"
+    , horizontalLayoutItem = Attrs.class "flex-grow"
     , label = Attrs.class "text-lg mt-4"
     , groupLabel = Attrs.class "text-lg"
-    , categorizationMenu = Attrs.class "flex my-4 bg-indigo-500 font-bold shadow-sm rounded-md ring-1"
+    , categorizationMenu = Attrs.class "my-4 bg-indigo-500 font-bold"
     , categorizationMenuItem =
         \{ focus } ->
             Attrs.classList
-                [ ( "p-4 max-w-full", True )
+                [ ( "p-4", True )
                 , ( "text-white", focus )
                 , ( "text-white/60", not focus )
                 ]
     , fieldGroup = Attrs.class "my-4"
-    , fieldInput =
-        \{ invalid } ->
-            Attrs.classList
-                [ ( "px-3 bg-white block w-full rounded-md py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", True )
-                , ( "border-0", not invalid )
-                , ( ifInvalid, invalid )
-                ]
-    , fieldLabel = Attrs.class "block text-sm leading-6 text-gray-900"
-    , fieldDescription = Attrs.class "text-sm leading-6 text-gray-600 field-meta"
-    , fieldError = Attrs.class "text-red-500 text-xs my-1"
+    , fieldLabel = Attrs.class "block text-sm my-1"
+    , fieldDescription = Attrs.class "text-sm text-gray-600"
+    , fieldError = Attrs.class "text-red-600 text-xs my-1"
     , checkboxRow = Attrs.class "flex items-center"
+    , textInput =
+        \{ trim, invalid } ->
+            Attrs.classList
+                [ ( "border-red-600", invalid )
+                , ( "w-full", not trim )
+                ]
+    , textArea =
+        \{ trim, invalid } ->
+            Attrs.classList
+                [ ( "border-red-600", invalid )
+                , ( "w-full", not trim )
+                ]
+    , selectInput =
+        \{ trim, invalid } ->
+            Attrs.classList
+                [ ( "border-red-600", invalid )
+                , ( "w-full", not trim )
+                ]
     , checkboxInput =
         \{ invalid } ->
             Attrs.classList
-                [ ( "h-4 w-4 mr-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600", True )
-                , ( ifInvalid, invalid )
+                [ ( "mr-3", True )
+                , ( "border-red-600", invalid )
                 ]
-    , group = Attrs.class "field-input border border-gray-300 rounded-md p-3 my-3 shadow-sm"
+    , sliderInput =
+        \{ trim } ->
+        Attrs.classList
+                [ ( "w-full", not trim )
+                ]
+    , group = Attrs.class "border border-gray-300 p-3 my-3"
     , disabledElems = Attrs.class "opacity-50"
     }

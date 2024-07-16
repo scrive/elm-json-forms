@@ -17,7 +17,7 @@ Generate validating forms from JSON schemas.
 
 ## Unimplemented Features
 
-- linked schemas using `$ref`.
+- Linked schemas using `$ref`.
 - Arrays
 - Control Example
   - Descriptions as tooltips for booleans

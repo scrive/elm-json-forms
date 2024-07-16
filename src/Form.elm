@@ -8,7 +8,7 @@ Documentation for the original TypeScript library can be found here: <https://js
 
 -}
 
-import Form.Options exposing (Options)
+import Form.Settings exposing (Settings)
 import Form.State
 import Form.Validation exposing (validation)
 import Form.View
@@ -32,7 +32,7 @@ type alias Msg =
 
 {-| Initialize form state
 -}
-init : String -> Options -> Schema -> Maybe UiSchema -> Form
+init : String -> Settings -> Schema -> Maybe UiSchema -> Form
 init id options schema mUiSchema =
     let
         uiSchema =

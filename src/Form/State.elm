@@ -11,7 +11,7 @@ module Form.State exposing
 import Dict exposing (Dict)
 import Form.Error exposing (ErrorValue, Errors)
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Form.Options exposing (Options)
+import Form.Settings exposing (Settings)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
@@ -20,7 +20,7 @@ import Validation exposing (Validation)
 
 
 type alias Form =
-    { options : Options
+    { settings : Settings
     , schema : Schema
     , uiSchema : UiSchema
     , state : FormState
