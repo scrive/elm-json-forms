@@ -173,7 +173,7 @@ errorString error =
                     "must be equal to " ++ s
 
         InvalidString ->
-            "field is required"
+            "not a valid string"
 
         InvalidEmail ->
             "not a valid email address"
@@ -182,16 +182,16 @@ errorString error =
             "not the correct format"
 
         InvalidInt ->
-            "not a valid number"
+            "not a valid integer"
 
         InvalidFloat ->
-            "not a valid decimal number"
+            "not a valid number"
 
         InvalidBool ->
             "not a valid option"
 
         InvalidNull ->
-            "not a valid option"
+            "not a null"
 
         LessIntThan n ->
             "can not be smaller than " ++ String.fromInt n

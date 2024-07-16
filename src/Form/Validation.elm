@@ -103,8 +103,8 @@ validateSingleType schema type_ value =
         NullType ->
             Result.map (always Encode.null) <| validateNull value
 
-        _ ->
-            Err <| error (Error.Unimplemented "type")
+        ArrayType ->
+            Err <| error (Error.Unimplemented "array")
 
 
 validateString : SubSchema -> Value -> Validation String

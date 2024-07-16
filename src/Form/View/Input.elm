@@ -47,7 +47,7 @@ baseInput options toFieldValue inputType state attrs =
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.fieldInput
-                    { withError = state.error /= Nothing
+                    { invalid = state.error /= Nothing
                     }
             ]
     in
@@ -104,7 +104,7 @@ slider options schema toFieldValue inputType state attrs =
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.fieldInput
-                    { withError = state.error /= Nothing
+                    { invalid = state.error /= Nothing
                     }
             ]
     in
@@ -131,7 +131,7 @@ textArea options state attrs =
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 options.theme.fieldInput
-                    { withError = state.error /= Nothing
+                    { invalid = state.error /= Nothing
                     }
             ]
     in
@@ -201,7 +201,7 @@ baseSelectInput options valueList toFieldValue state attrs =
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
-            , Attrs.map never <| options.theme.fieldInput { withError = state.error /= Nothing }
+            , Attrs.map never <| options.theme.fieldInput { invalid = state.error /= Nothing }
             ]
 
         buildOption ( k, v ) =

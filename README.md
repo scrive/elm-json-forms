@@ -1,10 +1,10 @@
 # JSON Schema Form Generator
 
-[![Elm CI](https://github.com/scrive/json-schema-form/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/json-schema-form/actions)
+[![Elm CI](https://github.com/scrive/elm-json-schema/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/elm-json-schema/actions)
 
 Generate validating forms from JSON schemas.
 
-    elm package install potocpav/elm-json-forms
+    elm package install scrive/elm-json-forms
 
 ## Features
 
@@ -15,37 +15,21 @@ Generate validating forms from JSON schemas.
 - Supports custom string formats using validation functions (similar to Json decoders).
 - Comes with default Tailwind CSS theme in the `Theme` object that can be customised.
 
-## Fresh and Unimplemented Features
+## Unimplemented Features
 
-- [x] Fix multiple forms on the same page sharing IDs
-- [x] Validate e-mails
-- [x] Layout
-  - [x] Remove unnecessary nested formRow items for horizontal layout inside vertical layout
-- [ ] Control Example
-  - [ ] Descriptions as tooltips for Booleans
-  - [ ] Asterisks for required fields
-  - [ ] Toggle buttons for booleans
-  - [ ] Trim text
-  - [ ] Restrict text
-  - [ ] Hide required asterisk
-- [ ] Categorization Example
-  - [x] Fix multiple categorizations in one schema (in vertical layout)
-  - [x] Rules to show and hide categories
-  - [ ] Implement prev/next buttons
-  - [ ] Implement stepper variant
-- [x] Rule example
-  - [x] Groups
-  - [x] Group labels
-  - [x] Rule to enable/disable
-  - [x] Rule to show/hide
-- [x] Layout example
-- [x] Generate UI Schema example
-  - [x] Fix groups
-
-## Warnings
-
-1. There is currently no support for linked schemas using `$ref`.
+- linked schemas using `$ref`.
+- Arrays
+- Control Example
+  - Descriptions as tooltips for booleans
+  - Asterisks for required fields
+  - Toggle buttons for booleans
+  - Trim text
+  - Restrict text
+  - Hide required asterisk
+- Categorization Example
+  - Implement prev/next buttons
+  - Implement stepper variant
 
 ## Example usage
 
-See the [example project](https://github.com/potocpav/elm-json-form/tree/master/example) for examples
+See the [example project](tree/master/example) for examples

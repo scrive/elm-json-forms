@@ -312,7 +312,7 @@ checkbox options control schema fieldState =
         inputField =
             div [ Attrs.map never options.theme.checkboxRow ]
                 [ Input.checkboxInput fieldState
-                    [ Attrs.map never <| options.theme.checkboxInput { withError = fieldState.error /= Nothing }
+                    [ Attrs.map never <| options.theme.checkboxInput { invalid = fieldState.error /= Nothing }
                     , Attrs.id (Input.inputElementId fieldState.formId fieldState.pointer)
                     ]
                 , Html.viewMaybe identity <| fieldLabel options.theme control.label schema control.scope
