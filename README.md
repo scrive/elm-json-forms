@@ -1,6 +1,6 @@
 # JSON Schema Form Generator
 
-[![Elm CI](https://github.com/scrive/elm-json-schema/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/elm-json-schema/actions)
+[![Elm CI](https://github.com/scrive/elm-json-forms/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/elm-json-forms/actions)
 
 Generate validating forms from JSON schemas.
 
@@ -32,4 +32,4 @@ Generate validating forms from JSON schemas.
 
 ## Example usage
 
-See the [example project](tree/master/example) for examples
+See the [example project](example) for examples
