@@ -46,9 +46,9 @@ import Simplify
 config : List Rule
 config =
     [ Docs.NoMissing.rule
-         { document = onlyExposed
-         , from = exposedModules
-         }
+        { document = onlyExposed
+        , from = exposedModules
+        }
     , Docs.ReviewLinksAndSections.rule
     , Docs.ReviewAtDocs.rule
     , Docs.UpToDateReadmeLinks.rule

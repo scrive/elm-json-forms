@@ -1,9 +1,9 @@
 name: Elm CI
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,7 +18,9 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
       - name: Compile Elm
-        run: elm make src/Json/Schema/*.elm
+        run: elm make src/**/*.elm
+      - name: Compile Elm Example
+        run: cd example; elm make *.elm
       - name: Run elm-format
         run: npx elm-format --validate .
       - name: Run elm-tests
