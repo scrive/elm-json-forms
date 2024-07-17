@@ -1,4 +1,4 @@
-module Form.Error exposing (Errors, ErrorValue(..), getErrors)
+module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..), getErrors)
 
 {-| Form field error handling
 
@@ -22,7 +22,7 @@ type ErrorValue
     = Empty
     | InvalidString
     | InvalidEmail
-    | InvalidFormat
+    | InvalidFormat TextFormat
     | InvalidInt
     | InvalidFloat
     | InvalidBool
@@ -43,6 +43,15 @@ type ErrorValue
     | NotIncludedIn (List Value)
     | Unimplemented String
 
+
+{-| Text format
+-}
+type TextFormat
+    = Regex
+    | Time
+    | Date
+    | DateTime
+    | Email
 
 {-| Get all form errors as a list
 -}

@@ -126,27 +126,17 @@ validateString schema v =
 validateFormat : String -> String -> Validation String
 validateFormat format v =
     case format of
-        -- TODO: custom error for different formats.
         "date-time" ->
-            validateRegex Form.Regex.dateTime v
+            validateRegex Form.Regex.dateTime Error.DateTime v
 
         "date" ->
-            validateRegex Form.Regex.date v
+            validateRegex Form.Regex.date Error.Date v
 
         "time" ->
-            validateRegex Form.Regex.time v
+            validateRegex Form.Regex.time Error.Time v
 
         "email" ->
-            validateRegex Form.Regex.email v
-
-        "hostname" ->
-            validateRegex Form.Regex.hostname v
-
-        "ipv4" ->
-            validateRegex Form.Regex.ipv4 v
-
-        "ipv6" ->
-            validateRegex Form.Regex.ipv6 v
+            validateRegex Form.Regex.email Error.Email v
 
         _ ->
             Validation.succeed v
@@ -156,23 +146,19 @@ validatePattern : String -> String -> Validation String
 validatePattern pat s =
     case Regex.fromString pat of
         Just regex ->
-            validateRegex regex s
+            validateRegex regex Error.Regex s
 
         Nothing ->
-            Err (error Error.InvalidFormat)
+            Err (error (Error.InvalidFormat Error.Regex))
 
 
-validateRegex : Regex.Regex -> String -> Validation String
-validateRegex regex s =
+validateRegex : Regex.Regex -> Error.TextFormat -> String -> Validation String
+validateRegex regex errorFormat s =
     if Regex.contains regex s then
         Ok s
 
     else
-        Err (error Error.InvalidFormat)
-
-
-
--- TODO: create a more specific error
+        Err (error (Error.InvalidFormat errorFormat))
 
 
 validateMinLength : Int -> String -> Validation String

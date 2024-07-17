@@ -45,7 +45,7 @@ tailwind =
     , horizontalLayoutItem = Attrs.class "flex-grow"
     , label = Attrs.class "text-lg mt-4"
     , groupLabel = Attrs.class "text-lg"
-    , categorizationMenu = Attrs.class "my-4 bg-indigo-500 font-bold"
+    , categorizationMenu = Attrs.class "my-4 bg-gray-500 font-bold"
     , categorizationMenuItem =
         \{ focus } ->
             Attrs.classList

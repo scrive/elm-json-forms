@@ -121,13 +121,13 @@ type alias Options =
     , readonly : Maybe Bool
     , multi : Maybe Bool
     , slider : Maybe Bool
-    , trim : Maybe Bool -- TODO: implement
+    , trim : Maybe Bool
     , restrict : Maybe Bool -- TODO: implement
     , showUnfocusedDescription : Maybe Bool
     , hideRequiredAsterisk : Maybe Bool -- TODO: implement
     , toggle : Maybe Bool -- TODO: implement
-    , variant : Maybe String -- TODO: implement
-    , showNavButtons : Maybe String -- TODO: implement
+    , variant : Maybe CategorizationVariant -- TODO: implement
+    , showNavButtons : Maybe Bool -- TODO: implement
     }
 
 emptyOptions : Options
@@ -164,6 +164,8 @@ type Detail
     | DetailRegistered
     | DetailInlined UiSchema
 
+type CategorizationVariant
+    = Stepper
 
 decodeUiSchema : Decoder UiSchema
 decodeUiSchema =
@@ -306,8 +308,8 @@ decodeOptions =
         |> Decode.optional "showUnfocusedDescription" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "hideRequiredAsterisk" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "toggle" (Decode.nullable Decode.bool) Nothing
-        |> Decode.optional "variant" (Decode.nullable Decode.string) Nothing
-        |> Decode.optional "showNavButtons" (Decode.nullable Decode.string) Nothing
+        |> Decode.optional "variant" (Decode.nullable decodeVariant) Nothing
+        |> Decode.optional "showNavButtons" (Decode.nullable Decode.bool) Nothing
 
 
 decodeFormat : Decoder Format
@@ -321,6 +323,20 @@ decodeFormat =
 
                     _ ->
                         Decode.fail "Unable to decode Format"
+            )
+
+
+decodeVariant : Decoder CategorizationVariant
+decodeVariant =
+    Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "stepper" ->
+                        Decode.succeed Stepper
+
+                    _ ->
+                        Decode.fail "Unable to decode Variant"
             )
 
 
