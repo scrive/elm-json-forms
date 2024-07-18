@@ -8,6 +8,7 @@ import Form.Theme exposing (Theme)
 import Form.View.Input as Input
 import Html exposing (Html, button, div, label, span, text)
 import Html.Attributes as Attrs
+import Html.Attributes.Extra as Attrs
 import Html.Events exposing (onClick, preventDefaultOn)
 import Html.Extra as Html
 import Json.Decode as Decode
@@ -41,7 +42,7 @@ view form uiState =
         newUiState =
             { uiState | disabled = ruleEffect == Just Rule.Disabled }
     in
-    applyEffect form.settings.theme ruleEffect <|
+    maybeHide form.settings.theme ruleEffect <|
         case uiState.uiSchema of
             UI.UiControl c ->
                 [ controlView form.settings newUiState form.schema c form.state ]
@@ -62,14 +63,14 @@ view form uiState =
                 [ Html.div [ Attrs.map never form.settings.theme.label ] [ text l.text ] ]
 
 
-applyEffect : Theme -> Maybe Rule.AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
-applyEffect theme effect x =
+maybeHide : Theme -> Maybe Rule.AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
+maybeHide theme effect x =
     case effect of
         Just Rule.Hidden ->
             []
 
         Just Rule.Disabled ->
-            [ div [ Attrs.map never theme.disabledElems ] x ]
+            x
 
         Nothing ->
             x
@@ -124,8 +125,8 @@ categorizationView form uiState categorization =
         focusedCategoryIx =
             Maybe.withDefault 0 <| Dict.get uiState.uiPath form.state.categoryFocus
 
-        categoryButton ix category =
-            if Rule.computeRule form.state.value category.rule == Just Rule.Hidden then
+        categoryButton ix cat =
+            if Rule.computeRule form.state.value cat.rule == Just Rule.Hidden then
                 Nothing
 
             else
@@ -134,7 +135,7 @@ categorizationView form uiState categorization =
                         [ Attrs.map never <| form.settings.theme.categorizationMenuItem { focus = focusedCategoryIx == ix }
                         , onClickPreventDefault <| F.FocusCategory uiState.uiPath ix
                         ]
-                        [ text category.label ]
+                        [ text cat.label ]
 
         categoryUiState cat =
             walkState focusedCategoryIx (UI.UiVerticalLayout { elements = cat.elements, rule = cat.rule }) uiState
@@ -195,10 +196,7 @@ controlView settings uiState wholeSchema control form =
                                 textInput settings control schema fieldState
 
                         SingleType BooleanType ->
-                            if (control.options |> Maybe.andThen .toggle) == Just True then
-                                checkbox settings control schema fieldState
-                            else
-                                checkbox settings control schema fieldState
+                            checkbox settings control schema fieldState
 
                         _ ->
                             Html.nothing
@@ -208,6 +206,9 @@ controlView settings uiState wholeSchema control form =
             div
                 [ Attrs.id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
                 , Attrs.map never settings.theme.fieldGroup
+                , if fieldState.disabled
+                    then Attrs.map never <| settings.theme.disabledElems
+                    else Attrs.empty
                 ]
                 [ controlBody cs ]
         )
@@ -264,7 +265,7 @@ textInput settings control schema fieldState =
 
         options = Maybe.withDefault UI.emptyOptions control.options
     in
-    fieldGroup (Input.textInput settings options fieldState [ Attrs.type_ inputType ])
+    fieldGroup (Input.textInput settings options inputType schema.maxLength fieldState)
         settings
         control
         schema
@@ -273,7 +274,7 @@ textInput settings control schema fieldState =
 
 intInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 intInput settings control schema fieldState =
-    fieldGroup (Input.intInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState [])
+    fieldGroup (Input.intInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState)
         settings
         control
         schema
@@ -282,7 +283,7 @@ intInput settings control schema fieldState =
 
 numberInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 numberInput settings control schema fieldState =
-    fieldGroup (Input.floatInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState [])
+    fieldGroup (Input.floatInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState)
         settings
         control
         schema
@@ -291,7 +292,7 @@ numberInput settings control schema fieldState =
 
 intSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 intSlider settings control schema fieldState =
-    fieldGroup (Input.intSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState [])
+    fieldGroup (Input.intSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState)
         settings
         control
         schema
@@ -300,7 +301,7 @@ intSlider settings control schema fieldState =
 
 numberSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 numberSlider settings control schema fieldState =
-    fieldGroup (Input.numberSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState [])
+    fieldGroup (Input.numberSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState)
         settings
         control
         schema
@@ -309,7 +310,7 @@ numberSlider settings control schema fieldState =
 
 textarea : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 textarea settings control schema state =
-    fieldGroup (Input.textArea settings (Maybe.withDefault UI.emptyOptions control.options) state []) settings control schema state
+    fieldGroup (Input.textArea settings (Maybe.withDefault UI.emptyOptions control.options) schema.maxLength state) settings control schema state
 
 
 checkbox : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
@@ -318,10 +319,12 @@ checkbox settings control schema fieldState =
         inputField : Html F.Msg
         inputField =
             div [ Attrs.map never settings.theme.checkboxRow ]
-                [ Input.checkboxInput fieldState
-                    [ Attrs.map never <| settings.theme.checkboxInput { invalid = fieldState.error /= Nothing }
-                    , Attrs.id (Input.inputElementId fieldState.formId fieldState.pointer)
-                    ]
+                [
+                    if (control.options |> Maybe.andThen .toggle) == Just True then
+                        Input.toggleInput settings fieldState
+                    else
+                        Input.checkboxInput settings fieldState
+
                 , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
                 ]
 
@@ -333,7 +336,12 @@ checkbox settings control schema fieldState =
         errorMessage =
             Html.viewMaybe identity <| error settings.theme settings.errors fieldState
     in
-    label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
+    label
+        [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer)
+        , if fieldState.disabled
+            then Attrs.map never <| settings.theme.disabledElems
+            else Attrs.empty
+        ]
         [ inputField
         , description
         , errorMessage
@@ -363,7 +371,7 @@ select settings control schema fieldState fieldType =
                     Input.intSelectInput
     in
     fieldGroup
-        (inputType settings items fieldState [])
+        (inputType settings items fieldState)
         settings
         control
         schema

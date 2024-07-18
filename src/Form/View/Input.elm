@@ -1,7 +1,7 @@
 module Form.View.Input exposing
     ( Input
-    , InputType(..)
     , checkboxInput
+    , toggleInput
     , floatInput
     , floatSelectInput
     , inputElementGroupId
@@ -29,23 +29,22 @@ import Json.Schema.Definitions as Schema
 
 
 type alias Input =
-    FieldState -> List (Attribute Msg) -> Html Msg
+    FieldState -> Html Msg
 
 
-type InputType
-    = Text
-
-
-baseTextInput : Settings -> Options -> (String -> FieldValue) -> InputType -> Input
-baseTextInput settings options toFieldValue inputType state attrs =
+baseTextInput : Settings -> Options -> (String -> FieldValue) -> String -> Maybe Int -> Input
+baseTextInput settings options toFieldValue inputType maxLength state =
     let
         formAttrs =
             [ id (inputElementId state.formId state.pointer)
-            , type_ "text"
+            , type_ inputType
             , value (FieldValue.asString state.value)
             , onInput (toFieldValue >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
+            , case (options.restrict, maxLength) of
+                (Just True, Just n) -> Attrs.maxlength n
+                _ -> Attrs.empty
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 settings.theme.textInput
@@ -54,11 +53,11 @@ baseTextInput settings options toFieldValue inputType state attrs =
                     }
             ]
     in
-    input (formAttrs ++ attrs) []
+    input formAttrs []
 
 
-slider : Settings -> Options -> Schema.SubSchema -> (String -> FieldValue) -> InputType -> Input
-slider settings options schema toFieldValue inputType state attrs =
+slider : Settings -> Options -> Schema.SubSchema -> (String -> FieldValue) -> Input
+slider settings options schema toFieldValue state =
     let
         step =
             Maybe.withDefault 1.0 schema.multipleOf
@@ -106,7 +105,9 @@ slider settings options schema toFieldValue inputType state attrs =
             , Attrs.attribute "step" (String.fromFloat step)
             , Attrs.disabled state.disabled
             , Attrs.map never <|
-                settings.theme.sliderInput { trim = Maybe.withDefault False options.trim }
+                settings.theme.sliderInput
+                    { trim = Maybe.withDefault False options.trim
+                    }
             ]
     in
     div
@@ -115,12 +116,12 @@ slider settings options schema toFieldValue inputType state attrs =
             [ span [ Attrs.style "flex-grow" "1", Attrs.class "text-left" ] [ text (String.fromFloat minLimit) ]
             , span [ Attrs.style "flex-grow" "1", Attrs.class "text-right" ] [ text (String.fromFloat maxLimit) ]
             ]
-        , input (formAttrs ++ attrs) []
+        , input formAttrs []
         ]
 
 
-textArea : Settings -> Options -> Input
-textArea settings options state attrs =
+textArea : Settings -> Options -> Maybe Int -> Input
+textArea settings options maxLength state =
     let
         formAttrs =
             [ id <| Pointer.toString state.pointer
@@ -130,6 +131,9 @@ textArea settings options state attrs =
             , onBlur Blur
             , attribute "rows" "4"
             , Attrs.disabled state.disabled
+            , case (options.restrict, maxLength) of
+                (Just True, Just n) -> Attrs.maxlength n
+                _ -> Attrs.empty
             , Attrs.map never <|
                 settings.theme.textArea
                     { trim = Maybe.withDefault False options.trim
@@ -137,7 +141,7 @@ textArea settings options state attrs =
                     }
             ]
     in
-    Html.textarea (formAttrs ++ attrs) []
+    Html.textarea formAttrs []
 
 
 fromIntInput : String -> FieldValue
@@ -167,33 +171,33 @@ fromStringInput s =
         FieldValue.String s
 
 
-textInput : Settings -> Options -> Input
-textInput settings options =
-    baseTextInput settings options fromStringInput Text
+textInput : Settings -> Options -> String -> Maybe Int -> Input
+textInput settings options inputType maxLength =
+    baseTextInput settings options fromStringInput inputType maxLength
 
 
 intInput : Settings -> Options -> Input
-intInput settings options state attrs =
-    baseTextInput settings options fromIntInput Text state (attribute "type" "number" :: attrs)
+intInput settings options state =
+    baseTextInput settings options fromIntInput "number" Nothing state
 
 
 floatInput : Settings -> Options -> Input
-floatInput settings options state attrs =
-    baseTextInput settings options fromFloatInput Text state (attribute "type" "number" :: attrs)
+floatInput settings options state =
+    baseTextInput settings options fromFloatInput "number" Nothing state
 
 
 intSlider : Settings -> Options -> Schema.SubSchema -> Input
 intSlider settings options schema =
-    slider settings options schema fromIntInput Text
+    slider settings options schema fromIntInput
 
 
 numberSlider : Settings -> Options -> Schema.SubSchema -> Input
 numberSlider settings options schema =
-    slider settings options schema fromFloatInput Text
+    slider settings options schema fromFloatInput
 
 
 baseSelectInput : Settings -> List ( String, String ) -> (String -> FieldValue) -> Input
-baseSelectInput settings valueList toFieldValue state attrs =
+baseSelectInput settings valueList toFieldValue state =
     let
         formAttrs =
             [ id (inputElementId state.formId state.pointer)
@@ -203,13 +207,16 @@ baseSelectInput settings valueList toFieldValue state attrs =
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
-            , Attrs.map never <| settings.theme.selectInput { trim = False, invalid = state.error /= Nothing }
+            , Attrs.map never <| settings.theme.selectInput
+                { trim = False
+                , invalid = state.error /= Nothing
+                }
             ]
 
         buildOption ( k, v ) =
             option [ value k, selected (FieldValue.asString state.value == k) ] [ text v ]
     in
-    select (formAttrs ++ attrs) (List.map buildOption valueList)
+    select formAttrs (List.map buildOption valueList)
 
 
 textSelectInput : Settings -> List ( String, String ) -> Input
@@ -237,42 +244,35 @@ inputElementGroupId formId path =
     formId ++ "-" ++ path
 
 
-checkboxInput : Input
-checkboxInput state attrs =
+toggleInput : Settings -> Input
+toggleInput settings state =
     let
         checked = if state.value == Bool True then True else False
 
         formAttrs =
             [ type_ "button"
-            , Attrs.class "inline-flex w-11 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            , Attrs.classList
-                [ ("bg-gray-300", not state.disabled && not checked)
-                , ("bg-blue-500", not state.disabled && checked)
-                , ("bg-gray-200", state.disabled && not checked)
-                , ("bg-blue-300", state.disabled && checked)
-                ]
+            , Attrs.id (inputElementId state.formId state.pointer)
+            , Attrs.map never <| settings.theme.toggleInput { checked = checked }
             , onClick (Input state.pointer (Bool <| not checked))
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
             ]
     in
-    button (formAttrs ++ attrs)
+    button formAttrs
         [ span
-            [ Attrs.class "pointer-events-none h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out"
-            , Attrs.classList
-                [ ("translate-x-0", not checked)
-                , ("translate-x-5", checked)
-                ]
+            [ Attrs.map never <| settings.theme.toggleKnob { checked = checked }
             ] []
         ]
 
 
-checkboxInput_ : Input
-checkboxInput_ state attrs =
+checkboxInput : Settings -> Input
+checkboxInput settings state =
     let
         formAttrs =
             [ type_ "checkbox"
+            , Attrs.id (inputElementId state.formId state.pointer)
+            , Attrs.map never <| settings.theme.checkboxInput { invalid = state.error /= Nothing }
             , checked (FieldValue.asBool state.value |> Maybe.withDefault False)
             , onCheck (Bool >> Input state.pointer)
             , onFocus (Focus state.pointer)
@@ -280,4 +280,4 @@ checkboxInput_ state attrs =
             , Attrs.disabled state.disabled
             ]
     in
-    input (formAttrs ++ attrs) []
+    input formAttrs []

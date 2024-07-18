@@ -122,10 +122,10 @@ type alias Options =
     , multi : Maybe Bool
     , slider : Maybe Bool
     , trim : Maybe Bool
-    , restrict : Maybe Bool -- TODO: implement
+    , restrict : Maybe Bool
     , showUnfocusedDescription : Maybe Bool
     , hideRequiredAsterisk : Maybe Bool -- TODO: implement
-    , toggle : Maybe Bool -- TODO: implement
+    , toggle : Maybe Bool
     , variant : Maybe CategorizationVariant -- TODO: implement
     , showNavButtons : Maybe Bool -- TODO: implement
     }

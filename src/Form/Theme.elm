@@ -29,6 +29,8 @@ type alias Theme =
     , selectInput : { trim : Bool, invalid : Bool } -> Attribute Never
     , checkboxInput : { invalid : Bool } -> Attribute Never
     , sliderInput : { trim : Bool } -> Attribute Never
+    , toggleInput : { checked : Bool } -> Attribute Never
+    , toggleKnob : { checked : Bool } -> Attribute Never
     , group : Attribute Never
     , disabledElems : Attribute Never
     }
@@ -57,7 +59,7 @@ tailwind =
     , fieldLabel = Attrs.class "block text-sm my-1"
     , fieldDescription = Attrs.class "text-sm text-gray-600"
     , fieldError = Attrs.class "text-red-600 text-xs my-1"
-    , checkboxRow = Attrs.class "flex items-center"
+    , checkboxRow = Attrs.class "flex items-center space-x-4"
     , textInput =
         \{ trim, invalid } ->
             Attrs.classList
@@ -79,13 +81,26 @@ tailwind =
     , checkboxInput =
         \{ invalid } ->
             Attrs.classList
-                [ ( "mr-3", True )
-                , ( "border-red-600", invalid )
+                [ ( "border-red-600", invalid )
                 ]
     , sliderInput =
         \{ trim } ->
         Attrs.classList
                 [ ( "w-full", not trim )
+                ]
+    , toggleInput =
+        \{ checked } ->
+            Attrs.classList
+                [ ("inline-flex w-11 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2", True)
+                , ("bg-gray-300", not checked)
+                , ("bg-blue-500", checked)
+                ]
+    , toggleKnob =
+        \{ checked } ->
+            Attrs.classList
+                [ ("pointer-events-none h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out", True)
+                , ("translate-x-0", not checked)
+                , ("translate-x-5", checked)
                 ]
     , group = Attrs.class "border border-gray-300 p-3 my-3"
     , disabledElems = Attrs.class "opacity-50"
