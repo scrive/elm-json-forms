@@ -12,6 +12,7 @@ import Html.Attributes.Extra as Attrs
 import Html.Events exposing (onClick, preventDefaultOn)
 import Html.Extra as Html
 import Json.Decode as Decode
+import Json.Util as Util
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema(..), SingleType(..), SubSchema, Type(..))
 import List.Extra as List
@@ -152,15 +153,15 @@ categorizationView form uiState categorization =
 isRequired : Schema -> Pointer -> Bool
 isRequired wholeSchema pointer =
     let
-        parentSchema = Maybe.andThen (UI.pointToSchema wholeSchema) (List.init pointer)
+        parentSchema = UI.pointToSchema wholeSchema (List.take (List.length pointer - 2) pointer)
+        property = Debug.log "prop" <| List.last pointer
 
-        x = case parentSchema of
-            Just (ObjectSchema schema) -> case schema.type_ of
-                SingleType ObjectType -> False -- Maybe.map UI.unSchemata schema.properties
+    in
+        case (parentSchema, property) of
+            (Just (ObjectSchema schema), Just prop) -> case schema.type_ of
+                SingleType ObjectType -> List.any ((==) prop) (Maybe.withDefault [] schema.required)
                 _ -> False
             _ -> False
-    in
-        True
 
 
 controlView : Settings -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg
@@ -171,54 +172,54 @@ controlView settings uiState wholeSchema control form =
 
         parentSchema = Maybe.andThen (UI.pointToSchema wholeSchema) (List.init control.scope)
 
+        defOptions = UI.applyDefaults control.options
+
         disabled =
-            Maybe.andThen .readonly control.options == Just True || uiState.disabled
+            defOptions.readonly == True || uiState.disabled
+
+        required = isRequired wholeSchema control.scope
 
         fieldState =
-            F.fieldState disabled control.scope form
+            F.fieldState disabled required control.scope form
 
         controlBody schema_ =
-            case schema_ of
-                BooleanSchema _ ->
-                    Html.nothing
+            Util.withObjectSchema Html.nothing schema_ <| \schema ->
+                case schema.type_ of
+                    SingleType IntegerType ->
+                        if schema.enum /= Nothing then
+                            select settings control defOptions schema fieldState IntField
 
-                ObjectSchema schema ->
-                    case schema.type_ of
-                        SingleType IntegerType ->
-                            if schema.enum /= Nothing then
-                                select settings control schema fieldState IntField
+                        else if defOptions.slider == True then
+                            intSlider settings control defOptions schema fieldState
 
-                            else if (control.options |> Maybe.andThen .slider) == Just True then
-                                intSlider settings control schema fieldState
+                        else
+                            intInput settings control defOptions schema fieldState
 
-                            else
-                                intInput settings control schema fieldState
+                    SingleType NumberType ->
+                        if schema.enum /= Nothing then
+                            select settings control defOptions schema fieldState NumberField
 
-                        SingleType NumberType ->
-                            if schema.enum /= Nothing then
-                                select settings control schema fieldState NumberField
+                        else if defOptions.slider == True then
+                            numberSlider settings control defOptions schema fieldState
 
-                            else if (control.options |> Maybe.andThen .slider) == Just True then
-                                numberSlider settings control schema fieldState
+                        else
+                            numberInput settings control defOptions schema fieldState
 
-                            else
-                                numberInput settings control schema fieldState
+                    SingleType StringType ->
+                        if schema.enum /= Nothing then
+                            select settings control defOptions schema fieldState StringField
 
-                        SingleType StringType ->
-                            if schema.enum /= Nothing then
-                                select settings control schema fieldState StringField
+                        else if defOptions.multi == True then
+                            textarea settings control defOptions schema fieldState
 
-                            else if (control.options |> Maybe.andThen .multi) == Just True then
-                                textarea settings control schema fieldState
+                        else
+                            textInput settings control defOptions schema fieldState
 
-                            else
-                                textInput settings control schema fieldState
+                    SingleType BooleanType ->
+                        checkbox settings control defOptions schema fieldState
 
-                        SingleType BooleanType ->
-                            checkbox settings control schema fieldState
-
-                        _ ->
-                            Html.nothing
+                    _ ->
+                        Html.nothing
     in
     Html.viewMaybe
         (\cs ->
@@ -242,8 +243,8 @@ type TextFieldType
     | StringField
 
 
-textInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-textInput settings control schema fieldState =
+textInput : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+textInput settings control defOptions schema fieldState =
     let
         inputType : String
         inputType =
@@ -283,71 +284,74 @@ textInput settings control schema fieldState =
 
                 _ ->
                     "text"
-
-        options =
-            UI.applyDefaults control.options
     in
-    fieldGroup (Input.textInput settings options inputType schema.maxLength fieldState)
+    fieldGroup (Input.textInput settings defOptions inputType schema.maxLength fieldState)
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         fieldState
 
 
-intInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-intInput settings control schema fieldState =
-    fieldGroup (Input.intInput settings (UI.applyDefaults control.options) fieldState)
+intInput : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+intInput settings control defOptions schema fieldState =
+    fieldGroup (Input.intInput settings defOptions fieldState)
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         fieldState
 
 
-numberInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-numberInput settings control schema fieldState =
-    fieldGroup (Input.floatInput settings (UI.applyDefaults control.options) fieldState)
+numberInput : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+numberInput settings control defOptions schema fieldState =
+    fieldGroup (Input.floatInput settings defOptions fieldState)
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         fieldState
 
 
-intSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-intSlider settings control schema fieldState =
-    fieldGroup (Input.intSlider settings (UI.applyDefaults control.options) schema fieldState)
+intSlider : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+intSlider settings control defOptions schema fieldState =
+    fieldGroup (Input.intSlider settings defOptions schema fieldState)
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         fieldState
 
 
-numberSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-numberSlider settings control schema fieldState =
-    fieldGroup (Input.numberSlider settings (UI.applyDefaults control.options) schema fieldState)
+numberSlider : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+numberSlider settings control defOptions schema fieldState =
+    fieldGroup (Input.numberSlider settings defOptions schema fieldState)
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         fieldState
 
 
-textarea : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-textarea settings control schema state =
+textarea : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+textarea settings control defOptions schema state =
     fieldGroup
-        (Input.textArea settings (UI.applyDefaults control.options) schema.maxLength state)
+        (Input.textArea settings defOptions schema.maxLength state)
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         state
 
 
-select : Settings -> UI.Control -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
-select settings control schema fieldState fieldType =
+select : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
+select settings control defOptions schema fieldState fieldType =
     let
         values : List String
         values =
@@ -373,12 +377,13 @@ select settings control schema fieldState fieldType =
         settings
         { showLabel = True }
         control
+        defOptions
         schema
         fieldState
 
 
-checkbox : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-checkbox settings control schema fieldState =
+checkbox : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+checkbox settings control defOptions schema fieldState =
     let
         inputField : Html F.Msg
         inputField =
@@ -388,7 +393,7 @@ checkbox settings control schema fieldState =
 
                   else
                     Input.checkboxInput settings fieldState
-                , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
+                , Html.viewMaybe identity <| fieldLabel settings.theme control.label defOptions schema control.scope fieldState.required
                 ]
     in
     fieldGroup
@@ -396,21 +401,22 @@ checkbox settings control schema fieldState =
         settings
         { showLabel = False }
         control
+        defOptions
         schema
         fieldState
 
 
-fieldGroup : Html F.Msg -> Settings -> {showLabel: Bool} -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-fieldGroup inputField settings { showLabel } control schema fieldState =
+fieldGroup : Html F.Msg -> Settings -> {showLabel: Bool} -> UI.Control -> UI.DefOptions -> SubSchema -> F.FieldState -> Html F.Msg
+fieldGroup inputField settings { showLabel } control defOptions schema fieldState =
     let
         label_ : Maybe (Html F.Msg)
         label_ =
             if showLabel
-                then fieldLabel settings.theme control.label schema control.scope
+                then fieldLabel settings.theme control.label defOptions schema control.scope fieldState.required
                 else Nothing
 
         showDescription =
-            Maybe.andThen .showUnfocusedDescription control.options == Just True || fieldState.hasFocus
+            defOptions.showUnfocusedDescription == True || fieldState.hasFocus
 
         description : Html F.Msg
         description =
@@ -433,16 +439,18 @@ fieldGroup inputField settings { showLabel } control schema fieldState =
             ]
 
 
-fieldLabel : Theme -> Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe (Html F.Msg)
-fieldLabel theme label schema pointer =
+fieldLabel : Theme -> Maybe UI.ControlLabel -> UI.DefOptions -> SubSchema -> Pointer -> Bool -> Maybe (Html F.Msg)
+fieldLabel theme label options schema scope required =
     let
         fallback =
             schema.title
-                |> Maybe.orElse (List.last pointer |> Maybe.map UI.fieldNameToTitle)
+                |> Maybe.orElse (List.last scope |> Maybe.map UI.fieldNameToTitle)
                 |> Maybe.withDefault ""
 
         render str =
-            span [ Attrs.map never theme.fieldLabel ] [ text str ]
+            span [ Attrs.map never theme.fieldLabel ]
+                [ text (if not options.hideRequiredAsterisk && required then str ++ " *" else str)
+                ]
     in
     case label of
         Just (UI.StringLabel s) ->

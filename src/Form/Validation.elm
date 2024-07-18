@@ -14,8 +14,8 @@ import Json.Schema.Definitions
         )
 import Regex
 import Set
-import Json.Util exposing (unSchemata)
 import Validation exposing (Validation, error)
+import Json.Util as Util
 
 
 validation : Schema -> Value -> Validation Value
@@ -66,7 +66,7 @@ validateSingleType schema type_ value =
         ObjectType ->
             let
                 propList =
-                    Maybe.withDefault [] <| Maybe.map unSchemata schema.properties
+                    Util.getProperties schema
 
                 requiredKeys =
                     Set.fromList <| Maybe.withDefault [] schema.required
