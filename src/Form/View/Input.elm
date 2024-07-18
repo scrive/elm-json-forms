@@ -10,7 +10,7 @@ module Form.View.Input exposing
     , toggleInput
     )
 
-import Form.FieldValue as FieldValue exposing (FieldType(..), FieldValue(..))
+import Form.FieldValue as FieldValue exposing (FieldType, FieldValue(..))
 import Form.Settings exposing (Settings)
 import Form.State exposing (FieldState, Msg(..))
 import Html exposing (..)

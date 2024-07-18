@@ -2,9 +2,9 @@ module Form.View exposing (view)
 
 import Dict
 import Form.Error exposing (ErrorValue)
-import Form.FieldValue as FieldValue exposing (FieldType(..), FieldValue(..))
+import Form.FieldValue as FieldValue exposing (FieldType(..))
 import Form.Settings exposing (Settings)
-import Form.State as F exposing (FieldState, Form, FormState, Msg(..))
+import Form.State as F exposing (Form, FormState, Msg(..))
 import Form.Theme exposing (Theme)
 import Form.View.Input as Input exposing (Input)
 import Html exposing (Html, button, div, label, span, text)
@@ -234,6 +234,9 @@ textLikeInput settings control defOptions schema fieldType state =
 
     else if defOptions.slider == True then
         slider settings control defOptions schema fieldType state
+
+    else if defOptions.multi && fieldType == StringField then
+        textarea settings control defOptions schema state
 
     else
         textInput settings control defOptions schema fieldType state
