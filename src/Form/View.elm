@@ -147,11 +147,29 @@ categorizationView form uiState categorization =
         :: Maybe.unwrap [] (\cat -> view form (categoryUiState cat)) (List.getAt focusedCategoryIx categorization.elements)
 
 
+{-| Approximate whether a control is required to display asterix in the label
+-}
+isRequired : Schema -> Pointer -> Bool
+isRequired wholeSchema pointer =
+    let
+        parentSchema = Maybe.andThen (UI.pointToSchema wholeSchema) (List.init pointer)
+
+        x = case parentSchema of
+            Just (ObjectSchema schema) -> case schema.type_ of
+                SingleType ObjectType -> False -- Maybe.map UI.unSchemata schema.properties
+                _ -> False
+            _ -> False
+    in
+        True
+
+
 controlView : Settings -> UiState -> Schema -> UI.Control -> FormState -> Html F.Msg
 controlView settings uiState wholeSchema control form =
     let
-        mControlSchema =
+        controlSchema =
             UI.pointToSchema wholeSchema control.scope
+
+        parentSchema = Maybe.andThen (UI.pointToSchema wholeSchema) (List.init control.scope)
 
         disabled =
             Maybe.andThen .readonly control.options == Just True || uiState.disabled
@@ -215,7 +233,7 @@ controlView settings uiState wholeSchema control form =
                 ]
                 [ controlBody cs ]
         )
-        mControlSchema
+        controlSchema
 
 
 type TextFieldType
@@ -372,14 +390,6 @@ checkbox settings control schema fieldState =
                     Input.checkboxInput settings fieldState
                 , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
                 ]
-
-        description : Html F.Msg
-        description =
-            Html.viewMaybe identity <| fieldDescription settings.theme schema
-
-        errorMessage : Html F.Msg
-        errorMessage =
-            Html.viewMaybe identity <| error settings.theme settings.errors fieldState
     in
     fieldGroup
         inputField

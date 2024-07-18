@@ -1,10 +1,10 @@
-module UiSchema exposing (UiSchema, fromString)
+module UiSchema exposing (UiSchema, fromString, decode)
 
 {-| UI Schema definition and deserialization.
 
 Documentation can be found here: <https://jsonforms.io/docs/uischema/>
 
-@docs UiSchema, fromString
+@docs UiSchema, fromString, decode
 
 -}
 
@@ -17,9 +17,14 @@ import UiSchema.Internal exposing (decodeUiSchema)
 type alias UiSchema =
     UiSchema.Internal.UiSchema
 
+{-| UiSchema Decoder
+-}
+decode : Decode.Decoder UiSchema
+decode = decodeUiSchema
+
 
 {-| Validate and produce UI Schema from JSON String
 -}
 fromString : String -> Result String UiSchema
 fromString =
-    Decode.decodeString decodeUiSchema >> Result.mapError Decode.errorToString
+    Decode.decodeString decode >> Result.mapError Decode.errorToString

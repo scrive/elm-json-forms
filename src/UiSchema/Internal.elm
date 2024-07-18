@@ -25,12 +25,12 @@ module UiSchema.Internal exposing
     , generateUiSchema
     , getRule
     , pointToSchema
-    , unSchemata
     )
 
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
+import Json.Util exposing (unSchemata)
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema exposing (Schema(..))
 import String.Case
@@ -470,11 +470,6 @@ generateUiSchema schema =
                             Nothing
     in
     Maybe.withDefault (UiVerticalLayout { elements = [], rule = Nothing }) <| go Nothing schema []
-
-
-unSchemata : Schema.Schemata -> List ( String, Schema )
-unSchemata (Schema.Schemata l) =
-    l
 
 
 pointToSchema : Schema -> Pointer -> Maybe Schema
