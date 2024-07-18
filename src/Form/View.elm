@@ -271,6 +271,7 @@ textInput settings control schema fieldState =
     in
     fieldGroup (Input.textInput settings options inputType schema.maxLength fieldState)
         settings
+        { showLabel = True }
         control
         schema
         fieldState
@@ -280,6 +281,7 @@ intInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 intInput settings control schema fieldState =
     fieldGroup (Input.intInput settings (UI.applyDefaults control.options) fieldState)
         settings
+        { showLabel = True }
         control
         schema
         fieldState
@@ -289,6 +291,7 @@ numberInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 numberInput settings control schema fieldState =
     fieldGroup (Input.floatInput settings (UI.applyDefaults control.options) fieldState)
         settings
+        { showLabel = True }
         control
         schema
         fieldState
@@ -298,6 +301,7 @@ intSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 intSlider settings control schema fieldState =
     fieldGroup (Input.intSlider settings (UI.applyDefaults control.options) schema fieldState)
         settings
+        { showLabel = True }
         control
         schema
         fieldState
@@ -307,6 +311,7 @@ numberSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 numberSlider settings control schema fieldState =
     fieldGroup (Input.numberSlider settings (UI.applyDefaults control.options) schema fieldState)
         settings
+        { showLabel = True }
         control
         schema
         fieldState
@@ -314,43 +319,13 @@ numberSlider settings control schema fieldState =
 
 textarea : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 textarea settings control schema state =
-    fieldGroup (Input.textArea settings (UI.applyDefaults control.options) schema.maxLength state) settings control schema state
-
-
-checkbox : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-checkbox settings control schema fieldState =
-    let
-        inputField : Html F.Msg
-        inputField =
-            div [ Attrs.map never settings.theme.checkboxRow ]
-                [ if (control.options |> Maybe.andThen .toggle) == Just True then
-                    Input.toggleInput settings fieldState
-
-                  else
-                    Input.checkboxInput settings fieldState
-                , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
-                ]
-
-        description : Html F.Msg
-        description =
-            Html.viewMaybe identity <| fieldDescription settings.theme schema
-
-        errorMessage : Html F.Msg
-        errorMessage =
-            Html.viewMaybe identity <| error settings.theme settings.errors fieldState
-    in
-    label
-        [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer)
-        , if fieldState.disabled then
-            Attrs.map never <| settings.theme.disabledElems
-
-          else
-            Attrs.empty
-        ]
-        [ inputField
-        , description
-        , errorMessage
-        ]
+    fieldGroup
+        (Input.textArea settings (UI.applyDefaults control.options) schema.maxLength state)
+        settings
+        { showLabel = True }
+        control
+        schema
+        state
 
 
 select : Settings -> UI.Control -> SubSchema -> F.FieldState -> TextFieldType -> Html F.Msg
@@ -378,17 +353,51 @@ select settings control schema fieldState fieldType =
     fieldGroup
         (inputType settings items fieldState)
         settings
+        { showLabel = True }
         control
         schema
         fieldState
 
 
-fieldGroup : Html F.Msg -> Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
-fieldGroup inputField settings control schema fieldState =
+checkbox : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+checkbox settings control schema fieldState =
     let
-        title : Maybe (Html F.Msg)
-        title =
-            fieldLabel settings.theme control.label schema control.scope
+        inputField : Html F.Msg
+        inputField =
+            div [ Attrs.map never settings.theme.checkboxRow ]
+                [ if (control.options |> Maybe.andThen .toggle) == Just True then
+                    Input.toggleInput settings fieldState
+
+                  else
+                    Input.checkboxInput settings fieldState
+                , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
+                ]
+
+        description : Html F.Msg
+        description =
+            Html.viewMaybe identity <| fieldDescription settings.theme schema
+
+        errorMessage : Html F.Msg
+        errorMessage =
+            Html.viewMaybe identity <| error settings.theme settings.errors fieldState
+    in
+    fieldGroup
+        inputField
+        settings
+        { showLabel = False }
+        control
+        schema
+        fieldState
+
+
+fieldGroup : Html F.Msg -> Settings -> {showLabel: Bool} -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
+fieldGroup inputField settings { showLabel } control schema fieldState =
+    let
+        label_ : Maybe (Html F.Msg)
+        label_ =
+            if showLabel
+                then fieldLabel settings.theme control.label schema control.scope
+                else Nothing
 
         showDescription =
             Maybe.andThen .showUnfocusedDescription control.options == Just True || fieldState.hasFocus
@@ -406,12 +415,12 @@ fieldGroup inputField settings control schema fieldState =
         errorMessage =
             Html.viewMaybe identity <| error settings.theme settings.errors fieldState
     in
-    label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
-        [ Html.viewMaybe identity title
-        , inputField
-        , description
-        , errorMessage
-        ]
+        label [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer) ]
+            [ Html.viewMaybe identity label_
+            , inputField
+            , description
+            , errorMessage
+            ]
 
 
 fieldLabel : Theme -> Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe (Html F.Msg)

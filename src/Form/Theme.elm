@@ -57,7 +57,7 @@ tailwind =
                 ]
     , fieldGroup = Attrs.class "my-4"
     , fieldLabel = Attrs.class "block text-sm my-1"
-    , fieldDescription = Attrs.class "text-sm text-gray-600"
+    , fieldDescription = Attrs.class "text-sm text-gray-600 my-1"
     , fieldError = Attrs.class "text-red-600 text-xs my-1"
     , checkboxRow = Attrs.class "flex items-center space-x-4"
     , textInput =
