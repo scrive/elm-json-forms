@@ -153,7 +153,8 @@ controlView settings uiState wholeSchema control form =
         mControlSchema =
             UI.pointToSchema wholeSchema control.scope
 
-        disabled = Maybe.andThen (.readonly) (control.options) == Just True || uiState.disabled
+        disabled =
+            Maybe.andThen .readonly control.options == Just True || uiState.disabled
 
         fieldState =
             F.fieldState disabled control.scope form
@@ -206,9 +207,11 @@ controlView settings uiState wholeSchema control form =
             div
                 [ Attrs.id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
                 , Attrs.map never settings.theme.fieldGroup
-                , if fieldState.disabled
-                    then Attrs.map never <| settings.theme.disabledElems
-                    else Attrs.empty
+                , if fieldState.disabled then
+                    Attrs.map never <| settings.theme.disabledElems
+
+                  else
+                    Attrs.empty
                 ]
                 [ controlBody cs ]
         )
@@ -263,7 +266,8 @@ textInput settings control schema fieldState =
                 _ ->
                     "text"
 
-        options = UI.applyDefaults control.options
+        options =
+            UI.applyDefaults control.options
     in
     fieldGroup (Input.textInput settings options inputType schema.maxLength fieldState)
         settings
@@ -319,12 +323,11 @@ checkbox settings control schema fieldState =
         inputField : Html F.Msg
         inputField =
             div [ Attrs.map never settings.theme.checkboxRow ]
-                [
-                    if (control.options |> Maybe.andThen .toggle) == Just True then
-                        Input.toggleInput settings fieldState
-                    else
-                        Input.checkboxInput settings fieldState
+                [ if (control.options |> Maybe.andThen .toggle) == Just True then
+                    Input.toggleInput settings fieldState
 
+                  else
+                    Input.checkboxInput settings fieldState
                 , Html.viewMaybe identity <| fieldLabel settings.theme control.label schema control.scope
                 ]
 
@@ -338,9 +341,11 @@ checkbox settings control schema fieldState =
     in
     label
         [ Attrs.for (Input.inputElementId fieldState.formId fieldState.pointer)
-        , if fieldState.disabled
-            then Attrs.map never <| settings.theme.disabledElems
-            else Attrs.empty
+        , if fieldState.disabled then
+            Attrs.map never <| settings.theme.disabledElems
+
+          else
+            Attrs.empty
         ]
         [ inputField
         , description

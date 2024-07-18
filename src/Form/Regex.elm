@@ -1,9 +1,9 @@
 module Form.Regex exposing
-    ( time
-    , date
+    ( date
     , dateTime
     , email
     , phone
+    , time
     )
 
 import Regex
@@ -53,4 +53,8 @@ phone =
             { caseInsensitive = True
             , multiline = False
             }
-            "^\\+[0-9]{9,}$" -- TODO: better regexp
+            "^\\+[0-9]{9,}$"
+
+
+
+-- TODO: better regexp

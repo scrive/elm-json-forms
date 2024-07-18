@@ -4,6 +4,7 @@ module UiSchema.Internal exposing
     , Condition
     , Control
     , ControlLabel(..)
+    , DefOptions
     , Detail
     , Effect(..)
     , ElementLabelProp
@@ -12,15 +13,14 @@ module UiSchema.Internal exposing
     , HorizontalLayout
     , Label
     , Options
-    , DefOptions
     , Rule
     , UiSchema(..)
     , VerticalLayout
     , applyDefaults
-    , emptyOptions
     , decodeStringLike
     , decodeUiSchema
     , defaultValue
+    , emptyOptions
     , fieldNameToTitle
     , generateUiSchema
     , getRule
@@ -132,6 +132,7 @@ type alias Options =
     , showNavButtons : Maybe Bool -- TODO: implement
     }
 
+
 type alias DefOptions =
     { format : Maybe Format
     , showSortButtons : Bool
@@ -148,6 +149,7 @@ type alias DefOptions =
     , variant : Maybe CategorizationVariant
     , showNavButtons : Bool
     }
+
 
 emptyOptions : Options
 emptyOptions =
@@ -167,24 +169,27 @@ emptyOptions =
     , showNavButtons = Nothing
     }
 
-applyDefaults : Maybe Options -> DefOptions
-applyDefaults options = Maybe.withDefault emptyOptions options |> \o ->
-    { format = o.format
-    , showSortButtons = Maybe.withDefault False o.showSortButtons
-    , detail = Maybe.withDefault DetailDefault o.detail
-    , elementLabelProp = o.elementLabelProp
-    , readonly = Maybe.withDefault False o.readonly
-    , multi = Maybe.withDefault False o.multi
-    , slider = Maybe.withDefault False o.slider
-    , trim = Maybe.withDefault False o.trim
-    , restrict = Maybe.withDefault False o.restrict
-    , showUnfocusedDescription = Maybe.withDefault False o.showUnfocusedDescription
-    , hideRequiredAsterisk = Maybe.withDefault False o.hideRequiredAsterisk
-    , toggle = Maybe.withDefault False o.toggle
-    , variant = Nothing
-    , showNavButtons = Maybe.withDefault False o.showNavButtons
-    }
 
+applyDefaults : Maybe Options -> DefOptions
+applyDefaults options =
+    Maybe.withDefault emptyOptions options
+        |> (\o ->
+                { format = o.format
+                , showSortButtons = Maybe.withDefault False o.showSortButtons
+                , detail = Maybe.withDefault DetailDefault o.detail
+                , elementLabelProp = o.elementLabelProp
+                , readonly = Maybe.withDefault False o.readonly
+                , multi = Maybe.withDefault False o.multi
+                , slider = Maybe.withDefault False o.slider
+                , trim = Maybe.withDefault False o.trim
+                , restrict = Maybe.withDefault False o.restrict
+                , showUnfocusedDescription = Maybe.withDefault False o.showUnfocusedDescription
+                , hideRequiredAsterisk = Maybe.withDefault False o.hideRequiredAsterisk
+                , toggle = Maybe.withDefault False o.toggle
+                , variant = Nothing
+                , showNavButtons = Maybe.withDefault False o.showNavButtons
+                }
+           )
 
 
 type Format
@@ -202,8 +207,10 @@ type Detail
     | DetailRegistered
     | DetailInlined UiSchema
 
+
 type CategorizationVariant
     = Stepper
+
 
 decodeUiSchema : Decoder UiSchema
 decodeUiSchema =

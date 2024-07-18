@@ -1,7 +1,6 @@
 module Form.View.Input exposing
     ( Input
     , checkboxInput
-    , toggleInput
     , floatInput
     , floatSelectInput
     , inputElementGroupId
@@ -13,19 +12,20 @@ module Form.View.Input exposing
     , textArea
     , textInput
     , textSelectInput
+    , toggleInput
     )
 
 import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Html.Attributes.Extra as Attrs
 import Form.Settings exposing (Settings)
 import Form.State exposing (FieldState, Msg(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
+import Html.Attributes.Extra as Attrs
 import Html.Events exposing (..)
-import UiSchema.Internal exposing (DefOptions)
 import Json.Decode as Decode
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema
+import UiSchema.Internal exposing (DefOptions)
 
 
 type alias Input =
@@ -42,9 +42,12 @@ baseTextInput settings options toFieldValue inputType maxLength state =
             , onInput (toFieldValue >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
-            , case (options.restrict, maxLength) of
-                (True, Just n) -> Attrs.maxlength n
-                _ -> Attrs.empty
+            , case ( options.restrict, maxLength ) of
+                ( True, Just n ) ->
+                    Attrs.maxlength n
+
+                _ ->
+                    Attrs.empty
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 settings.theme.textInput
@@ -131,9 +134,12 @@ textArea settings options maxLength state =
             , onBlur Blur
             , attribute "rows" "4"
             , Attrs.disabled state.disabled
-            , case (options.restrict, maxLength) of
-                (True, Just n) -> Attrs.maxlength n
-                _ -> Attrs.empty
+            , case ( options.restrict, maxLength ) of
+                ( True, Just n ) ->
+                    Attrs.maxlength n
+
+                _ ->
+                    Attrs.empty
             , Attrs.map never <|
                 settings.theme.textArea
                     { trim = options.trim
@@ -207,10 +213,11 @@ baseSelectInput settings valueList toFieldValue state =
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
-            , Attrs.map never <| settings.theme.selectInput
-                { trim = False
-                , invalid = state.error /= Nothing
-                }
+            , Attrs.map never <|
+                settings.theme.selectInput
+                    { trim = False
+                    , invalid = state.error /= Nothing
+                    }
             ]
 
         buildOption ( k, v ) =
@@ -247,7 +254,12 @@ inputElementGroupId formId path =
 toggleInput : Settings -> Input
 toggleInput settings state =
     let
-        checked = if state.value == Bool True then True else False
+        checked =
+            if state.value == Bool True then
+                True
+
+            else
+                False
 
         formAttrs =
             [ type_ "button"
@@ -262,7 +274,8 @@ toggleInput settings state =
     button formAttrs
         [ span
             [ Attrs.map never <| settings.theme.toggleKnob { checked = checked }
-            ] []
+            ]
+            []
         ]
 
 

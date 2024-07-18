@@ -1,4 +1,7 @@
-module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..), getErrors)
+module Form.Error exposing
+    ( Errors, ErrorValue(..), getErrors
+    , TextFormat(..)
+    )
 
 {-| Form field error handling
 
@@ -53,6 +56,7 @@ type TextFormat
     | DateTime
     | Email
     | Phone
+
 
 {-| Get all form errors as a list
 -}
