@@ -22,7 +22,7 @@ import Form.State exposing (FieldState, Msg(..))
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (..)
 import Html.Events exposing (..)
-import UiSchema.Internal exposing (Options)
+import UiSchema.Internal exposing (DefOptions)
 import Json.Decode as Decode
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema
@@ -32,7 +32,7 @@ type alias Input =
     FieldState -> Html Msg
 
 
-baseTextInput : Settings -> Options -> (String -> FieldValue) -> String -> Maybe Int -> Input
+baseTextInput : Settings -> DefOptions -> (String -> FieldValue) -> String -> Maybe Int -> Input
 baseTextInput settings options toFieldValue inputType maxLength state =
     let
         formAttrs =
@@ -43,12 +43,12 @@ baseTextInput settings options toFieldValue inputType maxLength state =
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , case (options.restrict, maxLength) of
-                (Just True, Just n) -> Attrs.maxlength n
+                (True, Just n) -> Attrs.maxlength n
                 _ -> Attrs.empty
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 settings.theme.textInput
-                    { trim = options.trim == Just True
+                    { trim = options.trim
                     , invalid = state.error /= Nothing
                     }
             ]
@@ -56,7 +56,7 @@ baseTextInput settings options toFieldValue inputType maxLength state =
     input formAttrs []
 
 
-slider : Settings -> Options -> Schema.SubSchema -> (String -> FieldValue) -> Input
+slider : Settings -> DefOptions -> Schema.SubSchema -> (String -> FieldValue) -> Input
 slider settings options schema toFieldValue state =
     let
         step =
@@ -106,7 +106,7 @@ slider settings options schema toFieldValue state =
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 settings.theme.sliderInput
-                    { trim = Maybe.withDefault False options.trim
+                    { trim = options.trim
                     }
             ]
     in
@@ -120,7 +120,7 @@ slider settings options schema toFieldValue state =
         ]
 
 
-textArea : Settings -> Options -> Maybe Int -> Input
+textArea : Settings -> DefOptions -> Maybe Int -> Input
 textArea settings options maxLength state =
     let
         formAttrs =
@@ -132,11 +132,11 @@ textArea settings options maxLength state =
             , attribute "rows" "4"
             , Attrs.disabled state.disabled
             , case (options.restrict, maxLength) of
-                (Just True, Just n) -> Attrs.maxlength n
+                (True, Just n) -> Attrs.maxlength n
                 _ -> Attrs.empty
             , Attrs.map never <|
                 settings.theme.textArea
-                    { trim = Maybe.withDefault False options.trim
+                    { trim = options.trim
                     , invalid = state.error /= Nothing
                     }
             ]
@@ -171,27 +171,27 @@ fromStringInput s =
         FieldValue.String s
 
 
-textInput : Settings -> Options -> String -> Maybe Int -> Input
+textInput : Settings -> DefOptions -> String -> Maybe Int -> Input
 textInput settings options inputType maxLength =
     baseTextInput settings options fromStringInput inputType maxLength
 
 
-intInput : Settings -> Options -> Input
+intInput : Settings -> DefOptions -> Input
 intInput settings options state =
     baseTextInput settings options fromIntInput "number" Nothing state
 
 
-floatInput : Settings -> Options -> Input
+floatInput : Settings -> DefOptions -> Input
 floatInput settings options state =
     baseTextInput settings options fromFloatInput "number" Nothing state
 
 
-intSlider : Settings -> Options -> Schema.SubSchema -> Input
+intSlider : Settings -> DefOptions -> Schema.SubSchema -> Input
 intSlider settings options schema =
     slider settings options schema fromIntInput
 
 
-numberSlider : Settings -> Options -> Schema.SubSchema -> Input
+numberSlider : Settings -> DefOptions -> Schema.SubSchema -> Input
 numberSlider settings options schema =
     slider settings options schema fromFloatInput
 

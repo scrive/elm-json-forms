@@ -263,7 +263,7 @@ textInput settings control schema fieldState =
                 _ ->
                     "text"
 
-        options = Maybe.withDefault UI.emptyOptions control.options
+        options = UI.applyDefaults control.options
     in
     fieldGroup (Input.textInput settings options inputType schema.maxLength fieldState)
         settings
@@ -274,7 +274,7 @@ textInput settings control schema fieldState =
 
 intInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 intInput settings control schema fieldState =
-    fieldGroup (Input.intInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState)
+    fieldGroup (Input.intInput settings (UI.applyDefaults control.options) fieldState)
         settings
         control
         schema
@@ -283,7 +283,7 @@ intInput settings control schema fieldState =
 
 numberInput : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 numberInput settings control schema fieldState =
-    fieldGroup (Input.floatInput settings (Maybe.withDefault UI.emptyOptions control.options) fieldState)
+    fieldGroup (Input.floatInput settings (UI.applyDefaults control.options) fieldState)
         settings
         control
         schema
@@ -292,7 +292,7 @@ numberInput settings control schema fieldState =
 
 intSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 intSlider settings control schema fieldState =
-    fieldGroup (Input.intSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState)
+    fieldGroup (Input.intSlider settings (UI.applyDefaults control.options) schema fieldState)
         settings
         control
         schema
@@ -301,7 +301,7 @@ intSlider settings control schema fieldState =
 
 numberSlider : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 numberSlider settings control schema fieldState =
-    fieldGroup (Input.numberSlider settings (Maybe.withDefault UI.emptyOptions control.options) schema fieldState)
+    fieldGroup (Input.numberSlider settings (UI.applyDefaults control.options) schema fieldState)
         settings
         control
         schema
@@ -310,7 +310,7 @@ numberSlider settings control schema fieldState =
 
 textarea : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
 textarea settings control schema state =
-    fieldGroup (Input.textArea settings (Maybe.withDefault UI.emptyOptions control.options) schema.maxLength state) settings control schema state
+    fieldGroup (Input.textArea settings (UI.applyDefaults control.options) schema.maxLength state) settings control schema state
 
 
 checkbox : Settings -> UI.Control -> SubSchema -> F.FieldState -> Html F.Msg
