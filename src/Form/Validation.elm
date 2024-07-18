@@ -12,10 +12,10 @@ import Json.Schema.Definitions
         , SubSchema
         , Type(..)
         )
+import Json.Util as Util
 import Regex
 import Set
 import Validation exposing (Validation, error)
-import Json.Util as Util
 
 
 validation : Schema -> Value -> Validation Value

@@ -1,21 +1,16 @@
 module Form.View.Input exposing
     ( Input
+    , baseSelectInput
+    , baseTextInput
     , checkboxInput
-    , floatInput
-    , floatSelectInput
     , inputElementGroupId
     , inputElementId
-    , intInput
-    , intSelectInput
-    , intSlider
-    , numberSlider
+    , slider
     , textArea
-    , textInput
-    , textSelectInput
     , toggleInput
     )
 
-import Form.FieldValue as FieldValue exposing (FieldValue(..))
+import Form.FieldValue as FieldValue exposing (FieldType(..), FieldValue(..))
 import Form.Settings exposing (Settings)
 import Form.State exposing (FieldState, Msg(..))
 import Html exposing (..)
@@ -32,14 +27,14 @@ type alias Input =
     FieldState -> Html Msg
 
 
-baseTextInput : Settings -> DefOptions -> (String -> FieldValue) -> String -> Maybe Int -> Input
-baseTextInput settings options toFieldValue inputType maxLength state =
+baseTextInput : Settings -> DefOptions -> FieldType -> String -> Maybe Int -> Input
+baseTextInput settings options fieldType inputType maxLength state =
     let
         formAttrs =
             [ id (inputElementId state.formId state.pointer)
             , type_ inputType
             , value (FieldValue.asString state.value)
-            , onInput (toFieldValue >> Input state.pointer)
+            , onInput (FieldValue.fromFieldInput fieldType >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , case ( options.restrict, maxLength ) of
@@ -59,8 +54,8 @@ baseTextInput settings options toFieldValue inputType maxLength state =
     input formAttrs []
 
 
-slider : Settings -> DefOptions -> Schema.SubSchema -> (String -> FieldValue) -> Input
-slider settings options schema toFieldValue state =
+slider : Settings -> DefOptions -> Schema.SubSchema -> FieldType -> Input
+slider settings options schema fieldType state =
     let
         step =
             Maybe.withDefault 1.0 schema.multipleOf
@@ -100,7 +95,7 @@ slider settings options schema toFieldValue state =
             [ id <| Pointer.toString state.pointer
             , type_ "range"
             , value (FieldValue.asString state.value)
-            , onInput (toFieldValue >> Input state.pointer)
+            , onInput (FieldValue.fromFieldInput fieldType >> Input state.pointer)
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.attribute "min" (String.fromFloat minLimit)
@@ -150,66 +145,14 @@ textArea settings options maxLength state =
     Html.textarea formAttrs []
 
 
-fromIntInput : String -> FieldValue
-fromIntInput s =
-    if String.isEmpty s then
-        FieldValue.Empty
-
-    else
-        Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
-
-
-fromFloatInput : String -> FieldValue
-fromFloatInput s =
-    if String.isEmpty s then
-        FieldValue.Empty
-
-    else
-        Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
-
-
-fromStringInput : String -> FieldValue
-fromStringInput s =
-    if String.isEmpty s then
-        FieldValue.Empty
-
-    else
-        FieldValue.String s
-
-
-textInput : Settings -> DefOptions -> String -> Maybe Int -> Input
-textInput settings options inputType maxLength =
-    baseTextInput settings options fromStringInput inputType maxLength
-
-
-intInput : Settings -> DefOptions -> Input
-intInput settings options state =
-    baseTextInput settings options fromIntInput "number" Nothing state
-
-
-floatInput : Settings -> DefOptions -> Input
-floatInput settings options state =
-    baseTextInput settings options fromFloatInput "number" Nothing state
-
-
-intSlider : Settings -> DefOptions -> Schema.SubSchema -> Input
-intSlider settings options schema =
-    slider settings options schema fromIntInput
-
-
-numberSlider : Settings -> DefOptions -> Schema.SubSchema -> Input
-numberSlider settings options schema =
-    slider settings options schema fromFloatInput
-
-
-baseSelectInput : Settings -> List ( String, String ) -> (String -> FieldValue) -> Input
-baseSelectInput settings valueList toFieldValue state =
+baseSelectInput : FieldType -> Settings -> List ( String, String ) -> Input
+baseSelectInput fieldType settings valueList state =
     let
         formAttrs =
             [ id (inputElementId state.formId state.pointer)
             , on
                 "change"
-                (targetValue |> Decode.map (toFieldValue >> Input state.pointer))
+                (targetValue |> Decode.map (FieldValue.fromFieldInput fieldType >> Input state.pointer))
             , onFocus (Focus state.pointer)
             , onBlur Blur
             , Attrs.disabled state.disabled
@@ -224,21 +167,6 @@ baseSelectInput settings valueList toFieldValue state =
             option [ value k, selected (FieldValue.asString state.value == k) ] [ text v ]
     in
     select formAttrs (List.map buildOption valueList)
-
-
-textSelectInput : Settings -> List ( String, String ) -> Input
-textSelectInput settings valueList =
-    baseSelectInput settings valueList fromStringInput
-
-
-intSelectInput : Settings -> List ( String, String ) -> Input
-intSelectInput settings valueList =
-    baseSelectInput settings valueList fromIntInput
-
-
-floatSelectInput : Settings -> List ( String, String ) -> Input
-floatSelectInput settings valueList =
-    baseSelectInput settings valueList fromFloatInput
 
 
 inputElementId : String -> Pointer -> String

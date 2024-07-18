@@ -1,7 +1,9 @@
 module Form.FieldValue exposing
-    ( FieldValue(..)
+    ( FieldType(..)
+    , FieldValue(..)
     , asBool
     , asString
+    , fromFieldInput
     , pointedFieldValue
     , updateValue
     )
@@ -19,6 +21,14 @@ type FieldValue
     | Number Float
     | Bool Bool
     | Empty
+
+
+{-| Types that may be produced by a HTML field
+-}
+type FieldType
+    = NumberField
+    | IntField
+    | StringField
 
 
 asString : FieldValue -> String
@@ -129,3 +139,43 @@ updateValue pointer new value =
 
         _ ->
             value
+
+
+fromIntInput : String -> FieldValue
+fromIntInput s =
+    if String.isEmpty s then
+        Empty
+
+    else
+        Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
+
+
+fromFloatInput : String -> FieldValue
+fromFloatInput s =
+    if String.isEmpty s then
+        Empty
+
+    else
+        Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
+
+
+fromStringInput : String -> FieldValue
+fromStringInput s =
+    if String.isEmpty s then
+        Empty
+
+    else
+        String s
+
+
+fromFieldInput : FieldType -> String -> FieldValue
+fromFieldInput fieldType =
+    case fieldType of
+        StringField ->
+            fromStringInput
+
+        IntField ->
+            fromIntInput
+
+        NumberField ->
+            fromFloatInput

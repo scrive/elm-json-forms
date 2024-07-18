@@ -8,11 +8,12 @@ module UiSchema.Internal exposing
     , Detail
     , Effect(..)
     , ElementLabelProp
-    , Format
+    , Format(..)
     , Group
     , HorizontalLayout
     , Label
     , Options
+    , Orientation(..)
     , Rule
     , UiSchema(..)
     , VerticalLayout
@@ -30,11 +31,10 @@ module UiSchema.Internal exposing
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
-import Json.Util as Util
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions as Schema exposing (Schema(..))
-import String.Case
 import Json.Util as Util
+import String.Case
 
 
 type UiSchema
@@ -118,6 +118,7 @@ type alias Condition =
 
 type alias Options =
     { format : Maybe Format
+    , orientation : Maybe Orientation
     , showSortButtons : Maybe Bool
     , detail : Maybe Detail
     , elementLabelProp : Maybe ElementLabelProp
@@ -127,7 +128,7 @@ type alias Options =
     , trim : Maybe Bool
     , restrict : Maybe Bool
     , showUnfocusedDescription : Maybe Bool
-    , hideRequiredAsterisk : Maybe Bool -- TODO: implement
+    , hideRequiredAsterisk : Maybe Bool
     , toggle : Maybe Bool
     , variant : Maybe CategorizationVariant -- TODO: implement
     , showNavButtons : Maybe Bool -- TODO: implement
@@ -136,6 +137,7 @@ type alias Options =
 
 type alias DefOptions =
     { format : Maybe Format
+    , orientation : Orientation
     , showSortButtons : Bool
     , detail : Detail
     , elementLabelProp : Maybe ElementLabelProp
@@ -155,6 +157,7 @@ type alias DefOptions =
 emptyOptions : Options
 emptyOptions =
     { format = Nothing
+    , orientation = Nothing
     , showSortButtons = Nothing
     , detail = Nothing
     , elementLabelProp = Nothing
@@ -176,6 +179,7 @@ applyDefaults options =
     Maybe.withDefault emptyOptions options
         |> (\o ->
                 { format = o.format
+                , orientation = Maybe.withDefault Horizontal o.orientation
                 , showSortButtons = Maybe.withDefault False o.showSortButtons
                 , detail = Maybe.withDefault DetailDefault o.detail
                 , elementLabelProp = o.elementLabelProp
@@ -195,6 +199,11 @@ applyDefaults options =
 
 type Format
     = Radio
+
+
+type Orientation
+    = Horizontal
+    | Vertical
 
 
 type ElementLabelProp
@@ -343,6 +352,7 @@ decodeOptions : Decoder Options
 decodeOptions =
     Decode.succeed Options
         |> Decode.optional "format" (Decode.nullable decodeFormat) Nothing
+        |> Decode.optional "orientation" (Decode.nullable decodeOrientation) Nothing
         |> Decode.optional "showSortButtons" (Decode.nullable Decode.bool) Nothing
         |> Decode.optional "detail" (Decode.nullable decodeDetail) Nothing
         |> Decode.optional "elementLabelProp" (Decode.nullable decodeElementLabelProp) Nothing
@@ -369,6 +379,23 @@ decodeFormat =
 
                     _ ->
                         Decode.fail "Unable to decode Format"
+            )
+
+
+decodeOrientation : Decoder Orientation
+decodeOrientation =
+    Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "horizontal" ->
+                        Decode.succeed Horizontal
+
+                    "vertical" ->
+                        Decode.succeed Vertical
+
+                    _ ->
+                        Decode.fail "Unable to decode Orientation"
             )
 
 
@@ -427,44 +454,45 @@ generateUiSchema schema =
     let
         go : Maybe String -> Schema -> Pointer -> Maybe UiSchema
         go mName s p =
-            Util.withObjectSchema Nothing s <| \o ->
-                case o.type_ of
-                    Schema.SingleType t ->
-                        case t of
-                            Schema.ObjectType ->
-                                let
-                                    elements =
-                                        List.filterMap (\( name, x ) -> go (Just name) x (List.append p [ "properties", name ])) (Util.getProperties o)
-                                in
-                                Just <|
-                                    case mName of
-                                        Nothing ->
-                                            UiVerticalLayout
-                                                { elements = elements
-                                                , rule = Nothing
-                                                }
+            Util.withObjectSchema Nothing s <|
+                \o ->
+                    case o.type_ of
+                        Schema.SingleType t ->
+                            case t of
+                                Schema.ObjectType ->
+                                    let
+                                        elements =
+                                            List.filterMap (\( name, x ) -> go (Just name) x (List.append p [ "properties", name ])) (Util.getProperties o)
+                                    in
+                                    Just <|
+                                        case mName of
+                                            Nothing ->
+                                                UiVerticalLayout
+                                                    { elements = elements
+                                                    , rule = Nothing
+                                                    }
 
-                                        Just name ->
-                                            UiGroup
-                                                { label = Just (fieldNameToTitle name)
-                                                , elements = elements
-                                                , rule = Nothing
-                                                }
+                                            Just name ->
+                                                UiGroup
+                                                    { label = Just (fieldNameToTitle name)
+                                                    , elements = elements
+                                                    , rule = Nothing
+                                                    }
 
-                            Schema.NullType ->
-                                Nothing
+                                Schema.NullType ->
+                                    Nothing
 
-                            _ ->
-                                Just <|
-                                    UiControl
-                                        { scope = p
-                                        , label = Nothing
-                                        , options = Nothing
-                                        , rule = Nothing
-                                        }
+                                _ ->
+                                    Just <|
+                                        UiControl
+                                            { scope = p
+                                            , label = Nothing
+                                            , options = Nothing
+                                            , rule = Nothing
+                                            }
 
-                    _ ->
-                        Nothing
+                        _ ->
+                            Nothing
     in
     Maybe.withDefault (UiVerticalLayout { elements = [], rule = Nothing }) <| go Nothing schema []
 
@@ -476,7 +504,8 @@ pointToSchema schema pointer =
             Just schema
 
         "properties" :: x :: xs ->
-            Util.withObjectSchema Nothing schema <| \os ->
+            Util.withObjectSchema Nothing schema <|
+                \os ->
                     case os.properties of
                         Nothing ->
                             Nothing
@@ -526,8 +555,9 @@ defaultedProps schema =
     Util.getProperties schema
         |> List.filter
             (\( _, v ) ->
-                Util.withObjectSchema False v <| \o_ ->
-                    List.member o_.type_ [ Schema.SingleType Schema.BooleanType, Schema.SingleType Schema.ObjectType ]
+                Util.withObjectSchema False v <|
+                    \o_ ->
+                        List.member o_.type_ [ Schema.SingleType Schema.BooleanType, Schema.SingleType Schema.ObjectType ]
             )
         |> List.map (\( k, v ) -> ( k, defaultValue v ))
         |> List.sortBy (\( k, _ ) -> k)
@@ -537,7 +567,8 @@ defaultValue : Schema -> Value
 defaultValue schema =
     case defaultValue_ schema of
         Nothing ->
-            Util.withObjectSchema Encode.null schema <| \o ->
+            Util.withObjectSchema Encode.null schema <|
+                \o ->
                     case o.type_ of
                         Schema.SingleType Schema.ObjectType ->
                             Encode.object (defaultedProps o)
@@ -566,7 +597,8 @@ defaultValue schema =
 
 defaultValue_ : Schema -> Maybe Value
 defaultValue_ schema =
-    Util.withObjectSchema Nothing schema <| \o ->
+    Util.withObjectSchema Nothing schema <|
+        \o ->
             case o.default of
                 Just d ->
                     Just d
@@ -577,7 +609,8 @@ defaultValue_ schema =
                             case t of
                                 Schema.ObjectType ->
                                     let
-                                        schemata = Util.getProperties o
+                                        schemata =
+                                            Util.getProperties o
 
                                         propDefault ( name, sch ) =
                                             Maybe.map (\s -> ( name, s )) <| defaultValue_ sch

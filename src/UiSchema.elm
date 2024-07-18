@@ -17,10 +17,12 @@ import UiSchema.Internal exposing (decodeUiSchema)
 type alias UiSchema =
     UiSchema.Internal.UiSchema
 
+
 {-| UiSchema Decoder
 -}
 decode : Decode.Decoder UiSchema
-decode = decodeUiSchema
+decode =
+    decodeUiSchema
 
 
 {-| Validate and produce UI Schema from JSON String

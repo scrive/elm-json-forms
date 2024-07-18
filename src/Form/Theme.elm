@@ -24,10 +24,12 @@ type alias Theme =
     , fieldDescription : Attribute Never
     , fieldError : Attribute Never
     , checkboxRow : Attribute Never
+    , radioEntry : { vertical : Bool } -> Attribute Never
     , textInput : { trim : Bool, invalid : Bool } -> Attribute Never
     , textArea : { trim : Bool, invalid : Bool } -> Attribute Never
     , selectInput : { trim : Bool, invalid : Bool } -> Attribute Never
     , checkboxInput : { invalid : Bool } -> Attribute Never
+    , radioInput : Attribute Never
     , sliderInput : { trim : Bool } -> Attribute Never
     , toggleInput : { checked : Bool } -> Attribute Never
     , toggleKnob : { checked : Bool } -> Attribute Never
@@ -60,6 +62,12 @@ tailwind =
     , fieldDescription = Attrs.class "text-sm text-gray-600 my-1"
     , fieldError = Attrs.class "text-red-600 text-xs my-1"
     , checkboxRow = Attrs.class "flex items-center space-x-4"
+    , radioEntry =
+        \{ vertical } ->
+            Attrs.classList
+                [ ( "mr-5 items-center", True )
+                , ( "flex", vertical )
+                ]
     , textInput =
         \{ trim, invalid } ->
             Attrs.classList
@@ -83,6 +91,10 @@ tailwind =
             Attrs.classList
                 [ ( "border-red-600", invalid )
                 ]
+    , radioInput =
+        Attrs.classList
+            [ ( "mr-3", True )
+            ]
     , sliderInput =
         \{ trim } ->
             Attrs.classList
