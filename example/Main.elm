@@ -178,7 +178,7 @@ errorString error =
         InvalidEmail ->
             "not a valid email address"
 
-        InvalidFormat ->
+        InvalidFormat _ ->
             "not the correct format"
 
         InvalidInt ->

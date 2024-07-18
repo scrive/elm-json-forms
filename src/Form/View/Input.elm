@@ -240,6 +240,37 @@ inputElementGroupId formId path =
 checkboxInput : Input
 checkboxInput state attrs =
     let
+        checked = if state.value == Bool True then True else False
+
+        formAttrs =
+            [ type_ "button"
+            , Attrs.class "inline-flex w-11 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            , Attrs.classList
+                [ ("bg-gray-300", not state.disabled && not checked)
+                , ("bg-blue-500", not state.disabled && checked)
+                , ("bg-gray-200", state.disabled && not checked)
+                , ("bg-blue-300", state.disabled && checked)
+                ]
+            , onClick (Input state.pointer (Bool <| not checked))
+            , onFocus (Focus state.pointer)
+            , onBlur Blur
+            , Attrs.disabled state.disabled
+            ]
+    in
+    button (formAttrs ++ attrs)
+        [ span
+            [ Attrs.class "pointer-events-none h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out"
+            , Attrs.classList
+                [ ("translate-x-0", not checked)
+                , ("translate-x-5", checked)
+                ]
+            ] []
+        ]
+
+
+checkboxInput_ : Input
+checkboxInput_ state attrs =
+    let
         formAttrs =
             [ type_ "checkbox"
             , checked (FieldValue.asBool state.value |> Maybe.withDefault False)

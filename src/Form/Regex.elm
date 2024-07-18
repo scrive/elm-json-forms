@@ -3,6 +3,7 @@ module Form.Regex exposing
     , date
     , dateTime
     , email
+    , phone
     )
 
 import Regex
@@ -43,3 +44,13 @@ email =
             , multiline = False
             }
             "^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$"
+
+
+phone : Regex.Regex
+phone =
+    Maybe.withDefault Regex.never <|
+        Regex.fromStringWith
+            { caseInsensitive = True
+            , multiline = False
+            }
+            "^\\+[0-9]{9,}$" -- TODO: better regexp

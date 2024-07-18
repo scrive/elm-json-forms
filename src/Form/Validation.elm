@@ -138,6 +138,9 @@ validateFormat format v =
         "email" ->
             validateRegex Form.Regex.email Error.Email v
 
+        "phone" ->
+            validateRegex Form.Regex.phone Error.Phone v
+
         _ ->
             Validation.succeed v
 

@@ -52,6 +52,7 @@ type TextFormat
     | Date
     | DateTime
     | Email
+    | Phone
 
 {-| Get all form errors as a list
 -}

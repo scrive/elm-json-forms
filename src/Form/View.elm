@@ -152,8 +152,10 @@ controlView settings uiState wholeSchema control form =
         mControlSchema =
             UI.pointToSchema wholeSchema control.scope
 
+        disabled = Maybe.andThen (.readonly) (control.options) == Just True || uiState.disabled
+
         fieldState =
-            F.fieldState uiState.disabled control.scope form
+            F.fieldState disabled control.scope form
 
         controlBody schema_ =
             case schema_ of
@@ -193,7 +195,10 @@ controlView settings uiState wholeSchema control form =
                                 textInput settings control schema fieldState
 
                         SingleType BooleanType ->
-                            checkbox settings control schema fieldState
+                            if (control.options |> Maybe.andThen .toggle) == Just True then
+                                checkbox settings control schema fieldState
+                            else
+                                checkbox settings control schema fieldState
 
                         _ ->
                             Html.nothing
