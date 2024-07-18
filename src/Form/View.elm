@@ -44,7 +44,7 @@ view form uiState =
         newUiState =
             { uiState | disabled = ruleEffect == Just Rule.Disabled }
     in
-    maybeHide form.settings.theme ruleEffect <|
+    maybeHide ruleEffect <|
         case uiState.uiSchema of
             UI.UiControl c ->
                 [ controlView form.settings newUiState form.schema c form.state ]
@@ -65,8 +65,8 @@ view form uiState =
                 [ Html.div [ Attrs.map never form.settings.theme.label ] [ text l.text ] ]
 
 
-maybeHide : Theme -> Maybe Rule.AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
-maybeHide theme effect x =
+maybeHide : Maybe Rule.AppliedEffect -> List (Html F.Msg) -> List (Html F.Msg)
+maybeHide effect x =
     case effect of
         Just Rule.Hidden ->
             []
@@ -118,7 +118,7 @@ groupView form uiState group =
 onClickPreventDefault : msg -> Html.Attribute msg
 onClickPreventDefault msg =
     preventDefaultOn "click"
-        (Decode.succeed <| ( msg, True ))
+        (Decode.succeed ( msg, True ))
 
 
 categorizationView : Form -> UiState -> UI.Categorization -> List (Html F.Msg)
@@ -213,7 +213,7 @@ controlView settings uiState wholeSchema control form =
                 [ Attrs.id (Input.inputElementGroupId form.formId (Pointer.toString control.scope))
                 , Attrs.map never settings.theme.fieldGroup
                 , if fieldState.disabled then
-                    Attrs.map never <| settings.theme.disabledElems
+                    Attrs.map never settings.theme.disabledElems
 
                   else
                     Attrs.empty
@@ -352,10 +352,6 @@ radioGroup settings control defOptions schema fieldType fieldState =
         values =
             Maybe.toList schema.enum |> List.concat |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
 
-        items : List ( String, String )
-        items =
-            List.map (\v -> ( v, v )) values
-
         elementId =
             Input.inputElementId fieldState.formId fieldState.pointer
 
@@ -370,7 +366,7 @@ radioGroup settings control defOptions schema fieldType fieldState =
                     , Attrs.id optionElementId
                     , Attrs.name elementId
                     , Attrs.checked <| value == FieldValue.asString fieldState.value
-                    , Attrs.map never <| settings.theme.radioInput
+                    , Attrs.map never settings.theme.radioInput
                     , onClick (Input fieldState.pointer (FieldValue.fromFieldInput fieldType value))
                     , onFocus (Focus fieldState.pointer)
                     , onBlur Blur

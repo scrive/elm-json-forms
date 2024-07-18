@@ -1,11 +1,8 @@
-module Form.Error exposing
-    ( Errors, ErrorValue(..), getErrors
-    , TextFormat(..)
-    )
+module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..), getErrors)
 
 {-| Form field error handling
 
-@docs Errors, ErrorValue, getErrors
+@docs Errors, ErrorValue, TextFormat, getErrors
 
 -}
 

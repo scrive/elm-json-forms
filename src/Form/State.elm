@@ -51,7 +51,6 @@ type Msg
     = Focus Pointer
     | Blur
     | Input Pointer FieldValue
-    | Reset Value
     | FocusCategory (List Int) Int
 
 
@@ -93,12 +92,6 @@ updateState validation msg model =
         Input pointer fieldValue ->
             updateValidations validation
                 { model | value = FieldValue.updateValue pointer fieldValue model.value }
-
-        Reset value ->
-            updateValidations validation
-                { model
-                    | value = value
-                }
 
         FocusCategory uiState ix ->
             updateValidations validation { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }

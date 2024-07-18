@@ -1,4 +1,4 @@
-module Json.Util exposing (getProperties, unSchemata, withObjectSchema)
+module Json.Util exposing (getProperties, withObjectSchema)
 
 import Json.Schema.Definitions as Schema exposing (Schema(..), Schemata, SubSchema)
 

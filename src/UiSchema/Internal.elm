@@ -21,7 +21,6 @@ module UiSchema.Internal exposing
     , decodeStringLike
     , decodeUiSchema
     , defaultValue
-    , emptyOptions
     , fieldNameToTitle
     , generateUiSchema
     , getRule

@@ -32,4 +32,4 @@ Generate validating forms from JSON schemas.
 
 ## Example usage
 
-See the [example project](example) for examples
+See the [example project](https://github.com/scrive/elm-json-forms/tree/main/example) for examples
