@@ -6,41 +6,55 @@ import Form.Error as Error exposing (ErrorValue(..))
 import Form.Theme as Theme
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class)
-import Html.Events exposing (onSubmit)
+import Html.Attributes.Extra as Attrs
+import Html.Events as Attrs exposing (onSubmit)
+import Examples.Basic exposing (..)
 import Json.Encode as Encode
 import Json.Schema
 import Json.Schema.Definitions exposing (Schema)
 import List.Extra as List
 import UiSchema exposing (UiSchema)
+import Html.Extra exposing (viewMaybe)
 
+type alias FormState =
+    { title : String
+    , form : Form
+    , stringSchema : String
+    , stringUiSchema : Maybe String
+    , originalSchema : String
+    , originalUiSchema : Maybe String
+    }
 
 type alias MainState =
-    { forms : List Form
-    , titles : List String
+    { forms : List FormState
+    , activeForm : Int
     }
 
 
-type alias FormSpec =
+type alias FormDefinition =
     { title : String
     , schema : Schema
     , uiSchema : Maybe UiSchema
+    , stringSchema : String
+    , stringUiSchema : Maybe String
     }
 
+type MainMsg
+  = FormMsg Int Msg
+  | SwitchForm Int
+  | EditSchema Int String
+  | EditUiSchema Int String
+  | Noop
 
-type alias MainMsg =
-    { formId : Int
-    , msg : Msg
-    }
 
-
-formSpec : String -> String -> Maybe String -> Result String FormSpec
-formSpec title schemaText uiSchemaText =
+formSpec : String -> String -> Maybe String -> Result String FormDefinition
+formSpec title stringSchema stringUiSchema =
     let
         schema =
-            Json.Schema.fromString schemaText
+            Json.Schema.fromString stringSchema
 
         uiSchema =
-            Maybe.map UiSchema.fromString uiSchemaText
+            Maybe.map UiSchema.fromString stringUiSchema
     in
     case ( schema, uiSchema ) of
         ( Ok s, Nothing ) ->
@@ -48,6 +62,8 @@ formSpec title schemaText uiSchemaText =
                 { title = title
                 , schema = s
                 , uiSchema = Nothing
+                , stringSchema = stringSchema
+                , stringUiSchema = Nothing
                 }
 
         ( Ok s, Just (Ok us) ) ->
@@ -55,6 +71,8 @@ formSpec title schemaText uiSchemaText =
                 { title = title
                 , schema = s
                 , uiSchema = Just us
+                , stringSchema = stringSchema
+                , stringUiSchema = stringUiSchema
                 }
 
         ( Err e, _ ) ->
@@ -88,71 +106,141 @@ init =
     in
     { forms =
         List.map
-            (\formSpecRes ->
-                case formSpecRes of
-                    Ok fs ->
-                        Form.init
-                            fs.title
+            (\formDefinition ->
+                case formDefinition of
+                    Ok fd ->
+                        { form = Form.init
+                            fd.title
                             { errors = always errorString
                             , theme = Theme.tailwind
                             }
-                            fs.schema
-                            fs.uiSchema
+                            fd.schema
+                            fd.uiSchema
+                        , title = fd.title
+                        , stringSchema = fd.stringSchema
+                        , stringUiSchema = fd.stringUiSchema
+                        , originalSchema = fd.stringSchema
+                        , originalUiSchema = fd.stringUiSchema
+                        }
 
                     Err error ->
                         Debug.todo error
             )
             formSpecs
-    , titles = List.map (\x -> Result.withDefault "(no title)" <| Result.map .title x) formSpecs
+    , activeForm = 0
     }
 
 
 update : MainMsg -> MainState -> MainState
 update msg state =
-    { state
-        | forms =
-            List.indexedMap
-                (\i f ->
-                    if msg.formId == i then
-                        Form.update msg.msg f
+  case msg of
+    FormMsg i formMsg ->
+      { state
+          | forms = List.updateAt i (\fs -> { fs | form = Form.update formMsg fs.form }) state.forms
+      }
 
-                    else
-                        f
-                )
-                state.forms
-    }
+    SwitchForm i ->
+      { state | activeForm = i }
+
+    EditSchema i s ->
+      { state
+          | forms = List.updateAt i (\fs -> { fs | form =  fs.form }) state.forms
+      }
+
+    EditUiSchema i s ->
+      { state
+          | forms = List.updateAt i (\fs -> { fs | form =  fs.form }) state.forms
+      }
+
+    Noop -> state
 
 
 view : MainState -> Html MainMsg
 view state =
-    div [] <| List.indexedMap (\i ( title, form ) -> Html.map (\m -> { formId = i, msg = m }) (viewForm title form)) (List.zip state.titles state.forms)
-
-
-viewForm : String -> Form -> Html Msg
-viewForm title form =
-    let
-        anyErrors =
-            not <| List.isEmpty <| Error.getErrors form.state.errors
-    in
     div []
-        [ h1 [ Attrs.class "font-bold text-2xl" ] [ text title ]
-        , Html.form []
-            [ Form.view form
-            , let
-                json =
-                    Encode.encode 4 form.state.value
-              in
-              pre
-                [ if anyErrors then
-                    class "text-red-500"
-
-                  else
-                    class ""
-                ]
-                [ text json ]
-            ]
-        , hr [ class "my-5" ] []
+      [ aside [ Attrs.class "fixed w-80 top-0 left-0 p-3 bg-green" ]
+        [ h1 "Examples"
+        , hr [Attrs.class "my-3"] []
+        , div []
+          (List.indexedMap viewLink state.forms)
         ]
+      , viewMaybe (viewExample state.activeForm) (List.getAt state.activeForm state.forms)
+      ]
+
+
+viewLink : Int -> FormState -> Html MainMsg
+viewLink i fs =
+    div [class "my-1 cursor-pointer"]
+      [ a [Attrs.class "hover:underline text-blue-600", Attrs.onClick (SwitchForm i)] [text fs.title]]
+
+viewExample : Int -> FormState -> Html MainMsg
+viewExample i fs =
+  div [Attrs.class "p-3 sm:ml-80"]
+    [ div []
+        [ h1 fs.title
+        , hr [] []
+        ]
+    , div [ Attrs.class "flex flex-wrap -mx-2" ]
+      [
+        div [Attrs.class "w-1/2 px-2"]
+          [ div []
+            [ h2 "Form"
+            , div [class "border border-black p-3 bg-gray-50"]
+              [ Html.map (\m -> FormMsg i m) <| Form.view fs.form]
+            ]
+          , div []
+          [ h2 "Data"
+          , viewData fs.form
+          ]
+        ]
+      , div [Attrs.class "w-1/2 px-2"]
+        [ div []
+          [ h2 "JSON Schema"
+          , textarea (Attrs.onInput <| EditSchema i) fs.stringSchema
+          ]
+        , div []
+          [ h2 "UI Schema"
+          , case fs.stringUiSchema of
+              Just stringUiSchema -> textarea (Attrs.onInput <| EditUiSchema i) fs.stringSchema
+              Nothing -> text "<no UI Schema>"
+          ]
+        ]
+      ]
+    ]
+
+viewData : Form -> Html a
+viewData form =
+  let
+      nErrors =
+            List.length <| Error.getErrors form.state.errors
+
+      dataText =
+          Encode.encode 4 form.state.value
+  in
+    div []
+    [ textarea (Attrs.readonly True) dataText
+    , if nErrors == 0 then
+          text "No errors."
+
+        else
+          text <| String.fromInt nErrors ++ " errors."
+    ]
+
+
+textarea : (Attribute a) -> String -> Html a
+textarea attr s = Html.textarea
+  [ Attrs.rows 15
+  , Attrs.class "text-sm block w-full font-mono bg-gray-50"
+  , attr
+  ] [ text s ]
+
+
+
+h1 : String -> Html a
+h1 t = Html.h1 [Attrs.class "text-3xl my-5"] [ text t ]
+
+h2 : String -> Html a
+h2 t = Html.h2 [ Attrs.class "text-xl pt-4 pb-2" ] [ text t ]
 
 
 errorString : ErrorValue -> String
@@ -312,132 +400,6 @@ testingSchema =
   }
 }
     """
-
-
-basicExampleSchema : String
-basicExampleSchema =
-    """
-{
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "minLength": 3,
-      "description": "Please enter your name"
-    },
-    "vegetarian": {
-      "type": "boolean"
-    },
-    "birthDate": {
-      "type": "string",
-      "format": "date"
-    },
-    "nationality": {
-      "type": "string",
-      "enum": [
-        "DE",
-        "IT",
-        "JP",
-        "US",
-        "RU",
-        "Other"
-      ]
-    },
-    "personalData": {
-      "type": "object",
-      "properties": {
-        "age": {
-          "type": "integer",
-          "description": "Please enter your age."
-        },
-        "height": {
-          "type": "number"
-        },
-        "drivingSkill": {
-          "type": "number",
-          "maximum": 10,
-          "minimum": 1,
-          "default": 7
-        }
-      },
-      "required": [
-        "age",
-        "height"
-      ]
-    },
-    "occupation": {
-      "type": "string"
-    },
-    "postalCode": {
-      "type": "string",
-      "maxLength": 5
-    }
-  },
-  "required": [
-    "occupation",
-    "nationality"
-  ]
-}
-    """
-
-
-basicExampleUiSchema : String
-basicExampleUiSchema =
-    """
-{
-  "type": "VerticalLayout",
-  "elements": [
-    {
-      "type": "HorizontalLayout",
-      "elements": [
-        {
-          "type": "Control",
-          "scope": "#/properties/name"
-        },
-        {
-          "type": "Control",
-          "scope": "#/properties/personalData/properties/age"
-        },
-        {
-          "type": "Control",
-          "scope": "#/properties/birthDate"
-        }
-      ]
-    },
-    {
-      "type": "Label",
-      "text": "Additional Information"
-    },
-    {
-      "type": "HorizontalLayout",
-      "elements": [
-        {
-          "type": "Control",
-          "scope": "#/properties/personalData/properties/height"
-        },
-        {
-          "type": "Control",
-          "scope": "#/properties/nationality"
-        },
-        {
-          "type": "Control",
-          "scope": "#/properties/occupation",
-          "suggestion": [
-            "Accountant",
-            "Engineer",
-            "Freelancer",
-            "Journalism",
-            "Physician",
-            "Student",
-            "Teacher",
-            "Other"
-          ]
-        }
-      ]
-    }
-  ]
-}
-"""
 
 
 controlExample1Schema : String
