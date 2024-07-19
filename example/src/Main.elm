@@ -5,7 +5,7 @@ import Examples exposing (exampleForms)
 import Form exposing (Form)
 import Form.Error as Error
 import Html exposing (..)
-import Html.Attributes  as Attrs exposing (class)
+import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
 import Html.Extra exposing (viewMaybe)
 import Json.Encode as Encode
