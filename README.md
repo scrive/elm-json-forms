@@ -2,6 +2,8 @@
 
 [![Elm CI](https://github.com/scrive/elm-json-forms/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/elm-json-forms/actions)
 
+Live example: https://scrive.github.io/elm-json-forms/
+
 Generate validating forms from JSON schemas.
 
     elm package install scrive/elm-json-forms

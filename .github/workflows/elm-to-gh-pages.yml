@@ -35,9 +35,7 @@ jobs:
         uses: jorelali/setup-elm@v5
         with:
           elm-version: 0.19.1
-      - run: |
-          cd example
-          elm make src/Main.elm --output=example.js --optimize
+      - run: cd example; elm make src/Main.elm --output=main.js --optimize
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
