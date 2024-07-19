@@ -32,8 +32,8 @@ type alias Msg =
 
 {-| Initialize form state
 -}
-init : String -> Settings -> Schema -> Maybe UiSchema -> Form
-init id settings schema mUiSchema =
+init : Settings -> String -> Schema -> Maybe UiSchema -> Form
+init settings id schema mUiSchema =
     let
         uiSchema =
             Maybe.withDefaultLazy (always <| generateUiSchema schema) mUiSchema
