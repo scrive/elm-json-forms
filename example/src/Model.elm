@@ -1,4 +1,4 @@
-module Model exposing (ExampleMsg(..), FormState, MainMsg(..), MainState, makeForm)
+module Model exposing (ExampleMsg(..), FormState, MainMsg(..), MainState, Tab(..), makeForm)
 
 import Form exposing (Form, Msg)
 import Json.Schema
@@ -10,11 +10,18 @@ import UiSchema
 type alias FormState =
     { title : String
     , form : Maybe Form
+    , tab : Tab
     , stringSchema : String
     , stringUiSchema : Maybe String
     , schemaError : Maybe String
     , uiSchemaError : Maybe String
     }
+
+
+type Tab
+    = DataTab
+    | JsonSchemaTab
+    | UiSchemaTab
 
 
 type alias MainState =
@@ -32,6 +39,7 @@ type ExampleMsg
     = FormMsg Msg
     | EditSchema String
     | EditUiSchema String
+    | SwitchTab Tab
 
 
 makeForm : String -> String -> Maybe String -> FormState
@@ -47,6 +55,7 @@ makeForm title stringSchema stringUiSchema =
         ( Ok s, Nothing ) ->
             { title = title
             , form = Just <| Settings.initForm title s Nothing
+            , tab = DataTab
             , stringSchema = stringSchema
             , stringUiSchema = Nothing
             , schemaError = Nothing
@@ -56,6 +65,7 @@ makeForm title stringSchema stringUiSchema =
         ( Ok s, Just (Ok us) ) ->
             { title = title
             , form = Just <| Settings.initForm title s (Just us)
+            , tab = DataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
             , schemaError = Nothing
@@ -65,6 +75,7 @@ makeForm title stringSchema stringUiSchema =
         ( s, us ) ->
             { title = title
             , form = Nothing
+            , tab = DataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
             , schemaError = Result.error s

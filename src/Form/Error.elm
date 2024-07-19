@@ -2,7 +2,7 @@ module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..))
 
 {-| Form field error handling
 
-@docs Errors, ErrorValue, TextFormat, getErrors
+@docs Errors, ErrorValue, TextFormat
 
 -}
 

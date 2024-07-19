@@ -16,20 +16,14 @@ import Docs.ReviewAtDocs
 import Docs.ReviewLinksAndSections
 import Docs.UpToDateReadmeLinks
 import NoBooleanCase
-import NoConfusingPrefixOperator
 import NoDebug.Log
 import NoDebug.TodoOrToString
 import NoEmptyText
 import NoExposingEverything
-import NoImportingEverything
 import NoInconsistentAliases
 import NoLeftPizza
 import NoMissingTypeAnnotation
-import NoMissingTypeAnnotationInLetIn
-import NoMissingTypeExpose
-import NoPrematureLetComputation
 import NoRedundantCons
-import NoSimpleLetBody
 import NoTestValuesInProductionCode
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
@@ -40,7 +34,6 @@ import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
 import Review.Rule as Rule exposing (Rule)
-import Simplify
 
 
 config : List Rule
