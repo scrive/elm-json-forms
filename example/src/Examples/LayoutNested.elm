@@ -1,4 +1,4 @@
-module Examples.LayoutNested exposing (..)
+module Examples.LayoutNested exposing (layoutExample4UiSchema)
 
 
 layoutExample4UiSchema : String

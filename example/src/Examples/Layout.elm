@@ -1,4 +1,4 @@
-module Examples.Layout exposing (..)
+module Examples.Layout exposing (layoutExampleSchema)
 
 
 layoutExampleSchema : String

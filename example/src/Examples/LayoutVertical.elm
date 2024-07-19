@@ -1,4 +1,4 @@
-module Examples.LayoutVertical exposing (..)
+module Examples.LayoutVertical exposing (layoutExample2UiSchema)
 
 
 layoutExample2UiSchema : String

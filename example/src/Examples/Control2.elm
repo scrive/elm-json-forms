@@ -1,4 +1,4 @@
-module Examples.Control2 exposing (..)
+module Examples.Control2 exposing (controlExample2Schema, controlExample2UiSchema)
 
 
 controlExample2Schema : String

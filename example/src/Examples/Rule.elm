@@ -1,4 +1,4 @@
-module Examples.Rule exposing (..)
+module Examples.Rule exposing (ruleExampleSchema, ruleExampleUiSchema)
 
 
 ruleExampleSchema : String

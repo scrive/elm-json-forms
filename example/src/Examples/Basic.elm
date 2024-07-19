@@ -1,4 +1,4 @@
-module Examples.Basic exposing (..)
+module Examples.Basic exposing (basicExampleSchema, basicExampleUiSchema)
 
 
 basicExampleSchema : String

@@ -2,23 +2,17 @@ module Main exposing (main)
 
 import Browser
 import Examples exposing (exampleForms)
-import Examples.Basic exposing (..)
-import Form exposing (Form, Msg)
-import Form.Error as Error exposing (ErrorValue(..))
-import Form.Theme as Theme
+import Form exposing (Form)
+import Form.Error as Error
 import Html exposing (..)
-import Html.Attributes as Attrs exposing (class)
-import Html.Attributes.Extra as Attrs
-import Html.Events as Attrs exposing (onSubmit)
+import Html.Attributes  as Attrs exposing (class)
+import Html.Events as Events
 import Html.Extra exposing (viewMaybe)
 import Json.Encode as Encode
 import Json.Schema
-import Json.Schema.Definitions exposing (Schema)
 import List.Extra as List
 import Model exposing (..)
-import Result.Extra as Result
-import Settings exposing (errorString)
-import UiSchema exposing (UiSchema)
+import UiSchema
 
 
 main : Program () MainState MainMsg
@@ -78,9 +72,9 @@ update m state =
 view : MainState -> Html MainMsg
 view state =
     div []
-        [ aside [ Attrs.class "fixed w-80 top-0 left-0 p-3 bg-green" ]
+        [ aside [ class "fixed w-80 top-0 left-0 p-3 bg-green" ]
             [ h1 "Examples"
-            , hr [ Attrs.class "my-3" ] []
+            , hr [ class "my-3" ] []
             , div [] <|
                 List.indexedMap viewLink state.forms
             ]
@@ -91,18 +85,18 @@ view state =
 viewLink : Int -> FormState -> Html MainMsg
 viewLink i fs =
     div [ class "my-1 cursor-pointer" ]
-        [ a [ Attrs.class "hover:underline text-blue-600", Attrs.onClick (SwitchTo i) ] [ text fs.title ] ]
+        [ a [ class "hover:underline text-blue-600", Events.onClick (SwitchTo i) ] [ text fs.title ] ]
 
 
 viewExample : FormState -> Html ExampleMsg
 viewExample fs =
-    div [ Attrs.class "p-3 sm:ml-80" ]
+    div [ class "p-3 sm:ml-80" ]
         [ div []
             [ h1 fs.title
             , hr [] []
             ]
-        , div [ Attrs.class "flex flex-wrap -mx-2" ]
-            [ div [ Attrs.class "w-1/2 px-2" ]
+        , div [ class "flex flex-wrap -mx-2" ]
+            [ div [ class "w-1/2 px-2" ]
                 [ div []
                     [ h2 "Form"
                     , case fs.form of
@@ -123,17 +117,17 @@ viewExample fs =
                             viewData form
                     ]
                 ]
-            , div [ Attrs.class "w-1/2 px-2" ]
+            , div [ class "w-1/2 px-2" ]
                 [ div []
                     [ h2 "JSON Schema"
-                    , textarea (Attrs.onInput <| EditSchema) fs.stringSchema
+                    , textarea (Events.onInput EditSchema) fs.stringSchema
                     , viewMaybe viewError fs.schemaError
                     ]
                 , div []
                     [ h2 "UI Schema"
                     , case fs.stringUiSchema of
                         Just stringUiSchema ->
-                            textarea (Attrs.onInput <| EditUiSchema) stringUiSchema
+                            textarea (Events.onInput EditUiSchema) stringUiSchema
 
                         Nothing ->
                             empty
@@ -180,7 +174,7 @@ textarea : Attribute a -> String -> Html a
 textarea attr s =
     Html.textarea
         [ Attrs.rows 15
-        , Attrs.class "text-sm block w-full font-mono bg-gray-50"
+        , class "text-sm block w-full font-mono bg-gray-50"
         , Attrs.spellcheck False
         , attr
         ]
@@ -189,9 +183,9 @@ textarea attr s =
 
 h1 : String -> Html a
 h1 t =
-    Html.h1 [ Attrs.class "text-3xl my-5" ] [ text t ]
+    Html.h1 [ class "text-3xl my-5" ] [ text t ]
 
 
 h2 : String -> Html a
 h2 t =
-    Html.h2 [ Attrs.class "text-xl pt-4 pb-2" ] [ text t ]
+    Html.h2 [ class "text-xl pt-4 pb-2" ] [ text t ]

@@ -11,7 +11,7 @@ import Examples.LayoutHorizontal exposing (..)
 import Examples.LayoutNested exposing (..)
 import Examples.LayoutVertical exposing (..)
 import Examples.Rule exposing (..)
-import Model exposing (FormState, MainState, makeForm)
+import Model exposing (FormState, makeForm)
 
 
 exampleForms : List FormState

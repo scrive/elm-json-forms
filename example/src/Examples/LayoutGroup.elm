@@ -1,4 +1,4 @@
-module Examples.LayoutGroup exposing (..)
+module Examples.LayoutGroup exposing (layoutExample3UiSchema)
 
 
 layoutExample3UiSchema : String

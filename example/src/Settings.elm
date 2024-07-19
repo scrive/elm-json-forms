@@ -1,10 +1,9 @@
-module Settings exposing (..)
+module Settings exposing (initForm)
 
-import Form exposing (Form, Msg)
-import Form.Error as Error exposing (ErrorValue(..))
+import Form exposing (Form)
+import Form.Error exposing (ErrorValue(..))
 import Form.Theme as Theme
 import Json.Encode as Encode
-import Json.Schema
 import Json.Schema.Definitions exposing (Schema)
 import UiSchema exposing (UiSchema)
 

@@ -1,13 +1,10 @@
-module Model exposing (..)
+module Model exposing (ExampleMsg(..), FormState, MainMsg(..), MainState, makeForm)
 
 import Form exposing (Form, Msg)
-import Form.Error as Error exposing (ErrorValue(..))
-import Form.Theme as Theme
 import Json.Schema
-import Json.Schema.Definitions exposing (Schema)
 import Result.Extra as Result
 import Settings
-import UiSchema exposing (UiSchema)
+import UiSchema
 
 
 type alias FormState =

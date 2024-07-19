@@ -1,4 +1,4 @@
-module Examples.Categorization1 exposing (..)
+module Examples.Categorization1 exposing (categorizationExample1Schema, categorizationExample1UiSchema)
 
 
 categorizationExample1Schema : String

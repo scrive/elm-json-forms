@@ -1,4 +1,4 @@
-module Examples.GenerateUiSchema exposing (..)
+module Examples.GenerateUiSchema exposing (generateUiSchemaExampleSchema)
 
 
 generateUiSchemaExampleSchema : String

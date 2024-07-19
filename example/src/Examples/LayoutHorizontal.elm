@@ -1,4 +1,4 @@
-module Examples.LayoutHorizontal exposing (..)
+module Examples.LayoutHorizontal exposing (layoutExample1UiSchema)
 
 
 layoutExample1UiSchema : String
