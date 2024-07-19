@@ -23,6 +23,8 @@ type alias FormState =
     , stringUiSchema : Maybe String
     , originalSchema : String
     , originalUiSchema : Maybe String
+    , schemaError : Maybe String
+    , uiSchemaError : Maybe String
     }
 
 type alias MainState =
@@ -40,11 +42,13 @@ type alias FormDefinition =
     }
 
 type MainMsg
-  = FormMsg Int Msg
-  | SwitchForm Int
-  | EditSchema Int String
-  | EditUiSchema Int String
-  | Noop
+  = ExampleMsg Int ExampleMsg
+  | SwitchTo Int
+
+type ExampleMsg
+  = FormMsg Msg
+  | EditSchema String
+  | EditUiSchema String
 
 
 formSpec : String -> String -> Maybe String -> Result String FormDefinition
@@ -121,6 +125,8 @@ init =
                         , stringUiSchema = fd.stringUiSchema
                         , originalSchema = fd.stringSchema
                         , originalUiSchema = fd.stringUiSchema
+                        , schemaError = Nothing -- TODO: fix if examples have errors
+                        , uiSchemaError = Nothing -- TODO: fix if examples have errors
                         }
 
                     Err error ->
@@ -132,27 +138,48 @@ init =
 
 
 update : MainMsg -> MainState -> MainState
-update msg state =
-  case msg of
-    FormMsg i formMsg ->
-      { state
-          | forms = List.updateAt i (\fs -> { fs | form = Form.update formMsg fs.form }) state.forms
-      }
+update m state =
+  case m of
+    ExampleMsg i msg ->
+      let
+        updateForm : FormState -> FormState
+        updateForm fs =
+          case msg of
+            FormMsg formMsg ->
+              { fs | form = Form.update formMsg fs.form }
 
-    SwitchForm i ->
-      { state | activeForm = i }
+            EditSchema s ->
+              case Json.Schema.fromString s of
+                Ok schema ->
+                 { fs
+                  | stringSchema = s
+                  , form = Form.setSchema schema fs.form
+                  , schemaError = Nothing
+                  }
+                Err e ->
+                  { fs
+                  | stringSchema = s
+                  , schemaError = Just e
+                  }
 
-    EditSchema i s ->
-      { state
-          | forms = List.updateAt i (\fs -> { fs | form =  fs.form }) state.forms
-      }
-
-    EditUiSchema i s ->
-      { state
-          | forms = List.updateAt i (\fs -> { fs | form =  fs.form }) state.forms
-      }
-
-    Noop -> state
+            EditUiSchema s ->
+                case UiSchema.fromString s of
+                  Ok uiSchema ->
+                    { fs
+                    | stringUiSchema = Just s
+                    , form = Form.setUiSchema (Just uiSchema) fs.form
+                    , uiSchemaError = Nothing
+                    }
+                  Err e ->
+                    { fs
+                    | stringUiSchema = Just s
+                    , uiSchemaError = Just e
+                    }
+      in
+        { state
+          | forms = List.updateAt i updateForm state.forms
+        }
+    SwitchTo i -> { state | activeForm = i }
 
 
 view : MainState -> Html MainMsg
@@ -162,19 +189,19 @@ view state =
         [ h1 "Examples"
         , hr [Attrs.class "my-3"] []
         , div []
-          (List.indexedMap viewLink state.forms)
+          <| List.indexedMap viewLink state.forms
         ]
-      , viewMaybe (viewExample state.activeForm) (List.getAt state.activeForm state.forms)
+      , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
       ]
 
 
 viewLink : Int -> FormState -> Html MainMsg
 viewLink i fs =
     div [class "my-1 cursor-pointer"]
-      [ a [Attrs.class "hover:underline text-blue-600", Attrs.onClick (SwitchForm i)] [text fs.title]]
+      [ a [Attrs.class "hover:underline text-blue-600", Attrs.onClick (SwitchTo i)] [text fs.title]]
 
-viewExample : Int -> FormState -> Html MainMsg
-viewExample i fs =
+viewExample : FormState -> Html ExampleMsg
+viewExample fs =
   div [Attrs.class "p-3 sm:ml-80"]
     [ div []
         [ h1 fs.title
@@ -186,7 +213,7 @@ viewExample i fs =
           [ div []
             [ h2 "Form"
             , div [class "border border-black p-3 bg-gray-50"]
-              [ Html.map (\m -> FormMsg i m) <| Form.view fs.form]
+              [ Html.map (\m -> FormMsg m) <| Form.view fs.form]
             ]
           , div []
           [ h2 "Data"
@@ -196,17 +223,26 @@ viewExample i fs =
       , div [Attrs.class "w-1/2 px-2"]
         [ div []
           [ h2 "JSON Schema"
-          , textarea (Attrs.onInput <| EditSchema i) fs.stringSchema
+          , textarea (Attrs.onInput <| EditSchema) fs.stringSchema
+          , viewMaybe viewError fs.schemaError
           ]
         , div []
           [ h2 "UI Schema"
           , case fs.stringUiSchema of
-              Just stringUiSchema -> textarea (Attrs.onInput <| EditUiSchema i) fs.stringSchema
-              Nothing -> text "<no UI Schema>"
+              Just stringUiSchema -> textarea (Attrs.onInput <| EditUiSchema) stringUiSchema
+              Nothing -> Html.span [class "text-gray-500"] [text "(empty)"]
+          , viewMaybe viewError fs.uiSchemaError
           ]
         ]
       ]
     ]
+
+viewError : String -> Html a
+viewError err =
+  div []
+            [ h3 [class "text-red-600 font-bold mt-1"] [text "Error:"]
+            , pre [class "text-sm overflow-scroll" ] [text err]
+            ]
 
 viewData : Form -> Html a
 viewData form =
@@ -231,6 +267,7 @@ textarea : (Attribute a) -> String -> Html a
 textarea attr s = Html.textarea
   [ Attrs.rows 15
   , Attrs.class "text-sm block w-full font-mono bg-gray-50"
+  , Attrs.spellcheck False
   , attr
   ] [ text s ]
 

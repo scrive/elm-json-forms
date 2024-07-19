@@ -3,8 +3,7 @@ module Examples.Basic exposing (..)
 
 basicExampleSchema : String
 basicExampleSchema =
-    """
-{
+    """{
   "type": "object",
   "properties": {
     "name": {
@@ -64,14 +63,12 @@ basicExampleSchema =
     "occupation",
     "nationality"
   ]
-}
-    """
+}"""
 
 
 basicExampleUiSchema : String
 basicExampleUiSchema =
-    """
-{
+    """{
   "type": "VerticalLayout",
   "elements": [
     {
@@ -123,5 +120,4 @@ basicExampleUiSchema =
       ]
     }
   ]
-}
-"""
+}"""
