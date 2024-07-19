@@ -1,5 +1,5 @@
 # Made by Isaac Van Doren. Source at https://github.com/isaacvando/elm-to-gh-pages.
-name: Deploy an Elm app to GitHub Pages
+name: GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch

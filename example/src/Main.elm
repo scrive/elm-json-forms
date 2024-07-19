@@ -84,6 +84,7 @@ view state =
             , hr [ class "my-3" ] []
             , div [] <|
                 List.indexedMap (viewLink state.activeForm) state.forms
+            , viewGithubIcon
             ]
         , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
         ]
@@ -168,6 +169,10 @@ viewExample fs =
                 ]
             ]
         ]
+
+viewGithubIcon : Html a
+viewGithubIcon =
+    Html.a [Attrs.href "https://github.com/scrive/elm-json-forms"] [Html.img [Attrs.src "https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png", class "my-2", Attrs.width 40] []]
 
 
 viewTabHeader : List (Attribute ExampleMsg) -> Tab -> Tab -> Html ExampleMsg

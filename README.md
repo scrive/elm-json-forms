@@ -1,6 +1,7 @@
 # JSON Schema Form Generator
 
-[![Elm CI](https://github.com/scrive/elm-json-forms/workflows/Elm%20CI/badge.svg)](https://github.com/scrive/elm-json-forms/actions)
+[![Elm CI](https://github.com/scrive/elm-json-forms/actions/workflows/elm.yml/badge.svg)](https://github.com/scrive/elm-json-forms/actions/workflows/elm.yml)
+[![GitHub Pages](https://github.com/scrive/elm-json-forms/actions/workflows/elm-to-gh-pages.yml/badge.svg)](https://github.com/scrive/elm-json-forms/actions/workflows/elm-to-gh-pages.yml)
 
 Live example: https://scrive.github.io/elm-json-forms/
 
