@@ -1,11 +1,9 @@
 module Examples.Control2 exposing (..)
 
 
-
 controlExample2Schema : String
 controlExample2Schema =
-    """
-{
+    """{
   "type": "object",
   "properties": {
     "multilineString": {
@@ -45,14 +43,12 @@ controlExample2Schema =
     "hideRequiredAsterisk",
     "restrictText"
   ]
-}
-"""
+}"""
 
 
 controlExample2UiSchema : String
 controlExample2UiSchema =
-    """
-{
+    """{
   "type": "VerticalLayout",
   "elements": [
     {
@@ -106,5 +102,4 @@ controlExample2UiSchema =
       }
     }
   ]
-}
-"""
+}"""

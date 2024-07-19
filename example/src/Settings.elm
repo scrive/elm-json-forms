@@ -1,18 +1,21 @@
 module Settings exposing (..)
 
-import Json.Encode as Encode
 import Form exposing (Form, Msg)
 import Form.Error as Error exposing (ErrorValue(..))
 import Form.Theme as Theme
+import Json.Encode as Encode
 import Json.Schema
 import Json.Schema.Definitions exposing (Schema)
 import UiSchema exposing (UiSchema)
 
+
 initForm : String -> Schema -> Maybe UiSchema -> Form
-initForm = Form.init
-  { errors = always errorString
-  , theme = Theme.tailwind
-  }
+initForm =
+    Form.init
+        { errors = always errorString
+        , theme = Theme.tailwind
+        }
+
 
 errorString : ErrorValue -> String
 errorString error =

@@ -1,4 +1,7 @@
-module Form exposing (Form, Msg, init, update, view, setSchema, setUiSchema)
+module Form exposing
+    ( Form, Msg, init, update, view
+    , setSchema, setUiSchema
+    )
 
 {-| JSON Forms implementation with validations.
 
@@ -38,33 +41,35 @@ init settings id schema mUiSchema =
         uiSchema =
             Maybe.withDefaultLazy (always <| generateUiSchema schema) mUiSchema
     in
-        { settings = settings
-        , schema = schema
-        , uiSchema = uiSchema
-        , state = Form.State.initState id (defaultValue schema) (validation schema)
-        }
+    { settings = settings
+    , schema = schema
+    , uiSchema = uiSchema
+    , state = Form.State.initState id (defaultValue schema) (validation schema)
+    }
 
 
 {-| Swap the Schema of an existing form
 
 Form data is reset.
+
 -}
 setSchema : Schema -> Form -> Form
 setSchema schema form =
     { form
-    | schema = schema
-    , state = Form.State.initState form.state.formId (defaultValue schema) (validation schema)
+        | schema = schema
+        , state = Form.State.initState form.state.formId (defaultValue schema) (validation schema)
     }
 
 
 {-| Swap the UI Schema of an existing form
 
 Form data is preserved.
+
 -}
 setUiSchema : Maybe UiSchema -> Form -> Form
 setUiSchema uiSchema form =
     { form
-    | uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema form.schema) uiSchema
+        | uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema form.schema) uiSchema
     }
 
 

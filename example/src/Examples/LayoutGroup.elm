@@ -1,11 +1,9 @@
 module Examples.LayoutGroup exposing (..)
 
 
-
 layoutExample3UiSchema : String
 layoutExample3UiSchema =
-    """
-{
+    """{
   "type": "Group",
   "label": "My Group",
   "elements": [
@@ -20,5 +18,4 @@ layoutExample3UiSchema =
       "scope": "#/properties/birthDate"
     }
   ]
-}
-"""
+}"""

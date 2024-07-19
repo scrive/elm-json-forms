@@ -3,8 +3,7 @@ module Examples.GenerateUiSchema exposing (..)
 
 generateUiSchemaExampleSchema : String
 generateUiSchemaExampleSchema =
-    """
-{
+    """{
   "type": "object",
   "properties": {
     "name": {
@@ -40,5 +39,4 @@ generateUiSchemaExampleSchema =
     "personalData",
     "postalCode"
   ]
-}
-"""
+}"""

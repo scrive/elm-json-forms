@@ -1,11 +1,9 @@
 module Examples.Layout exposing (..)
 
 
-
 layoutExampleSchema : String
 layoutExampleSchema =
-    """
-{
+    """{
   "type": "object",
   "properties": {
     "name": {
@@ -18,5 +16,4 @@ layoutExampleSchema =
       "format": "date"
     }
   }
-}
-"""
+}"""

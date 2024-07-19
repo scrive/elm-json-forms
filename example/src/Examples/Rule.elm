@@ -1,9 +1,9 @@
 module Examples.Rule exposing (..)
 
+
 ruleExampleSchema : String
 ruleExampleSchema =
-    """
-{
+    """{
   "type": "object",
   "properties": {
     "name": {
@@ -32,14 +32,12 @@ ruleExampleSchema =
       ]
     }
   }
-}
-"""
+}"""
 
 
 ruleExampleUiSchema : String
 ruleExampleUiSchema =
-    """
-{
+    """{
   "type": "VerticalLayout",
   "elements": [
     {
@@ -96,5 +94,4 @@ ruleExampleUiSchema =
       ]
     }
   ]
-}
-"""
+}"""

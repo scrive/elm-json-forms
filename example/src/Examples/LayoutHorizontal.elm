@@ -1,11 +1,9 @@
 module Examples.LayoutHorizontal exposing (..)
 
 
-
 layoutExample1UiSchema : String
 layoutExample1UiSchema =
-    """
-{
+    """{
   "type": "HorizontalLayout",
   "elements": [
     {
@@ -19,5 +17,4 @@ layoutExample1UiSchema =
       "scope": "#/properties/birthDate"
     }
   ]
-}
-"""
+}"""

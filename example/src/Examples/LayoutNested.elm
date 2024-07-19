@@ -1,11 +1,9 @@
 module Examples.LayoutNested exposing (..)
 
 
-
 layoutExample4UiSchema : String
 layoutExample4UiSchema =
-    """
-{
+    """{
   "type": "Group",
   "label": "My Group",
   "elements": [
@@ -45,5 +43,4 @@ layoutExample4UiSchema =
       ]
     }
   ]
-}
-"""
+}"""

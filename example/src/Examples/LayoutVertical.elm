@@ -1,11 +1,9 @@
 module Examples.LayoutVertical exposing (..)
 
 
-
 layoutExample2UiSchema : String
 layoutExample2UiSchema =
-    """
-{
+    """{
   "type": "VerticalLayout",
   "elements": [
     {
@@ -19,5 +17,4 @@ layoutExample2UiSchema =
       "scope": "#/properties/birthDate"
     }
   ]
-}
-"""
+}"""

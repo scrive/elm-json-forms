@@ -3,8 +3,7 @@ module Examples.Control1 exposing (..)
 
 controlExample1Schema : String
 controlExample1Schema =
-    """
-{
+    """{
   "type": "object",
   "properties": {
     "string": {
@@ -42,14 +41,12 @@ controlExample1Schema =
       ]
     }
   }
-}
-"""
+}"""
 
 
 controlExample1UiSchema : String
 controlExample1UiSchema =
-    """
-{
+    """{
   "type": "VerticalLayout",
   "elements": [
     {
@@ -85,5 +82,4 @@ controlExample1UiSchema =
       "scope": "#/properties/enum"
     }
   ]
-}
-"""
+}"""
