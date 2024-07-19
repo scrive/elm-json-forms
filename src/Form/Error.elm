@@ -1,4 +1,4 @@
-module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..), getErrors)
+module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..))
 
 {-| Form field error handling
 
@@ -7,7 +7,7 @@ module Form.Error exposing (Errors, ErrorValue(..), TextFormat(..), getErrors)
 -}
 
 import Json.Decode exposing (Value)
-import Json.Pointer as Pointer exposing (Pointer)
+import Json.Pointer exposing (Pointer)
 
 
 {-| List of all errors in a form. One field may generate multiple entries.
@@ -53,10 +53,3 @@ type TextFormat
     | DateTime
     | Email
     | Phone
-
-
-{-| Get all form errors as a list
--}
-getErrors : Errors -> List ( String, ErrorValue )
-getErrors errors =
-    List.map (\( p, e ) -> ( Pointer.toString p, e )) errors

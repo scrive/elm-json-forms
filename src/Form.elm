@@ -1,21 +1,20 @@
-module Form exposing
-    ( Form, Msg, init, update, view
-    , setSchema, setUiSchema
-    )
+module Form exposing (Form, Msg, init, update, view, getErrors, setSchema, setUiSchema)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view
+@docs Form, Msg, init, update, view, getErrors, setSchema, setUiSchema
 
 -}
 
+import Form.Error as Error
 import Form.Settings exposing (Settings)
 import Form.State
 import Form.Validation exposing (validation)
 import Form.View
 import Html exposing (Html, div)
+import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
 import Maybe.Extra as Maybe
 import UiSchema.Internal exposing (UiSchema, defaultValue, generateUiSchema)
@@ -91,3 +90,13 @@ update msg form =
                 msg
                 form.state
     }
+
+
+{-| Get all form errors as a list.
+
+Empty list is returned if the form contains no errors.
+
+-}
+getErrors : Form -> List ( Pointer, Error.ErrorValue )
+getErrors form =
+    List.map (\( p, e ) -> ( p, e )) form.state.errors

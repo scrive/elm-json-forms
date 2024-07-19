@@ -1,4 +1,4 @@
-module Settings exposing (initForm)
+module Settings exposing (errorString, initForm)
 
 import Form exposing (Form)
 import Form.Error exposing (ErrorValue(..))

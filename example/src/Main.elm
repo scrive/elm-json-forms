@@ -7,11 +7,13 @@ import Form.Error as Error
 import Html exposing (..)
 import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
-import Html.Extra exposing (viewMaybe)
+import Html.Extra as Html exposing (viewMaybe)
 import Json.Encode as Encode
+import Json.Pointer as Pointer
 import Json.Schema
 import List.Extra as List
 import Model exposing (..)
+import Settings
 import UiSchema
 
 
@@ -121,7 +123,7 @@ viewExample fs =
                 [ div []
                     [ h2 "JSON Schema"
                     , textarea (Events.onInput EditSchema) fs.stringSchema
-                    , viewMaybe viewError fs.schemaError
+                    , viewMaybe (viewError "Error") fs.schemaError
                     ]
                 , div []
                     [ h2 "UI Schema"
@@ -131,7 +133,7 @@ viewExample fs =
 
                         Nothing ->
                             empty
-                    , viewMaybe viewError fs.uiSchemaError
+                    , viewMaybe (viewError "Error") fs.uiSchemaError
                     ]
                 ]
             ]
@@ -143,10 +145,10 @@ empty =
     Html.span [ class "text-gray-500" ] [ text "(empty)" ]
 
 
-viewError : String -> Html a
-viewError err =
+viewError : String -> String -> Html a
+viewError title err =
     div []
-        [ h3 [ class "text-red-600 font-bold mt-1" ] [ text "Error:" ]
+        [ h3 [ class "text-red-600 font-bold mt-1" ] [ text <| title ++ ":" ]
         , pre [ class "text-sm overflow-scroll" ] [ text err ]
         ]
 
@@ -154,19 +156,20 @@ viewError err =
 viewData : Form -> Html a
 viewData form =
     let
-        nErrors =
-            List.length <| Error.getErrors form.state.errors
-
         dataText =
             Encode.encode 4 form.state.value
+
+        errorsText =
+            String.join "\n" (List.map (\( pointer, err ) -> Pointer.toString pointer ++ ": " ++ Settings.errorString err) <| Form.getErrors form)
     in
     div []
         [ textarea (Attrs.readonly True) dataText
-        , if nErrors == 0 then
-            text "No errors."
+        , case Form.getErrors form of
+            [] ->
+                Html.nothing
 
-          else
-            text <| String.fromInt nErrors ++ " errors."
+            errs ->
+                viewError "Errors" errorsText
         ]
 
 
