@@ -79,14 +79,20 @@ updateExample msg fs =
 view : MainState -> Html MainMsg
 view state =
     div []
-        [ aside [ class "fixed w-80 top-0 left-0 p-3" ]
-            [ h1 "Examples"
-            , hr [ class "my-3" ] []
-            , div [] <|
-                List.indexedMap (viewLink state.activeForm) state.forms
-            , viewGithubIcon
-            ]
+        [ viewMenu state
         , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
+        ]
+
+
+viewMenu : MainState -> Html MainMsg
+viewMenu state =
+    aside [ class "fixed w-80 top-0 left-0 p-3" ]
+        [ h1 "Examples"
+        , hr [ class "my-3" ] []
+        , div [] <|
+            List.indexedMap (viewLink state.activeForm) state.forms
+        , hr [ class "my-3" ] []
+        , viewGithubIcon
         ]
 
 
@@ -122,7 +128,7 @@ viewExample fs =
                             empty
 
                         Just form ->
-                            div [ class "border border-black p-3 bg-gray-50" ]
+                            div [ class "border shadow rounded p-3" ]
                                 [ Html.map FormMsg (Form.view form) ]
                     ]
                 ]
@@ -173,7 +179,7 @@ viewExample fs =
 
 viewGithubIcon : Html a
 viewGithubIcon =
-    Html.a [ Attrs.href "https://github.com/scrive/elm-json-forms" ] [ Html.img [ Attrs.src "https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png", class "my-2", Attrs.width 40 ] [] ]
+    Html.a [ Attrs.href "https://github.com/scrive/elm-json-forms" ] [ Html.img [ Attrs.src "https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png", Attrs.width 40 ] [] ]
 
 
 viewTabHeader : List (Attribute ExampleMsg) -> Tab -> Tab -> Html ExampleMsg
@@ -236,7 +242,7 @@ viewData form =
 textarea : List (Attribute a) -> String -> Html a
 textarea attrs s =
     Html.textarea
-        ([ class "text-sm block w-full font-mono bg-gray-50"
+        ([ class "text-sm block w-full font-mono border border-gray-200 shadow rounded p-3"
          , Attrs.spellcheck False
          ]
             ++ attrs
