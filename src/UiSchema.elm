@@ -1,4 +1,4 @@
-module UiSchema exposing (UiSchema, fromString, decode)
+module UiSchema exposing (UiSchema, fromString, decode, generate)
 
 {-| UI Schema definition and deserialization.
 
