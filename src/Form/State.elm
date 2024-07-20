@@ -23,6 +23,7 @@ type alias Form =
     { settings : Settings
     , schema : Schema
     , uiSchema : UiSchema
+    , uiSchemaIsGenerated : Bool
     , state : FormState
     }
 

@@ -1,10 +1,10 @@
-module Form exposing (Form, Msg, init, update, view, getErrors, setSchema, setUiSchema)
+module Form exposing (Form, Msg, init, update, view, getSchema, getUiSchema, getErrors, setSchema, setUiSchema)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, getErrors, setSchema, setUiSchema
+@docs Form, Msg, init, update, view, getSchema, getUiSchema, getErrors, setSchema, setUiSchema
 
 -}
 
@@ -35,27 +35,30 @@ type alias Msg =
 {-| Initialize form state
 -}
 init : Settings -> String -> Schema -> Maybe UiSchema -> Form
-init settings id schema mUiSchema =
-    let
-        uiSchema =
-            Maybe.withDefaultLazy (always <| generateUiSchema schema) mUiSchema
-    in
+init settings id schema uiSchema =
     { settings = settings
     , schema = schema
-    , uiSchema = uiSchema
+    , uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema schema) uiSchema
+    , uiSchemaIsGenerated = uiSchema == Nothing
     , state = Form.State.initState id (defaultValue schema) (validation schema)
     }
 
 
 {-| Swap the Schema of an existing form
 
-Form data is reset.
+Form data is reset. UI Schema is re-generated if it was auto-generated in the first place.
 
 -}
 setSchema : Schema -> Form -> Form
 setSchema schema form =
     { form
         | schema = schema
+        , uiSchema =
+            if form.uiSchemaIsGenerated then
+                generateUiSchema schema
+
+            else
+                form.uiSchema
         , state = Form.State.initState form.state.formId (defaultValue schema) (validation schema)
     }
 
@@ -69,6 +72,7 @@ setUiSchema : Maybe UiSchema -> Form -> Form
 setUiSchema uiSchema form =
     { form
         | uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema form.schema) uiSchema
+        , uiSchemaIsGenerated = uiSchema == Nothing
     }
 
 
@@ -90,6 +94,20 @@ update msg form =
                 msg
                 form.state
     }
+
+
+{-| Get the current Schema
+-}
+getSchema : Form -> Schema
+getSchema form =
+    form.schema
+
+
+{-| Get the current UI Schema
+-}
+getUiSchema : Form -> UiSchema
+getUiSchema form =
+    form.uiSchema
 
 
 {-| Get all form errors as a list.

@@ -4,12 +4,13 @@ module UiSchema exposing (UiSchema, fromString, decode)
 
 Documentation can be found here: <https://jsonforms.io/docs/uischema/>
 
-@docs UiSchema, fromString, decode
+@docs UiSchema, fromString, decode, generate
 
 -}
 
 import Json.Decode as Decode
-import UiSchema.Internal exposing (decodeUiSchema)
+import Json.Schema.Definitions as Schema exposing (Schema)
+import UiSchema.Internal exposing (decodeUiSchema, generateUiSchema)
 
 
 {-| UI Schema definition
@@ -30,3 +31,13 @@ decode =
 fromString : String -> Result String UiSchema
 fromString =
     Decode.decodeString decode >> Result.mapError Decode.errorToString
+
+
+{-| Generate a UI Schema from a Schema.
+
+The generated UI schema contains vertical layout with controls for all primitive types.
+
+-}
+generate : Schema -> UiSchema
+generate =
+    generateUiSchema
