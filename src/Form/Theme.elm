@@ -1,8 +1,8 @@
-module Form.Theme exposing (Theme, tailwind)
+module Form.Theme exposing (Theme, simpleTailwind, scrive)
 
 {-| Form appearance
 
-@docs Theme, tailwind
+@docs Theme, simpleTailwind
 
 -}
 
@@ -13,7 +13,7 @@ import Html.Attributes as Attrs
 {-| Form appearance definition
 -}
 type alias Theme =
-    { horizontalLayout : Attribute Never
+    { horizontalLayout : { cols : Int } -> Attribute Never
     , horizontalLayoutItem : Attribute Never
     , groupLabel : Attribute Never
     , label : Attribute Never
@@ -38,17 +38,16 @@ type alias Theme =
     }
 
 
-{-| Default form styling using TailWind
+{-| Simple form styling using Tailwind
 
-You can modify this according to your needs.
-
+This theme is as simple as possible while also having acceptable styling.
 -}
-tailwind : Theme
-tailwind =
-    { horizontalLayout = Attrs.class "flex space-x-4"
-    , horizontalLayoutItem = Attrs.class "flex-grow"
-    , label = Attrs.class "text-lg mt-4"
-    , groupLabel = Attrs.class "text-lg"
+simpleTailwind : Theme
+simpleTailwind =
+    { horizontalLayout = \{cols} -> Attrs.class ("grid gap-3 grid-cols-" ++ String.fromInt cols)
+    , horizontalLayoutItem = Attrs.class ""
+    , label = Attrs.class "font-bold mt-4"
+    , groupLabel = Attrs.class "font-bold"
     , categorizationMenu = Attrs.class "my-4 border-b"
     , categorizationMenuItem =
         \{ focus } ->
@@ -59,7 +58,7 @@ tailwind =
                 ]
     , fieldGroup = Attrs.class "my-4"
     , fieldLabel = Attrs.class "block text-sm my-1"
-    , fieldDescription = Attrs.class "text-sm text-gray-600 my-1"
+    , fieldDescription = Attrs.class "text-sm text-slate-500 my-1"
     , fieldError = Attrs.class "text-red-600 text-xs my-1"
     , checkboxRow = Attrs.class "flex items-center space-x-4"
     , radioEntry =
@@ -94,6 +93,96 @@ tailwind =
     , radioInput =
         Attrs.classList
             [ ( "mr-3", True )
+            ]
+    , sliderInput =
+        \{ trim } ->
+            Attrs.classList
+                [ ( "w-full", not trim )
+                ]
+    , toggleInput =
+        \{ checked } ->
+            Attrs.classList
+                [ ( "inline-flex w-11 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2", True )
+                , ( "bg-gray-300", not checked )
+                , ( "bg-blue-500", checked )
+                ]
+    , toggleKnob =
+        \{ checked } ->
+            Attrs.classList
+                [ ( "pointer-events-none h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out", True )
+                , ( "translate-x-0", not checked )
+                , ( "translate-x-5", checked )
+                ]
+    , group = Attrs.class "border border-gray-300 p-3 my-3"
+    , disabledElems = Attrs.class "opacity-50"
+    }
+
+
+{-| Simple form styling using Tailwind
+
+This theme is as simple as possible while also having acceptable styling.
+-}
+scrive : Theme
+scrive =
+    { horizontalLayout = \{cols} -> Attrs.class ("grid gap-3 grid-cols-" ++ String.fromInt cols)
+    , horizontalLayoutItem = Attrs.class ""
+    , label = Attrs.class "font-bold mt-4"
+    , groupLabel = Attrs.class "font-bold"
+    , categorizationMenu = Attrs.class "my-4 border-b"
+    , categorizationMenuItem =
+        \{ focus } ->
+            Attrs.classList
+                [ ( "p-4 pb-2", True )
+                , ( "text-blue-500 border-b-2 border-blue-500", focus )
+                , ( "", not focus )
+                ]
+    , fieldGroup = Attrs.class "my-4"
+    , fieldLabel = Attrs.class "block text-sm font-medium mb-1"
+    , fieldDescription = Attrs.class "text-sm text-slate-500 my-1"
+    , fieldError = Attrs.class "text-red-600 text-xs my-1"
+    , checkboxRow = Attrs.class "flex items-center gap-3"
+    , radioEntry =
+        \{ vertical } ->
+            Attrs.classList
+                [ ( "mr-5 items-center", True )
+                , ( "flex", vertical )
+                ]
+    , textInput =
+        \{ trim, invalid } ->
+            Attrs.classList
+                [ ( "border-red-600", invalid )
+                , ( "border-gray-700", not invalid)
+                , ( "w-full", not trim )
+                , ( "w-52", trim )
+                , ( "py-2 px-3 text-sm rounded", True)
+                ]
+    , textArea =
+        \{ trim, invalid } ->
+            Attrs.classList
+                [ ( "border-red-600", invalid )
+                , ( "border-gray-700", not invalid)
+                , ( "w-full", not trim )
+                , ( "w-52", trim )
+                , ( "py-2 px-3 text-sm rounded", True)
+                ]
+    , selectInput =
+        \{ trim, invalid } ->
+            Attrs.classList
+                [ ( "border-red-600", invalid )
+                , ( "border-gray-700", not invalid)
+                , ( "w-full", not trim )
+                , ( "w-52", trim )
+                , ( "py-2 px-3 text-sm rounded", True)
+                ]
+    , checkboxInput =
+        \{ invalid } ->
+            Attrs.classList
+                [ ( "border-gray-500", True ) -- "border-scrive-gray" eqivalent
+                , ( "border-2 w-5 h-5", True)
+                ]
+    , radioInput =
+        Attrs.classList
+            [ ( "border-gray-500 border-2 w-4 h-4 mr-3", True )
             ]
     , sliderInput =
         \{ trim } ->

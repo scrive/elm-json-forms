@@ -12,7 +12,7 @@ initForm : String -> Schema -> Maybe UiSchema -> Form
 initForm =
     Form.init
         { errors = always errorString
-        , theme = Theme.tailwind
+        , theme = Theme.scrive
         }
 
 

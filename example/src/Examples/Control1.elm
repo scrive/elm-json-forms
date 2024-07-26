@@ -79,7 +79,7 @@ controlExample1UiSchema =
     },
     {
       "type": "Control",
-      "scope": "#/properties/enum"
+      "scope": "#/properties/enum", "options": { "format": "radio", "orientation": "vertical" }
     }
   ]
 }"""
