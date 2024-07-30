@@ -78,7 +78,7 @@ updateExample msg fs =
 
 view : MainState -> Html MainMsg
 view state =
-    div [class "flex flex-wrap"]
+    div [ class "flex flex-wrap" ]
         [ viewMenu state
         , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
         ]

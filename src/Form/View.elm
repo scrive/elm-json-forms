@@ -80,7 +80,7 @@ maybeHide effect x =
 
 horizontalLayoutView : Form -> UiState -> UI.HorizontalLayout -> List (Html F.Msg)
 horizontalLayoutView form uiState hl =
-    [ div [ Attrs.map never <| form.settings.theme.horizontalLayout {cols = List.length hl.elements} ] <|
+    [ div [ Attrs.map never <| form.settings.theme.horizontalLayout { cols = List.length hl.elements } ] <|
         List.indexedMap
             (\ix us ->
                 div
@@ -373,7 +373,7 @@ radioGroup settings control defOptions schema fieldType fieldState =
                     , Attrs.disabled fieldState.disabled
                     ]
                     []
-                , span [Attrs.map never <| settings.theme.fieldLabel] [ text value ]
+                , span [ Attrs.map never settings.theme.fieldLabel ] [ text value ]
                 ]
     in
     fieldGroup

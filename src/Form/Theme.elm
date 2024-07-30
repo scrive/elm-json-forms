@@ -1,4 +1,7 @@
-module Form.Theme exposing (Theme, simpleTailwind, scrive)
+module Form.Theme exposing
+    ( Theme, simpleTailwind
+    , scrive
+    )
 
 {-| Form appearance
 
@@ -41,10 +44,11 @@ type alias Theme =
 {-| Simple form styling using Tailwind
 
 This theme is as simple as possible while also having acceptable styling.
+
 -}
 simpleTailwind : Theme
 simpleTailwind =
-    { horizontalLayout = \{cols} -> Attrs.class ("grid gap-3 grid-cols-" ++ String.fromInt cols)
+    { horizontalLayout = \{ cols } -> Attrs.class ("grid gap-3 grid-cols-" ++ String.fromInt cols)
     , horizontalLayoutItem = Attrs.class ""
     , label = Attrs.class "font-bold mt-4"
     , groupLabel = Attrs.class "font-bold"
@@ -121,10 +125,11 @@ simpleTailwind =
 {-| Simple form styling using Tailwind
 
 This theme is as simple as possible while also having acceptable styling.
+
 -}
 scrive : Theme
 scrive =
-    { horizontalLayout = \{cols} -> Attrs.class ("grid gap-3 grid-cols-" ++ String.fromInt cols)
+    { horizontalLayout = \{ cols } -> Attrs.class ("grid gap-3 grid-cols-" ++ String.fromInt cols)
     , horizontalLayoutItem = Attrs.class ""
     , label = Attrs.class "font-bold mt-4"
     , groupLabel = Attrs.class "font-bold"
@@ -151,34 +156,34 @@ scrive =
         \{ trim, invalid } ->
             Attrs.classList
                 [ ( "border-red-600", invalid )
-                , ( "border-gray-700", not invalid)
+                , ( "border-gray-700", not invalid )
                 , ( "w-full", not trim )
                 , ( "w-52", trim )
-                , ( "py-2 px-3 text-sm rounded", True)
+                , ( "py-2 px-3 text-sm rounded", True )
                 ]
     , textArea =
         \{ trim, invalid } ->
             Attrs.classList
                 [ ( "border-red-600", invalid )
-                , ( "border-gray-700", not invalid)
+                , ( "border-gray-700", not invalid )
                 , ( "w-full", not trim )
                 , ( "w-52", trim )
-                , ( "py-2 px-3 text-sm rounded", True)
+                , ( "py-2 px-3 text-sm rounded", True )
                 ]
     , selectInput =
         \{ trim, invalid } ->
             Attrs.classList
                 [ ( "border-red-600", invalid )
-                , ( "border-gray-700", not invalid)
+                , ( "border-gray-700", not invalid )
                 , ( "w-full", not trim )
                 , ( "w-52", trim )
-                , ( "py-2 px-3 text-sm rounded", True)
+                , ( "py-2 px-3 text-sm rounded", True )
                 ]
     , checkboxInput =
-        \{ invalid } ->
+        \_ ->
             Attrs.classList
                 [ ( "border-gray-500", True ) -- "border-scrive-gray" eqivalent
-                , ( "border-2 w-5 h-5", True)
+                , ( "border-2 w-5 h-5", True )
                 ]
     , radioInput =
         Attrs.classList

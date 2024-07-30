@@ -9,7 +9,7 @@ Documentation can be found here: <https://jsonforms.io/docs/uischema/>
 -}
 
 import Json.Decode as Decode
-import Json.Schema.Definitions as Schema exposing (Schema)
+import Json.Schema.Definitions exposing (Schema)
 import UiSchema.Internal exposing (decodeUiSchema, generateUiSchema)
 
 
