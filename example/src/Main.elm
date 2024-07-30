@@ -78,7 +78,7 @@ updateExample msg fs =
 
 view : MainState -> Html MainMsg
 view state =
-    div []
+    div [class "flex flex-wrap"]
         [ viewMenu state
         , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
         ]
@@ -86,7 +86,7 @@ view state =
 
 viewMenu : MainState -> Html MainMsg
 viewMenu state =
-    aside [ class "fixed w-80 top-0 left-0 p-3" ]
+    aside [ class "md:w-1/4 p-3" ]
         [ h1 "Examples"
         , hr [ class "my-3" ] []
         , div [] <|
@@ -114,13 +114,13 @@ viewLink activeId linkId fs =
 
 viewExample : FormState -> Html ExampleMsg
 viewExample fs =
-    div [ class "p-3 sm:ml-80" ]
+    div [ class "p-3 w-full md:w-3/4" ]
         [ div []
             [ h1 fs.title
             , hr [] []
             ]
         , div [ class "flex flex-wrap -mx-2" ]
-            [ div [ class "w-1/2 px-2" ]
+            [ div [ class "w-full lg:w-1/2 px-2" ]
                 [ div []
                     [ h2 "Form"
                     , case fs.form of
@@ -132,7 +132,7 @@ viewExample fs =
                                 [ Html.map FormMsg (Form.view form) ]
                     ]
                 ]
-            , div [ class "w-1/2 px-2" ]
+            , div [ class "w-full lg:w-1/2 px-2" ]
                 [ div [ class "border-b mb-3" ]
                     [ viewTabHeader [] fs.tab DataTab
                     , viewTabHeader
