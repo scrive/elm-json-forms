@@ -244,10 +244,11 @@ textarea attrs s =
     Html.textarea
         ([ class "text-sm block w-full font-mono border border-gray-200 shadow rounded p-3"
          , Attrs.spellcheck False
+         , Attrs.value s
          ]
             ++ attrs
         )
-        [ text s ]
+        []
 
 
 h1 : String -> Html a
