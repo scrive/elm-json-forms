@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Navigation as Nav
 import Examples exposing (exampleForms)
 import Form exposing (Form)
 import Html exposing (..)
@@ -12,26 +13,76 @@ import Json.Encode as Encode
 import Json.Pointer as Pointer
 import Json.Schema
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Model exposing (..)
 import Settings
 import UiSchema
+import Url
+import Url.Parser exposing ((<?>))
+import Url.Parser.Query
 
 
-main : Program () MainState MainMsg
+main : Program () Model Msg
 main =
-    Browser.sandbox { init = { forms = exampleForms, activeForm = 0 }, update = update, view = view }
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = \_ -> Sub.none
+        , onUrlChange = UrlChanged
+        , onUrlRequest = LinkClicked
+        }
 
 
-update : MainMsg -> MainState -> MainState
-update m state =
-    case m of
-        ExampleMsg i msg ->
-            { state
-                | forms = List.updateAt i (updateExample msg) state.forms
-            }
+init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
+    let
+        activeForm =
+            case parseUrl url of
+                Just i ->
+                    i
 
-        SwitchTo i ->
-            { state | activeForm = i }
+                Nothing ->
+                    0
+    in
+    ( { forms = exampleForms, activeForm = activeForm, key = key }, Cmd.none )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        ExampleMsg i m ->
+            ( { model
+                | forms = List.updateAt i (updateExample m) model.forms
+              }
+            , Cmd.none
+            )
+
+        UrlChanged url ->
+            case parseUrl url of
+                Just eid ->
+                    ( { model | activeForm = eid }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
+
+
+makeUrl : Int -> String
+makeUrl exampleId =
+    "?example=" ++ String.fromInt exampleId
+
+
+parseUrl : Url.Url -> Maybe Int
+parseUrl =
+    Maybe.join << Url.Parser.parse (Url.Parser.top <?> Url.Parser.Query.int "example")
 
 
 updateExample : ExampleMsg -> FormState -> FormState
@@ -76,15 +127,19 @@ updateExample msg fs =
             }
 
 
-view : MainState -> Html MainMsg
+view : Model -> Browser.Document Msg
 view state =
-    div [ class "flex flex-wrap" ]
-        [ viewMenu state
-        , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
+    { title = "JSON Schema Forms"
+    , body =
+        [ div [ class "flex flex-wrap" ]
+            [ viewMenu state
+            , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
+            ]
         ]
+    }
 
 
-viewMenu : MainState -> Html MainMsg
+viewMenu : Model -> Html Msg
 viewMenu state =
     aside [ class "md:w-1/4 p-3" ]
         [ h1 "Examples"
@@ -96,7 +151,7 @@ viewMenu state =
         ]
 
 
-viewLink : Int -> Int -> FormState -> Html MainMsg
+viewLink : Int -> Int -> FormState -> Html Msg
 viewLink activeId linkId fs =
     div
         [ Attrs.class "my-1 cursor-pointer"
@@ -106,7 +161,7 @@ viewLink activeId linkId fs =
                 [ ( "hover:underline text-blue-600", activeId /= linkId )
                 , ( "font-bold", activeId == linkId )
                 ]
-            , Events.onClick (SwitchTo linkId)
+            , Attrs.href <| makeUrl linkId
             ]
             [ text fs.title ]
         ]

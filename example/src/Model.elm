@@ -1,10 +1,13 @@
-module Model exposing (ExampleMsg(..), FormState, MainMsg(..), MainState, Tab(..), makeForm)
+module Model exposing (ExampleMsg(..), FormState, Model, Msg(..), Tab(..), makeForm)
 
-import Form exposing (Form, Msg)
+import Browser
+import Browser.Navigation as Nav
+import Form exposing (Form)
 import Json.Schema
 import Result.Extra as Result
 import Settings
 import UiSchema
+import Url
 
 
 type alias FormState =
@@ -24,19 +27,21 @@ type Tab
     | UiSchemaTab
 
 
-type alias MainState =
+type alias Model =
     { forms : List FormState
     , activeForm : Int
+    , key : Nav.Key
     }
 
 
-type MainMsg
+type Msg
     = ExampleMsg Int ExampleMsg
-    | SwitchTo Int
+    | UrlChanged Url.Url
+    | LinkClicked Browser.UrlRequest
 
 
 type ExampleMsg
-    = FormMsg Msg
+    = FormMsg Form.Msg
     | EditSchema String
     | EditUiSchema String
     | SwitchTab Tab
