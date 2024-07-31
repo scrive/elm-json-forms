@@ -390,6 +390,10 @@ radioGroup settings control defOptions schema fieldType fieldState =
 checkbox : Settings -> UI.Control -> UI.DefOptions -> SubSchema -> Input
 checkbox settings control defOptions schema fieldState =
     let
+        required : Bool
+        required =
+            schema.const == Just (Encode.bool True)
+
         inputField : Html F.Msg
         inputField =
             div [ Attrs.map never settings.theme.checkboxRow ]
@@ -398,7 +402,7 @@ checkbox settings control defOptions schema fieldState =
 
                   else
                     Input.checkboxInput settings fieldState
-                , Html.viewMaybe identity <| fieldLabel settings.theme control.label defOptions schema control.scope (fieldState.required && schema.const == Just (Encode.bool True))
+                , Html.viewMaybe identity <| fieldLabel settings.theme control.label defOptions schema control.scope required
                 ]
     in
     fieldGroup
