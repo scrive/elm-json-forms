@@ -18,7 +18,7 @@ import Model exposing (..)
 import Settings
 import UiSchema
 import Url
-import Url.Parser exposing ((<?>))
+import Url.Parser
 import Url.Parser.Query
 
 
@@ -35,15 +35,10 @@ main =
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url key =
+init _ url key =
     let
         activeForm =
-            case parseUrl url of
-                Just i ->
-                    i
-
-                Nothing ->
-                    0
+            Maybe.withDefault 0 <| parseUrl url
     in
     ( { forms = exampleForms, activeForm = activeForm, key = key }, Cmd.none )
 
@@ -81,8 +76,8 @@ makeUrl exampleId =
 
 
 parseUrl : Url.Url -> Maybe Int
-parseUrl =
-    Maybe.join << Url.Parser.parse (Url.Parser.top <?> Url.Parser.Query.int "example")
+parseUrl url =
+    Maybe.join <| Url.Parser.parse (Url.Parser.query <| Url.Parser.Query.int "example") { url | path = "" }
 
 
 updateExample : ExampleMsg -> FormState -> FormState

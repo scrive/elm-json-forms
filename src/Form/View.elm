@@ -13,6 +13,7 @@ import Html.Attributes.Extra as Attrs
 import Html.Events exposing (..)
 import Html.Extra as Html
 import Json.Decode as Decode
+import Json.Encode as Encode
 import Json.Pointer as Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema(..), SingleType(..), SubSchema, Type(..))
 import Json.Util as Util
@@ -397,7 +398,7 @@ checkbox settings control defOptions schema fieldState =
 
                   else
                     Input.checkboxInput settings fieldState
-                , Html.viewMaybe identity <| fieldLabel settings.theme control.label defOptions schema control.scope fieldState.required
+                , Html.viewMaybe identity <| fieldLabel settings.theme control.label defOptions schema control.scope (fieldState.required && schema.const == Just (Encode.bool True))
                 ]
     in
     fieldGroup
