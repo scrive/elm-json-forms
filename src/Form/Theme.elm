@@ -1,11 +1,8 @@
-module Form.Theme exposing
-    ( Theme, simpleTailwind
-    , scrive
-    )
+module Form.Theme exposing (Theme, simpleTailwind, scrive)
 
 {-| Form appearance
 
-@docs Theme, simpleTailwind
+@docs Theme, simpleTailwind, scrive
 
 -}
 
