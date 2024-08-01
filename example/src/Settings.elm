@@ -36,9 +36,6 @@ errorString error =
         InvalidString ->
             "not a valid string"
 
-        InvalidEmail ->
-            "not a valid email address"
-
         InvalidFormat _ ->
             "not the correct format"
 

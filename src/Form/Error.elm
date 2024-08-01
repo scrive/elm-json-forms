@@ -21,7 +21,6 @@ type alias Errors =
 type ErrorValue
     = Empty
     | InvalidString
-    | InvalidEmail
     | InvalidFormat TextFormat
     | InvalidInt
     | InvalidFloat

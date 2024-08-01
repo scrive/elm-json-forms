@@ -142,7 +142,7 @@ scrive =
     , fieldLabel = Attrs.class "block text-sm font-medium mb-1"
     , fieldDescription = Attrs.class "text-sm text-slate-500 my-1"
     , fieldError = Attrs.class "text-red-600 text-xs my-1"
-    , checkboxRow = Attrs.class "flex items-center gap-3"
+    , checkboxRow = Attrs.class "flex gap-3"
     , radioEntry =
         \{ vertical } ->
             Attrs.classList
@@ -156,7 +156,7 @@ scrive =
                 , ( "border-gray-700", not invalid )
                 , ( "w-full", not trim )
                 , ( "w-52", trim )
-                , ( "py-2 px-3 text-sm rounded", True )
+                , ( "border py-2 px-3 text-sm rounded", True )
                 ]
     , textArea =
         \{ trim, invalid } ->
@@ -165,7 +165,7 @@ scrive =
                 , ( "border-gray-700", not invalid )
                 , ( "w-full", not trim )
                 , ( "w-52", trim )
-                , ( "py-2 px-3 text-sm rounded", True )
+                , ( "border py-2 px-3 text-sm rounded", True )
                 ]
     , selectInput =
         \{ trim, invalid } ->
@@ -174,7 +174,7 @@ scrive =
                 , ( "border-gray-700", not invalid )
                 , ( "w-full", not trim )
                 , ( "w-52", trim )
-                , ( "py-2 px-3 text-sm rounded", True )
+                , ( "border py-2 px-3 text-sm rounded bg-white", True )
                 ]
     , checkboxInput =
         \_ ->
