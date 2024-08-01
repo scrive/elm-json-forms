@@ -102,14 +102,15 @@ slider settings options schema fieldType state =
             , Attrs.attribute "max" (String.fromFloat maxLimit)
             , Attrs.attribute "step" (String.fromFloat step)
             , Attrs.disabled state.disabled
-            , Attrs.map never <|
-                settings.theme.sliderInput
-                    { trim = options.trim
-                    }
+            , Attrs.map never settings.theme.sliderInput
             ]
     in
     div
-        []
+        [ Attrs.map never <|
+            settings.theme.sliderWithTicks
+                { trim = options.trim
+                }
+        ]
         [ div [ Attrs.style "display" "flex", Attrs.class "text-sm" ]
             [ span [ Attrs.style "flex-grow" "1", Attrs.class "text-left" ] [ text (String.fromFloat minLimit) ]
             , span [ Attrs.style "flex-grow" "1", Attrs.class "text-right" ] [ text (String.fromFloat maxLimit) ]

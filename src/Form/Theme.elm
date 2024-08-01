@@ -30,7 +30,8 @@ type alias Theme =
     , selectInput : { trim : Bool, invalid : Bool } -> Attribute Never
     , checkboxInput : { invalid : Bool } -> Attribute Never
     , radioInput : Attribute Never
-    , sliderInput : { trim : Bool } -> Attribute Never
+    , sliderInput : Attribute Never
+    , sliderWithTicks : { trim : Bool } -> Attribute Never
     , toggleInput : { checked : Bool } -> Attribute Never
     , toggleKnob : { checked : Bool } -> Attribute Never
     , group : Attribute Never
@@ -96,9 +97,11 @@ simpleTailwind =
             [ ( "mr-3", True )
             ]
     , sliderInput =
+        Attrs.class "w-full"
+    , sliderWithTicks =
         \{ trim } ->
             Attrs.classList
-                [ ( "w-full", not trim )
+                [ ( "w-52", trim )
                 ]
     , toggleInput =
         \{ checked } ->
@@ -183,13 +186,13 @@ scrive =
                 , ( "border-2 w-5 h-5", True )
                 ]
     , radioInput =
-        Attrs.classList
-            [ ( "border-gray-500 border-2 w-4 h-4 mr-3", True )
-            ]
+        Attrs.class "border-gray-500 border-2 w-4 h-4 mr-3"
     , sliderInput =
+        Attrs.class "w-full"
+    , sliderWithTicks =
         \{ trim } ->
             Attrs.classList
-                [ ( "w-full", not trim )
+                [ ( "w-52", trim )
                 ]
     , toggleInput =
         \{ checked } ->
