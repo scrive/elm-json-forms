@@ -126,7 +126,7 @@ view : Model -> Browser.Document Msg
 view state =
     { title = "JSON Schema Forms"
     , body =
-        [ div [ class "flex flex-wrap" ]
+        [ div [ class "flex flex-wrap bg-slate-100 h-lvh" ]
             [ viewMenu state
             , Html.map (ExampleMsg state.activeForm) <| viewMaybe viewExample (List.getAt state.activeForm state.forms)
             ]
@@ -136,7 +136,7 @@ view state =
 
 viewMenu : Model -> Html Msg
 viewMenu state =
-    aside [ class "md:w-1/4 p-3" ]
+    aside [ class "md:w-1/4 max-w-80 p-3" ]
         [ h1 "Examples"
         , hr [ class "my-3" ] []
         , div [] <|
@@ -178,7 +178,7 @@ viewExample fs =
                             empty
 
                         Just form ->
-                            div [ class "border shadow rounded p-3" ]
+                            div [ class "border shadow rounded p-3 bg-white" ]
                                 [ Html.map FormMsg (Form.view form) ]
                     ]
                 ]
