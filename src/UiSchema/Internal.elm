@@ -547,7 +547,7 @@ decodeStringLike =
         ]
 
 
-{-| Properties which are, by default, not omitted but with a default value.
+{-| Properties which are by default not omitted, but created with a default value.
 -}
 defaultedProps : Schema.SubSchema -> List ( String, Value )
 defaultedProps schema =
@@ -562,9 +562,11 @@ defaultedProps schema =
         |> List.sortBy (\( k, _ ) -> k)
 
 
+{-| Produce a default value for the given form schema.
+-}
 defaultValue : Schema -> Value
 defaultValue schema =
-    case defaultValue_ schema of
+    case defaultObjectSchemaValue schema of
         Nothing ->
             Util.withObjectSchema Encode.null schema <|
                 \o ->
@@ -594,13 +596,17 @@ defaultValue schema =
             v
 
 
-defaultValue_ : Schema -> Maybe Value
-defaultValue_ schema =
+defaultObjectSchemaValue : Schema -> Maybe Value
+defaultObjectSchemaValue schema =
     Util.withObjectSchema Nothing schema <|
         \o ->
             case o.default of
                 Just d ->
-                    Just d
+                    if d == Encode.null then
+                        Nothing
+
+                    else
+                        Just d
 
                 Nothing ->
                     case o.type_ of
@@ -612,7 +618,7 @@ defaultValue_ schema =
                                             Util.getProperties o
 
                                         propDefault ( name, sch ) =
-                                            Maybe.map (\s -> ( name, s )) <| defaultValue_ sch
+                                            Maybe.map (\s -> ( name, s )) <| defaultObjectSchemaValue sch
 
                                         propDefaults =
                                             List.filterMap propDefault schemata
