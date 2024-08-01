@@ -149,7 +149,7 @@ scrive =
     , radioEntry =
         \{ vertical } ->
             Attrs.classList
-                [ ( "mr-5 items-center", True )
+                [ ( "mr-5", True )
                 , ( "flex", vertical )
                 ]
     , textInput =
