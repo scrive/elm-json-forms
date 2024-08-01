@@ -1,10 +1,10 @@
-module Form exposing (Form, Msg, init, update, view, getSchema, getUiSchema, getErrors, setSchema, setUiSchema)
+module Form exposing (Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, getSchema, getUiSchema, getErrors, setSchema, setUiSchema
+@docs Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema
 
 -}
 
@@ -14,6 +14,7 @@ import Form.State
 import Form.Validation exposing (validation)
 import Form.View
 import Html exposing (Html, div)
+import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
 import Maybe.Extra as Maybe
@@ -94,6 +95,17 @@ update msg form =
                 msg
                 form.state
     }
+
+
+{-| Get the current form value.
+
+The returned value may not be conforming to the JSON Schema if the
+list of validation errors returned by `getErrors` is non-empty.
+
+-}
+getValue : Form -> Value
+getValue form =
+    form.state.value
 
 
 {-| Get the current Schema

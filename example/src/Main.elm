@@ -273,7 +273,7 @@ viewData : Form -> Html a
 viewData form =
     let
         dataText =
-            Encode.encode 4 form.state.value
+            Encode.encode 4 (Form.getValue form)
 
         errorsText =
             String.join "\n" (List.map (\( pointer, err ) -> Pointer.toString pointer ++ ": " ++ Settings.errorString err) <| Form.getErrors form)
