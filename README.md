@@ -3,6 +3,8 @@
 [![Elm CI](https://github.com/scrive/elm-json-forms/actions/workflows/elm.yml/badge.svg)](https://github.com/scrive/elm-json-forms/actions/workflows/elm.yml)
 [![GitHub Pages](https://github.com/scrive/elm-json-forms/actions/workflows/elm-to-gh-pages.yml/badge.svg)](https://github.com/scrive/elm-json-forms/actions/workflows/elm-to-gh-pages.yml)
 
+Elm Package: https://package.elm-lang.org/packages/scrive/elm-json-forms/latest
+
 Live example: https://scrive.github.io/elm-json-forms/
 
 Generate validating forms from JSON schemas.
@@ -27,7 +29,3 @@ Generate validating forms from JSON schemas.
 - Categorization Example
   - Implement prev/next buttons
   - Implement stepper variant
-
-## Example usage
-
-See the [example project](https://github.com/scrive/elm-json-forms/tree/main/example) for examples
