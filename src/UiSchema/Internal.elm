@@ -602,11 +602,7 @@ defaultObjectSchemaValue schema =
         \o ->
             case o.default of
                 Just d ->
-                    if d == Encode.null then
-                        Nothing
-
-                    else
-                        Just d
+                    Just d
 
                 Nothing ->
                     case o.type_ of
