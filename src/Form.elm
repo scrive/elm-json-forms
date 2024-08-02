@@ -1,10 +1,10 @@
-module Form exposing (Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema)
+module Form exposing (Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema
+@docs Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
 
 -}
 
@@ -42,6 +42,18 @@ init settings id schema uiSchema =
     , uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema schema) uiSchema
     , uiSchemaIsGenerated = uiSchema == Nothing
     , state = Form.State.initState id (defaultValue schema) (validation schema)
+    }
+
+
+{-| Swap the Settings of an existing form
+
+Form data is not affected, only the view may change.
+
+-}
+setSettings : Settings -> Form -> Form
+setSettings settings form =
+    { form
+        | settings = settings
     }
 
 
