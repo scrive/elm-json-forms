@@ -208,7 +208,7 @@ viewExample fs =
                 , div []
                     [ div [ Attrs.hidden (fs.tab /= RawDataTab) ]
                         [ Html.viewMaybe viewRawData fs.form
-                        ]                    
+                        ]
                     , div [ Attrs.hidden (fs.tab /= SubmitDataTab) ]
                         [ Html.viewMaybe viewSubmitData fs.form
                         ]
@@ -283,13 +283,17 @@ viewRawData form =
 
 viewSubmitData : Form -> Html a
 viewSubmitData form =
-    viewData form <| case Form.getSubmitValue form of
-        Nothing -> "<empty>"
-        Just v -> Encode.encode 4 v
+    viewData form <|
+        case Form.getSubmitValue form of
+            Nothing ->
+                "<empty>"
+
+            Just v ->
+                Encode.encode 4 v
 
 
 viewData : Form -> String -> Html a
-viewData form dataText = 
+viewData form dataText =
     let
         errorsText =
             String.join "\n" (List.map (\( pointer, err ) -> Pointer.toString pointer ++ ": " ++ Settings.errorString err) <| Form.getErrors form)
@@ -303,6 +307,7 @@ viewData form dataText =
             _ ->
                 viewError "Errors" errorsText
         ]
+
 
 textarea : List (Attribute a) -> String -> Html a
 textarea attrs s =

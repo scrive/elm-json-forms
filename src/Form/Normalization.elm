@@ -24,18 +24,25 @@ normalizeString : Value -> Value
 normalizeString =
     withDefault (Decode.map (Encode.string << String.trim) Decode.string)
 
+
 {-| Empty values are removed from objects
 -}
 isEmpty : Value -> Bool
-isEmpty v = Decode.decodeValue Decode.string v == Ok ""
+isEmpty v =
+    Decode.decodeValue Decode.string v == Ok ""
+
 
 normalizeObject : Value -> Value
 normalizeObject value =
     let
-        mapKeyValue (k, v) = if isEmpty v then Nothing else Just (k, v)
+        mapKeyValue ( k, v ) =
+            if isEmpty v then
+                Nothing
 
+            else
+                Just ( k, v )
     in
-        withDefault (Decode.map (Encode.object << List.filterMap (mapKeyValue << Tuple.mapSecond normalizeValue)) (Decode.keyValuePairs Decode.value)) value
+    withDefault (Decode.map (Encode.object << List.filterMap (mapKeyValue << Tuple.mapSecond normalizeValue)) (Decode.keyValuePairs Decode.value)) value
 
 
 normalizeList : Value -> Value

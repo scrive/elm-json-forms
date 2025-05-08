@@ -1,16 +1,16 @@
 module Validation exposing
     ( Validation
-    , map
-    , voidRight
     , andMap
     , error
     , fail
     , isOk
+    , map
     , mapErrorPointers
     , oneOf
     , succeed
     , unless
     , validateAll
+    , voidRight
     , whenJust
     )
 

@@ -1,8 +1,9 @@
 module Form.Validation exposing (validate)
 
 import Form.Error as Error exposing (ErrorValue(..))
+import Form.Normalization exposing (normalizeValue)
 import Form.Regex
-import Json.Decode as Decode exposing (Value)
+import Json.Decode as Decode exposing (Value, value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
     exposing
@@ -14,27 +15,28 @@ import Json.Schema.Definitions
         )
 import Json.Util as Util
 import Regex
-import Set
-import Form.Normalization exposing (normalizeValue)
-import Validation exposing (Validation, error)
-import Json.Decode as Decode exposing (value)
 import Result.Extra as Result
+import Set
+import Validation exposing (Validation, error)
 
 
 validate : Schema -> Value -> Validation Value
 validate schema rawValue =
-    let 
-        value = normalizeValue rawValue
+    let
+        value =
+            normalizeValue rawValue
     in
-        Validation.voidRight value <| validateSchema schema value
+    Validation.voidRight value <| validateSchema schema value
 
 
 validateSchema : Schema -> Value -> Validation Value
 validateSchema schema rawValue =
-    let 
-        value = normalizeValue rawValue
+    let
+        value =
+            normalizeValue rawValue
     in
-        Validation.voidRight value <| case schema of
+    Validation.voidRight value <|
+        case schema of
             BooleanSchema bool ->
                 if bool then
                     Validation.succeed value
@@ -44,6 +46,7 @@ validateSchema schema rawValue =
 
             ObjectSchema objectSchema ->
                 validateSubSchema objectSchema value
+
 
 validateSubSchema : SubSchema -> Value -> Validation Value
 validateSubSchema schema =

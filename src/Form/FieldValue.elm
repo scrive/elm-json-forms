@@ -21,6 +21,7 @@ type FieldValue
     | Number Float
     | Bool Bool
 
+
 {-| Types that may be produced by a HTML field
 -}
 type FieldType
@@ -129,17 +130,17 @@ updateValue pointer new value =
 
 fromIntInput : String -> FieldValue
 fromIntInput s =
-        Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
+    Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
 
 
 fromFloatInput : String -> FieldValue
 fromFloatInput s =
-        Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
+    Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
 
 
 fromStringInput : String -> FieldValue
 fromStringInput s =
-        String s
+    String s
 
 
 fromFieldInput : FieldType -> String -> FieldValue

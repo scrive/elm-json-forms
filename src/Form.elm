@@ -1,18 +1,4 @@
-module Form exposing 
-    (Form
-    , Msg
-    , init
-    , update
-    , view
-    , getRawValue
-    , getSubmitValue
-    , getSchema
-    , getUiSchema
-    , getErrors
-    , setSettings
-    , setSchema
-    , setUiSchema
-    )
+module Form exposing (Form, Msg, init, update, view, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema)
 
 {-| JSON Forms implementation with validations.
 
@@ -125,7 +111,7 @@ update msg form =
 
 {-| Get the current form value.
 
-The returned value reflects the current form contents. 
+The returned value reflects the current form contents.
 It is not normalized, and may not be conforming to the JSON Schema.
 To get a normalized value conforming to the JSON Schema, use `getValidValue`.
 
@@ -138,6 +124,7 @@ getRawValue form =
 {-| Get the current form value.
 
 The value is present only if form validation passes.
+
 -}
 getSubmitValue : Form -> Maybe Value
 getSubmitValue form =
