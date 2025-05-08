@@ -36,7 +36,6 @@ baseTextInput settings options fieldType inputType maxLength state =
             , value (FieldValue.asString state.value)
             , onInput (FieldValue.fromFieldInput fieldType >> Input state.pointer)
             , onFocus (Focus state.pointer)
-            , onBlur Blur
             , case ( options.restrict, maxLength ) of
                 ( True, Just n ) ->
                     Attrs.maxlength n
@@ -97,7 +96,6 @@ slider settings options schema fieldType state =
             , value (FieldValue.asString state.value)
             , onInput (FieldValue.fromFieldInput fieldType >> Input state.pointer)
             , onFocus (Focus state.pointer)
-            , onBlur Blur
             , Attrs.attribute "min" (String.fromFloat minLimit)
             , Attrs.attribute "max" (String.fromFloat maxLimit)
             , Attrs.attribute "step" (String.fromFloat step)
@@ -127,7 +125,6 @@ textArea settings options maxLength state =
             , value (FieldValue.asString state.value)
             , onInput (String >> Input state.pointer)
             , onFocus (Focus state.pointer)
-            , onBlur Blur
             , attribute "rows" "4"
             , Attrs.disabled state.disabled
             , case ( options.restrict, maxLength ) of
@@ -155,7 +152,6 @@ baseSelectInput fieldType settings valueList state =
                 "change"
                 (targetValue |> Decode.map (FieldValue.fromFieldInput fieldType >> Input state.pointer))
             , onFocus (Focus state.pointer)
-            , onBlur Blur
             , Attrs.disabled state.disabled
             , Attrs.map never <|
                 settings.theme.selectInput
@@ -196,7 +192,6 @@ toggleInput settings state =
             , Attrs.map never <| settings.theme.toggleInput { checked = checked }
             , onClick (Input state.pointer (Bool <| not checked))
             , onFocus (Focus state.pointer)
-            , onBlur Blur
             , Attrs.disabled state.disabled
             ]
     in
@@ -215,10 +210,9 @@ checkboxInput settings state =
             [ type_ "checkbox"
             , Attrs.id (inputElementId state.formId state.pointer)
             , Attrs.map never <| settings.theme.checkboxInput { invalid = state.error /= Nothing }
-            , checked (FieldValue.asBool state.value |> Maybe.withDefault False)
+            , checked (FieldValue.asBool state.value)
             , onCheck (Bool >> Input state.pointer)
             , onFocus (Focus state.pointer)
-            , onBlur Blur
             , Attrs.disabled state.disabled
             ]
     in

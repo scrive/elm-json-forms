@@ -1,9 +1,12 @@
 module Form.FieldValue exposing
-    ( FieldType(..)
+    ( FieldFormat(..)
+    , FieldType(..)
     , FieldValue(..)
     , asBool
     , asString
+    , formatFromSchema
     , fromFieldInput
+    , isStringField
     , pointedFieldValue
     , updateValue
     )
@@ -27,7 +30,25 @@ type FieldValue
 type FieldType
     = NumberField
     | IntField
-    | StringField
+    | StringField FieldFormat
+
+
+type FieldFormat
+    = Text
+    | Email
+    | Date
+    | Time
+    | DateTime
+
+
+isStringField : FieldType -> Bool
+isStringField fieldType =
+    case fieldType of
+        StringField _ ->
+            True
+
+        _ ->
+            False
 
 
 asString : FieldValue -> String
@@ -65,14 +86,14 @@ asValue fv =
             Encode.bool b
 
 
-asBool : FieldValue -> Maybe Bool
+asBool : FieldValue -> Bool
 asBool fv =
     case fv of
         Bool b ->
-            Just b
+            b
 
         _ ->
-            Nothing
+            False
 
 
 toFieldValue : Value -> Maybe FieldValue
@@ -146,7 +167,7 @@ fromStringInput s =
 fromFieldInput : FieldType -> String -> FieldValue
 fromFieldInput fieldType =
     case fieldType of
-        StringField ->
+        StringField _ ->
             fromStringInput
 
         IntField ->
@@ -154,3 +175,26 @@ fromFieldInput fieldType =
 
         NumberField ->
             fromFloatInput
+
+
+formatFromSchema : Maybe String -> FieldFormat
+formatFromSchema =
+    Maybe.withDefault Text
+        << Maybe.map
+            (\f ->
+                case f of
+                    "email" ->
+                        Email
+
+                    "date" ->
+                        Date
+
+                    "time" ->
+                        Time
+
+                    "date-time" ->
+                        DateTime
+
+                    _ ->
+                        Text
+            )

@@ -20,19 +20,22 @@ module UiSchema.Internal exposing
     , applyDefaults
     , decodeStringLike
     , decodeUiSchema
+    , defaultOptions
     , defaultValue
     , fieldNameToTitle
     , generateUiSchema
     , getRule
     , pointToSchema
+    , pointToSubSchema
     )
 
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
 import Json.Pointer as Pointer exposing (Pointer)
-import Json.Schema.Definitions as Schema exposing (Schema)
+import Json.Schema.Definitions as Schema exposing (Schema, SubSchema)
 import Json.Util as Util
+import Maybe.Extra as Maybe
 import String.Case
 
 
@@ -153,47 +156,48 @@ type alias DefOptions =
     }
 
 
-emptyOptions : Options
-emptyOptions =
+defaultOptions : DefOptions
+defaultOptions =
     { format = Nothing
-    , orientation = Nothing
-    , showSortButtons = Nothing
-    , detail = Nothing
+    , orientation = Horizontal
+    , showSortButtons = False
+    , detail = DetailDefault
     , elementLabelProp = Nothing
-    , readonly = Nothing
-    , multi = Nothing
-    , slider = Nothing
-    , trim = Nothing
-    , restrict = Nothing
-    , showUnfocusedDescription = Nothing
-    , hideRequiredAsterisk = Nothing
-    , toggle = Nothing
+    , readonly = False
+    , multi = False
+    , slider = False
+    , trim = False
+    , restrict = False
+    , showUnfocusedDescription = False
+    , hideRequiredAsterisk = False
+    , toggle = False
     , variant = Nothing
-    , showNavButtons = Nothing
+    , showNavButtons = False
     }
 
 
-applyDefaults : Maybe Options -> DefOptions
-applyDefaults options =
-    Maybe.withDefault emptyOptions options
-        |> (\o ->
-                { format = o.format
-                , orientation = Maybe.withDefault Horizontal o.orientation
-                , showSortButtons = Maybe.withDefault False o.showSortButtons
-                , detail = Maybe.withDefault DetailDefault o.detail
-                , elementLabelProp = o.elementLabelProp
-                , readonly = Maybe.withDefault False o.readonly
-                , multi = Maybe.withDefault False o.multi
-                , slider = Maybe.withDefault False o.slider
-                , trim = Maybe.withDefault False o.trim
-                , restrict = Maybe.withDefault False o.restrict
-                , showUnfocusedDescription = Maybe.withDefault False o.showUnfocusedDescription
-                , hideRequiredAsterisk = Maybe.withDefault False o.hideRequiredAsterisk
-                , toggle = Maybe.withDefault False o.toggle
-                , variant = Nothing
-                , showNavButtons = Maybe.withDefault False o.showNavButtons
-                }
-           )
+applyDefaults : DefOptions -> Maybe Options -> DefOptions
+applyDefaults d mo =
+    Maybe.unwrap d
+        (\o ->
+            { format = Maybe.or o.format d.format
+            , orientation = Maybe.withDefault d.orientation o.orientation
+            , showSortButtons = Maybe.withDefault d.showSortButtons o.showSortButtons
+            , detail = Maybe.withDefault d.detail o.detail
+            , elementLabelProp = Maybe.or o.elementLabelProp d.elementLabelProp
+            , readonly = Maybe.withDefault d.readonly o.readonly
+            , multi = Maybe.withDefault d.multi o.multi
+            , slider = Maybe.withDefault d.slider o.slider
+            , trim = Maybe.withDefault d.trim o.trim
+            , restrict = Maybe.withDefault d.restrict o.restrict
+            , showUnfocusedDescription = Maybe.withDefault d.showUnfocusedDescription o.showUnfocusedDescription
+            , hideRequiredAsterisk = Maybe.withDefault d.hideRequiredAsterisk o.hideRequiredAsterisk
+            , toggle = Maybe.withDefault d.toggle o.toggle
+            , variant = Maybe.or o.variant d.variant
+            , showNavButtons = Maybe.withDefault d.showNavButtons o.showNavButtons
+            }
+        )
+        mo
 
 
 type Format
@@ -514,6 +518,20 @@ pointToSchema schema pointer =
 
         _ ->
             Nothing
+
+
+pointToSubSchema : Schema -> Pointer -> Maybe SubSchema
+pointToSubSchema schema =
+    pointToSchema schema
+        >> Maybe.andThen
+            (\s ->
+                case s of
+                    Schema.ObjectSchema subSchema ->
+                        Just subSchema
+
+                    _ ->
+                        Nothing
+            )
 
 
 getRule : UiSchema -> Maybe Rule

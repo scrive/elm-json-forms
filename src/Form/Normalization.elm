@@ -25,8 +25,6 @@ normalizeString =
     withDefault (Decode.map (Encode.string << String.trim) Decode.string)
 
 
-{-| Empty values are removed from objects
--}
 isEmpty : Value -> Bool
 isEmpty v =
     Decode.decodeValue Decode.string v == Ok ""
@@ -35,6 +33,11 @@ isEmpty v =
 normalizeObject : Value -> Value
 normalizeObject value =
     let
+        {- Empty values are removed from objects.
+
+           This is important to do, because we need to mark empty fields as missing,
+           not invalid.
+        -}
         mapKeyValue ( k, v ) =
             if isEmpty v then
                 Nothing

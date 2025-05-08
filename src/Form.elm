@@ -1,10 +1,13 @@
-module Form exposing (Form, Msg, init, update, view, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema)
+module Form exposing
+    ( Form, Msg, init, update, view, widget, viewWidget, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
+    , Control, Widget, validateAllMsg
+    )
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
+@docs Form, Msg, init, update, view, widget, viewWidget, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
 
 -}
 
@@ -13,11 +16,14 @@ import Form.Settings exposing (Settings)
 import Form.State
 import Form.Validation exposing (validate)
 import Form.View
+import Form.ViewWidget
+import Form.Widget
 import Html exposing (Html, div)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
 import Maybe.Extra as Maybe
+import UiSchema as UI
 import UiSchema.Internal exposing (UiSchema, defaultValue, generateUiSchema)
 
 
@@ -33,16 +39,40 @@ type alias Msg =
     Form.State.Msg
 
 
+type alias Widget =
+    Form.Widget.Widget
+
+
+type alias Control =
+    Form.Widget.Control
+
+
+validateAllMsg : Msg
+validateAllMsg =
+    Form.State.ValidateAll
+
+
 {-| Initialize form state
 -}
-init : Settings -> String -> Schema -> Maybe UiSchema -> Form
-init settings id schema uiSchema =
+init : Settings -> UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
+init settings defaultOptions id schema uiSchema =
     { settings = settings
     , schema = schema
     , uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema schema) uiSchema
     , uiSchemaIsGenerated = uiSchema == Nothing
-    , state = Form.State.initState id (defaultValue schema) (validation schema)
+    , state = Form.State.initState id (defaultValue schema) (validate schema)
+    , defaultOptions = defaultOptions
     }
+
+
+widget : Form -> Widget
+widget =
+    Form.Widget.widget
+
+
+viewWidget : Widget -> Html Msg
+viewWidget =
+    Form.ViewWidget.viewWidget
 
 
 {-| Swap the Settings of an existing form

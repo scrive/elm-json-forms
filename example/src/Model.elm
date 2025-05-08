@@ -43,6 +43,7 @@ type Msg
 
 type ExampleMsg
     = FormMsg Form.Msg
+    | Submit
     | EditSchema String
     | EditUiSchema String
     | SwitchTab Tab

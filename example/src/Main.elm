@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import Cmd.Extra as Cmd
 import Examples exposing (exampleForms)
 import Form exposing (Form)
 import Html exposing (..)
@@ -47,11 +48,16 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ExampleMsg i m ->
-            ( { model
-                | forms = List.updateAt i (updateExample m) model.forms
-              }
-            , Cmd.none
-            )
+            case List.getAt i model.forms |> Maybe.map (updateExample m) of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just ( st, cmd ) ->
+                    ( { model
+                        | forms = List.updateAt i (always st) model.forms
+                      }
+                    , Cmd.map (ExampleMsg i) cmd
+                    )
 
         UrlChanged url ->
             case parseUrl url of
@@ -80,46 +86,55 @@ parseUrl url =
     Maybe.join <| Url.Parser.parse (Url.Parser.query <| Url.Parser.Query.int "example") { url | path = "" }
 
 
-updateExample : ExampleMsg -> FormState -> FormState
+updateExample : ExampleMsg -> FormState -> ( FormState, Cmd ExampleMsg )
 updateExample msg fs =
     case msg of
         FormMsg formMsg ->
-            { fs | form = Maybe.map (Form.update formMsg) fs.form }
+            ( { fs | form = Maybe.map (Form.update formMsg) fs.form }, Cmd.none )
 
         EditSchema s ->
             case Json.Schema.fromString s of
                 Ok schema ->
-                    { fs
+                    ( { fs
                         | stringSchema = s
                         , form = Maybe.map (Form.setSchema schema) fs.form
                         , schemaError = Nothing
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 Err e ->
-                    { fs
+                    ( { fs
                         | stringSchema = s
                         , schemaError = Just e
-                    }
+                      }
+                    , Cmd.none
+                    )
+
+        Submit ->
+            ( fs, Cmd.batch [ Cmd.perform (FormMsg Form.validateAllMsg) ] )
 
         EditUiSchema s ->
             case UiSchema.fromString s of
                 Ok uiSchema ->
-                    { fs
+                    ( { fs
                         | stringUiSchema = Just s
                         , form = Maybe.map (Form.setUiSchema (Just uiSchema)) fs.form
                         , uiSchemaError = Nothing
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 Err e ->
-                    { fs
+                    ( { fs
                         | stringUiSchema = Just s
                         , uiSchemaError = Just e
-                    }
+                      }
+                    , Cmd.none
+                    )
 
         SwitchTab t ->
-            { fs
-                | tab = t
-            }
+            ( { fs | tab = t }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -173,6 +188,20 @@ viewExample fs =
             [ div [ class "w-full lg:w-1/2 px-2" ]
                 [ div []
                     [ h2 "Form"
+                    , case fs.form of
+                        Nothing ->
+                            empty
+
+                        Just form ->
+                            div [ class "border shadow rounded p-3 bg-white" ]
+                                [ Html.map FormMsg (Form.viewWidget (Form.widget form))
+                                , button
+                                    [ Attrs.class "bg-blue-500 text-white p-2 rounded"
+                                    , Events.onClick Submit
+                                    ]
+                                    [ text "Validate" ]
+                                ]
+                    , h2 "Form Legacy"
                     , case fs.form of
                         Nothing ->
                             empty

@@ -5,7 +5,7 @@ import Form.Error exposing (ErrorValue(..))
 import Form.Theme as Theme
 import Json.Encode as Encode
 import Json.Schema.Definitions exposing (Schema)
-import UiSchema exposing (UiSchema)
+import UiSchema exposing (DefOptions, UiSchema, defaultOptions)
 
 
 initForm : String -> Schema -> Maybe UiSchema -> Form
@@ -13,6 +13,9 @@ initForm =
     Form.init
         { errors = always errorString
         , theme = Theme.scrive
+        }
+        { defaultOptions
+            | showUnfocusedDescription = True
         }
 
 

@@ -2,7 +2,7 @@ module Form.View exposing (view)
 
 import Dict
 import Form.Error exposing (ErrorValue)
-import Form.FieldValue as FieldValue exposing (FieldType(..))
+import Form.FieldValue as FieldValue exposing (FieldFormat(..), FieldType(..), formatFromSchema, isStringField)
 import Form.Settings exposing (Settings)
 import Form.State as F exposing (Form, FormState, Msg(..))
 import Form.Theme exposing (Theme)
@@ -178,7 +178,7 @@ controlView settings uiState wholeSchema control form =
             UI.pointToSchema wholeSchema control.scope
 
         defOptions =
-            UI.applyDefaults control.options
+            UI.applyDefaults UI.defaultOptions control.options
 
         disabled =
             defOptions.readonly == True || uiState.disabled
@@ -200,7 +200,7 @@ controlView settings uiState wholeSchema control form =
                             textLikeInput settings control defOptions schema NumberField fieldState
 
                         SingleType StringType ->
-                            textLikeInput settings control defOptions schema StringField fieldState
+                            textLikeInput settings control defOptions schema (StringField <| formatFromSchema schema.format) fieldState
 
                         SingleType BooleanType ->
                             checkbox settings control defOptions schema fieldState
@@ -236,7 +236,7 @@ textLikeInput settings control defOptions schema fieldType state =
     else if defOptions.slider == True then
         slider settings control defOptions schema fieldType state
 
-    else if defOptions.multi && fieldType == StringField then
+    else if defOptions.multi && isStringField fieldType then
         textarea settings control defOptions schema state
 
     else
@@ -249,43 +249,22 @@ textInput settings control defOptions schema fieldType fieldState =
         inputType : String
         inputType =
             case fieldType of
-                StringField ->
-                    case schema.format of
-                        Just "email" ->
+                StringField format ->
+                    case format of
+                        Text ->
+                            "text"
+
+                        Email ->
                             "email"
 
-                        Just "idn-email" ->
-                            "email"
-
-                        Just "date" ->
+                        Date ->
                             "date"
 
-                        Just "time" ->
+                        Time ->
                             "time"
 
-                        Just "date-time" ->
+                        DateTime ->
                             "datetime-local"
-
-                        Just "month" ->
-                            "month"
-
-                        Just "week" ->
-                            "week"
-
-                        Just "hostname" ->
-                            "url"
-
-                        Just "idn-hostname" ->
-                            "url"
-
-                        Just "uri" ->
-                            "url"
-
-                        Just "iri" ->
-                            "url"
-
-                        _ ->
-                            "text"
 
                 NumberField ->
                     "number"
@@ -370,7 +349,6 @@ radioGroup settings control defOptions schema fieldType fieldState =
                     , Attrs.map never settings.theme.radioInput
                     , onClick (Input fieldState.pointer (FieldValue.fromFieldInput fieldType value))
                     , onFocus (Focus fieldState.pointer)
-                    , onBlur Blur
                     , Attrs.disabled fieldState.disabled
                     ]
                     []
