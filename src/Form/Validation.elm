@@ -1,4 +1,4 @@
-module Form.Validation exposing (validation)
+module Form.Validation exposing (validate)
 
 import Form.Error as Error exposing (ErrorValue(..))
 import Form.Regex
@@ -15,25 +15,38 @@ import Json.Schema.Definitions
 import Json.Util as Util
 import Regex
 import Set
+import Form.Normalization exposing (normalizeValue)
 import Validation exposing (Validation, error)
+import Json.Decode as Decode exposing (value)
+import Result.Extra as Result
 
 
-validation : Schema -> Value -> Validation Value
-validation schema value =
-    case schema of
-        BooleanSchema bool ->
-            if bool then
-                Validation.succeed value
-
-            else
-                Validation.fail (error <| Unimplemented "Boolean schemas are not implemented.")
-
-        ObjectSchema objectSchema ->
-            subSchema objectSchema value
+validate : Schema -> Value -> Validation Value
+validate schema rawValue =
+    let 
+        value = normalizeValue rawValue
+    in
+        Validation.voidRight value <| validateSchema schema value
 
 
-subSchema : SubSchema -> Value -> Validation Value
-subSchema schema =
+validateSchema : Schema -> Value -> Validation Value
+validateSchema schema rawValue =
+    let 
+        value = normalizeValue rawValue
+    in
+        Validation.voidRight value <| case schema of
+            BooleanSchema bool ->
+                if bool then
+                    Validation.succeed value
+
+                else
+                    Validation.fail (error <| Unimplemented "Boolean schemas are not implemented.")
+
+            ObjectSchema objectSchema ->
+                validateSubSchema objectSchema value
+
+validateSubSchema : SubSchema -> Value -> Validation Value
+validateSubSchema schema =
     let
         typeValidations : Value -> Validation Value
         typeValidations =
@@ -84,7 +97,7 @@ validateSingleType schema type_ value =
                                 Ok Encode.null
 
                             ( Just val, _ ) ->
-                                validation propSchema val
+                                validateSchema propSchema val
             in
             Validation.validateAll (List.map (\( key, propSchema ) _ -> validateKey key propSchema) propList) value
 

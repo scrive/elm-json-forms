@@ -184,7 +184,8 @@ viewExample fs =
                 ]
             , div [ class "w-full lg:w-1/2 px-2" ]
                 [ div [ class "border-b mb-3" ]
-                    [ viewTabHeader [] fs.tab DataTab
+                    [ viewTabHeader [] fs.tab RawDataTab
+                    , viewTabHeader [] fs.tab SubmitDataTab
                     , viewTabHeader
                         [ if fs.schemaError /= Nothing then
                             class "line-through"
@@ -205,8 +206,11 @@ viewExample fs =
                         UiSchemaTab
                     ]
                 , div []
-                    [ div [ Attrs.hidden (fs.tab /= DataTab) ]
-                        [ Html.viewMaybe viewData fs.form
+                    [ div [ Attrs.hidden (fs.tab /= RawDataTab) ]
+                        [ Html.viewMaybe viewRawData fs.form
+                        ]                    
+                    , div [ Attrs.hidden (fs.tab /= SubmitDataTab) ]
+                        [ Html.viewMaybe viewSubmitData fs.form
                         ]
                     , div [ Attrs.hidden (fs.tab /= JsonSchemaTab) ]
                         [ textarea [ Attrs.name "JsonSchema", Events.onInput EditSchema, Attrs.rows 30 ] fs.stringSchema
@@ -245,8 +249,11 @@ viewTabHeader attrs activeTab tab =
         )
         [ text <|
             case tab of
-                DataTab ->
-                    "Data"
+                RawDataTab ->
+                    "Raw Data"
+
+                SubmitDataTab ->
+                    "Submit Data"
 
                 JsonSchemaTab ->
                     "JSON Schema"
@@ -269,12 +276,21 @@ viewError title err =
         ]
 
 
-viewData : Form -> Html a
-viewData form =
-    let
-        dataText =
-            Encode.encode 4 (Form.getValue form)
+viewRawData : Form -> Html a
+viewRawData form =
+    viewData form <| Encode.encode 4 <| Form.getRawValue form
 
+
+viewSubmitData : Form -> Html a
+viewSubmitData form =
+    viewData form <| case Form.getSubmitValue form of
+        Nothing -> "<empty>"
+        Just v -> Encode.encode 4 v
+
+
+viewData : Form -> String -> Html a
+viewData form dataText = 
+    let
         errorsText =
             String.join "\n" (List.map (\( pointer, err ) -> Pointer.toString pointer ++ ": " ++ Settings.errorString err) <| Form.getErrors form)
     in
@@ -287,7 +303,6 @@ viewData form =
             _ ->
                 viewError "Errors" errorsText
         ]
-
 
 textarea : List (Attribute a) -> String -> Html a
 textarea attrs s =

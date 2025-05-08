@@ -73,7 +73,7 @@ fieldState : Bool -> Bool -> Pointer -> FormState -> FieldState
 fieldState disabled required pointer form =
     { formId = form.formId
     , pointer = pointer
-    , value = Maybe.withDefault Empty <| FieldValue.pointedFieldValue pointer form.value
+    , value = Maybe.withDefault (String "") <| FieldValue.pointedFieldValue pointer form.value
     , error = getErrorAt pointer form.errors
     , hasFocus = form.focus == Just pointer
     , disabled = disabled

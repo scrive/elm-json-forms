@@ -22,7 +22,8 @@ type alias FormState =
 
 
 type Tab
-    = DataTab
+    = RawDataTab
+    | SubmitDataTab
     | JsonSchemaTab
     | UiSchemaTab
 
@@ -60,7 +61,7 @@ makeForm title stringSchema stringUiSchema =
         ( Ok s, Nothing ) ->
             { title = title
             , form = Just <| Settings.initForm title s Nothing
-            , tab = DataTab
+            , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = Nothing
             , schemaError = Nothing
@@ -70,7 +71,7 @@ makeForm title stringSchema stringUiSchema =
         ( Ok s, Just (Ok us) ) ->
             { title = title
             , form = Just <| Settings.initForm title s (Just us)
-            , tab = DataTab
+            , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
             , schemaError = Nothing
@@ -80,7 +81,7 @@ makeForm title stringSchema stringUiSchema =
         ( s, us ) ->
             { title = title
             , form = Nothing
-            , tab = DataTab
+            , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
             , schemaError = Result.error s

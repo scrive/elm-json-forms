@@ -1,17 +1,31 @@
-module Form exposing (Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema)
+module Form exposing 
+    (Form
+    , Msg
+    , init
+    , update
+    , view
+    , getRawValue
+    , getSubmitValue
+    , getSchema
+    , getUiSchema
+    , getErrors
+    , setSettings
+    , setSchema
+    , setUiSchema
+    )
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
+@docs Form, Msg, init, update, view, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
 
 -}
 
 import Form.Error as Error
 import Form.Settings exposing (Settings)
 import Form.State
-import Form.Validation exposing (validation)
+import Form.Validation exposing (validate)
 import Form.View
 import Html exposing (Html, div)
 import Json.Decode exposing (Value)
@@ -72,7 +86,7 @@ setSchema schema form =
 
             else
                 form.uiSchema
-        , state = Form.State.initState form.state.formId (defaultValue schema) (validation schema)
+        , state = Form.State.initState form.state.formId (defaultValue schema) (validate schema)
     }
 
 
@@ -103,7 +117,7 @@ update msg form =
     { form
         | state =
             Form.State.updateState
-                (validation form.schema)
+                (validate form.schema)
                 msg
                 form.state
     }
@@ -111,13 +125,24 @@ update msg form =
 
 {-| Get the current form value.
 
-The returned value may not be conforming to the JSON Schema if the
-list of validation errors returned by `getErrors` is non-empty.
+The returned value reflects the current form contents. 
+It is not normalized, and may not be conforming to the JSON Schema.
+To get a normalized value conforming to the JSON Schema, use `getValidValue`.
 
 -}
-getValue : Form -> Value
-getValue form =
+getRawValue : Form -> Value
+getRawValue form =
     form.state.value
+
+
+{-| Get the current form value.
+
+The value is present only if form validation passes.
+-}
+getSubmitValue : Form -> Maybe Value
+getSubmitValue form =
+    validate form.schema form.state.value
+        |> Result.toMaybe
 
 
 {-| Get the current Schema

@@ -1,5 +1,7 @@
 module Validation exposing
     ( Validation
+    , map
+    , voidRight
     , andMap
     , error
     , fail
@@ -67,6 +69,8 @@ oneOf validations v =
     List.foldl f (Err (error Error.Empty)) validations
 
 
+{-| Run a list of validations, discard their results
+-}
 validateAll : List (a -> Validation b) -> a -> Validation a
 validateAll l a =
     let
@@ -93,6 +97,16 @@ andMap aValidation partialValidation =
 
         ( partialResult, aResult ) ->
             Err (List.append (errList partialResult) (errList aResult))
+
+
+map : (a -> b) -> Validation a -> Validation b
+map f v =
+    andMap v (Ok f)
+
+
+voidRight : a -> Validation b -> Validation a
+voidRight a =
+    map (always a)
 
 
 errList : Validation a -> Errors
