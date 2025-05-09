@@ -513,7 +513,9 @@ pointToSchema schema pointer =
                             Nothing
 
                         Just (Schema.Schemata props) ->
-                            Maybe.andThen (\( _, p ) -> pointToSchema p xs) <| List.head <| List.filter (\( n, _ ) -> n == x) props
+                            Maybe.andThen (\( _, p ) -> pointToSchema p xs) <|
+                                List.head <|
+                                    List.filter (\( n, _ ) -> n == x) props
 
         _ ->
             Nothing

@@ -1,36 +1,25 @@
 module Form.Widget exposing
-    ( Widget(..)
-    , Label
-    , Group
-    , Categorization
-    , CategoryButton
-    , Validation(..)
-    , isInvalid
-    , Control(..)
-    , Options
-    , Checkbox
-    , TextInput
-    , TextArea
-    , Slider
-    , RadioGroup
-    , Select
+    ( Widget(..), Label, Group, Categorization, CategoryButton, Control(..), Options, Validation(..), isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select
+    , FieldFormat(..), FieldType(..)
     )
-
 
 {-| Abstract form view representation.
 
-@docs Widget, Label, Group, Categorization, CategoryButton, Control, Options, Validation, isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select
+This representation is meant to be rendered into HTML. For inspiration, see the
+[`Form.Widget.View`](https://github.com/scrive/elm-json-forms/blob/main/src/Form/Widget/View.elm) module.
+
+@docs Widget, Label, Group, Categorization, CategoryButton, Control, Options, Validation, isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select, FieldFormat, FieldType
 
 -}
 
 import Form.Error exposing (ErrorValue)
-import Form.FieldValue exposing (FieldType)
 import Form.State exposing (Msg)
 
 
 {-| Root of the form representation.
 
 Widgets can be nested to create more complex forms.
+
 -}
 type Widget
     = WHorizontalLayout (List Widget)
@@ -42,15 +31,33 @@ type Widget
 
 
 {-| Label element.
-
 -}
 type alias Label =
     String
 
 
+{-| Types that may be produced by a HTML field
+-}
+type FieldType
+    = NumberField
+    | IntField
+    | StringField FieldFormat
+
+
+{-| Format of a string field
+-}
+type FieldFormat
+    = Text
+    | Email
+    | Date
+    | Time
+    | DateTime
+
+
 {-| Labeled group of elements.
 
 Elements in a group are rendered vertically, below the group label.
+
 -}
 type alias Group =
     { label : Maybe String
@@ -64,6 +71,7 @@ A categorization element consists of a list of category buttons,
 and a list of elements from the chosen category.
 
 Categorization element contains only the active category elements.
+
 -}
 type alias Categorization =
     { buttons : List CategoryButton
@@ -76,6 +84,7 @@ type alias Categorization =
 A category button is a button that can be clicked to select the active category.
 
 Active category is marked with the `focus` attribute.
+
 -}
 type alias CategoryButton =
     { label : String
@@ -105,7 +114,6 @@ type alias Options =
 
 
 {-| Specific kind of a control element with associated options.
-
 -}
 type Control
     = CCheckbox Checkbox
@@ -116,12 +124,12 @@ type Control
     | CSelect Select
 
 
-
 {-| Validation state of a field.
 
 To avoid showing many validation errors for a freshly-displayed form,
 the validation state is not shown until the field is focused, or
 until the `validateAll` message is sent.
+
 -}
 type Validation
     = NotValidated
@@ -130,7 +138,6 @@ type Validation
 
 
 {-| Convenience function to check if a validation state is invalid.
-
 -}
 isInvalid : Validation -> Bool
 isInvalid validation =
@@ -142,9 +149,7 @@ isInvalid validation =
             False
 
 
-
 {-| Checkbox control.
-
 -}
 type alias Checkbox =
     { value : Bool
@@ -153,7 +158,6 @@ type alias Checkbox =
 
 
 {-| Text input control.
-
 -}
 type alias TextInput =
     { value : String
@@ -164,7 +168,6 @@ type alias TextInput =
 
 
 {-| Text area control.
-
 -}
 type alias TextArea =
     { value : String
@@ -176,6 +179,7 @@ type alias TextArea =
 {-| Slider control.
 
 This element is implemented for completeness, but there are probably not many use-cases for it.
+
 -}
 type alias Slider =
     { value : String
@@ -187,7 +191,6 @@ type alias Slider =
 
 
 {-| Radio group control.
-
 -}
 type alias RadioGroup =
     { value : String
@@ -197,7 +200,6 @@ type alias RadioGroup =
 
 
 {-| Select control.
-
 -}
 type alias Select =
     { value : String

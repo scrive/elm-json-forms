@@ -57,7 +57,8 @@ makeForm title stringSchema stringUiSchema =
         uiSchema =
             Maybe.map UiSchema.fromString stringUiSchema
 
-        options = Form.defaultOptions
+        options =
+            Form.defaultOptions
     in
     case ( schema, uiSchema ) of
         ( Ok s, Nothing ) ->

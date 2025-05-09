@@ -1,10 +1,9 @@
-module Form.Widget.Generate exposing
-    ( widget
-    )
+module Form.Widget.Generate exposing (widget)
 
 import Dict
-import Form.FieldValue as FieldValue exposing (FieldType(..), FieldValue(..), formatFromSchema, isStringField)
+import Form.FieldValue as FieldValue exposing (FieldValue, fromFloatInput, fromIntInput, fromStringInput)
 import Form.State as F exposing (Form, FormState, Msg(..), validateWidget)
+import Form.Widget exposing (..)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Json.Pointer as Pointer exposing (Pointer)
@@ -13,7 +12,6 @@ import List.Extra as List
 import Maybe.Extra as Maybe
 import UiSchema.Internal as UI exposing (UiSchema)
 import UiSchema.Rule as Rule
-import Form.Widget exposing (..)
 
 
 type alias UiState =
@@ -173,7 +171,7 @@ controlWidget defaultOptions uiState wholeSchema control form =
                 Nothing
 
         pointedValue =
-            Maybe.withDefault (String "") <|
+            Maybe.withDefault (FieldValue.String "") <|
                 FieldValue.pointedFieldValue control.scope form.value
 
         elementId =
@@ -231,7 +229,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
                             (\label ->
                                 { id = elementId ++ "-" ++ label
                                 , label = label
-                                , onClick = Input pointer <| FieldValue.fromFieldInput fieldType label
+                                , onClick = Input pointer <| fromFieldInput fieldType label
                                 }
                             )
                 , vertical = defOptions.orientation == UI.Vertical
@@ -245,7 +243,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
                         |> List.concat
                         |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
                         |> List.append [ "" ]
-                , onChange = Input pointer << FieldValue.fromFieldInput fieldType
+                , onChange = Input pointer << fromFieldInput fieldType
                 }
 
     else if defOptions.slider == True then
@@ -286,7 +284,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
         in
         CSlider
             { value = FieldValue.asString fieldValue
-            , onInput = Input pointer << FieldValue.fromFieldInput fieldType
+            , onInput = Input pointer << fromFieldInput fieldType
             , min = String.fromFloat minLimit
             , max = String.fromFloat maxLimit
             , step = String.fromFloat step
@@ -301,13 +299,13 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
 
                 else
                     Nothing
-            , onInput = Input pointer << FieldValue.fromFieldInput fieldType
+            , onInput = Input pointer << fromFieldInput fieldType
             }
 
     else
         CTextInput
             { value = FieldValue.asString fieldValue
-            , onInput = Input pointer << FieldValue.fromFieldInput fieldType
+            , onInput = Input pointer << fromFieldInput fieldType
             , fieldType = fieldType
             , restrict =
                 if defOptions.restrict then
@@ -373,3 +371,49 @@ fieldLabel label schema scope =
 inputElementId : String -> Pointer -> String
 inputElementId formId pointer =
     formId ++ "-" ++ Pointer.toString pointer ++ "-input"
+
+
+fromFieldInput : FieldType -> String -> FieldValue
+fromFieldInput fieldType =
+    case fieldType of
+        StringField _ ->
+            fromStringInput
+
+        IntField ->
+            fromIntInput
+
+        NumberField ->
+            fromFloatInput
+
+
+formatFromSchema : Maybe String -> FieldFormat
+formatFromSchema =
+    Maybe.withDefault Text
+        << Maybe.map
+            (\f ->
+                case f of
+                    "email" ->
+                        Email
+
+                    "date" ->
+                        Date
+
+                    "time" ->
+                        Time
+
+                    "date-time" ->
+                        DateTime
+
+                    _ ->
+                        Text
+            )
+
+
+isStringField : FieldType -> Bool
+isStringField fieldType =
+    case fieldType of
+        StringField _ ->
+            True
+
+        _ ->
+            False

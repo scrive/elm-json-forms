@@ -1,12 +1,10 @@
 module Form.FieldValue exposing
-    ( FieldFormat(..)
-    , FieldType(..)
-    , FieldValue(..)
+    ( FieldValue(..)
     , asBool
     , asString
-    , formatFromSchema
-    , fromFieldInput
-    , isStringField
+    , fromFloatInput
+    , fromIntInput
+    , fromStringInput
     , pointedFieldValue
     , updateValue
     )
@@ -23,32 +21,6 @@ type FieldValue
     | Int Int
     | Number Float
     | Bool Bool
-
-
-{-| Types that may be produced by a HTML field
--}
-type FieldType
-    = NumberField
-    | IntField
-    | StringField FieldFormat
-
-
-type FieldFormat
-    = Text
-    | Email
-    | Date
-    | Time
-    | DateTime
-
-
-isStringField : FieldType -> Bool
-isStringField fieldType =
-    case fieldType of
-        StringField _ ->
-            True
-
-        _ ->
-            False
 
 
 asString : FieldValue -> String
@@ -162,39 +134,3 @@ fromFloatInput s =
 fromStringInput : String -> FieldValue
 fromStringInput s =
     String s
-
-
-fromFieldInput : FieldType -> String -> FieldValue
-fromFieldInput fieldType =
-    case fieldType of
-        StringField _ ->
-            fromStringInput
-
-        IntField ->
-            fromIntInput
-
-        NumberField ->
-            fromFloatInput
-
-
-formatFromSchema : Maybe String -> FieldFormat
-formatFromSchema =
-    Maybe.withDefault Text
-        << Maybe.map
-            (\f ->
-                case f of
-                    "email" ->
-                        Email
-
-                    "date" ->
-                        Date
-
-                    "time" ->
-                        Time
-
-                    "date-time" ->
-                        DateTime
-
-                    _ ->
-                        Text
-            )

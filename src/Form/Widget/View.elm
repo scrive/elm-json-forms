@@ -1,7 +1,6 @@
-module Form.Widget.View exposing (viewWidget, errorString)
+module Form.Widget.View exposing (errorString, viewWidget)
 
 import Form.Error exposing (ErrorValue(..))
-import Form.FieldValue exposing (FieldFormat(..), FieldType(..))
 import Form.State exposing (Msg)
 import Form.Widget exposing (..)
 import Html exposing (Html, div)

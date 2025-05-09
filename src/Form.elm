@@ -1,19 +1,19 @@
-module Form exposing (Form, Msg, Widget, Control, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg)
+module Form exposing (Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, Widget, Control, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg
+@docs Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg
 
 -}
 
 import Form.Error as Error
 import Form.State
 import Form.Validation exposing (validate)
-import Form.Widget.View
 import Form.Widget
 import Form.Widget.Generate
+import Form.Widget.View
 import Html exposing (Html)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
@@ -33,18 +33,6 @@ type alias Form =
 -}
 type alias Msg =
     Form.State.Msg
-
-
-{-| Form widget type
--}
-type alias Widget =
-    Form.Widget.Widget
-
-
-{-| Form control type
--}
-type alias Control =
-    Form.Widget.Control
 
 
 {-| Enable form validations for all fields.
@@ -78,11 +66,13 @@ defaultOptions =
 
 {-| Render the form into an abstract view representation.
 
-This representation can be rendered into HTML by `viewWidget`,
+This representation can be rendered into HTML by [`viewWidget`](#viewWidget),
 or by your custom function.
 
+Widget type is defined in [`Form.Widget`](Form-Widget).
+
 -}
-widget : Form -> Widget
+widget : Form -> Form.Widget.Widget
 widget =
     Form.Widget.Generate.widget
 
@@ -92,7 +82,7 @@ widget =
 This function can be used as a template for your own view function.
 
 -}
-viewWidget : Widget -> Html Msg
+viewWidget : Form.Widget.Widget -> Html Msg
 viewWidget =
     Form.Widget.View.viewWidget
 
@@ -100,6 +90,7 @@ viewWidget =
 {-| Convert an error value to a string.
 
 This function can be used as a template for your own error messages.
+
 -}
 errorString : Error.ErrorValue -> String
 errorString =
@@ -155,7 +146,7 @@ update msg form =
 
 The returned value reflects the current form contents.
 It is not normalized, and may not be conforming to the JSON Schema.
-To get a normalized value conforming to the JSON Schema, use `getValidValue`.
+To get a normalized value conforming to the JSON Schema, use [`getSubmitValue`](#getSubmitValue).
 
 -}
 getRawValue : Form -> Value
