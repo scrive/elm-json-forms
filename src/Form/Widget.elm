@@ -1,7 +1,4 @@
-module Form.Widget exposing
-    ( Widget(..), Label, Group, Categorization, CategoryButton, Control(..), Options, Validation(..), isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select
-    , FieldFormat(..), FieldType(..)
-    )
+module Form.Widget exposing (Widget(..), Label, Group, Categorization, CategoryButton, Control(..), Options, Validation(..), isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select, FieldFormat(..), FieldType(..))
 
 {-| Abstract form view representation.
 
