@@ -29,3 +29,19 @@ Generate validating forms from JSON schemas.
 - Categorization Example
   - Implement prev/next buttons
   - Implement stepper variant
+
+# Changelog
+
+## 2.0.0
+
+* Produce an intermediate representation instead of the HTML view. This allows much richer view customization.
+  * A default Tailwind view function is available. It can be used as a starting point for a custom view implementation.
+* Display errors on fields only after they have been touched, or after a submit was triggered.
+* Trim text fields
+
+## 1.0.0
+
+- Can handle most of the UI Schema specification
+- Can handle almost all JSON Schema features (draft-04 and draft-06).
+- Generates all common types of input fields (`text`, `select`, etc.) with optional labels and descriptions.
+- Comes with default Tailwind CSS theme in the `Theme` object that can be customised.
