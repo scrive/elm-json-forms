@@ -1,10 +1,10 @@
-module Form exposing (Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg)
+module Form exposing (Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg
+@docs Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg
 
 -}
 
@@ -37,15 +37,20 @@ type alias Msg =
 
 {-| Enable form validations for all fields.
 
-Normally, this message is triggered on form submit.
+Until this message is triggered, fields are validated only after input.
 
 -}
-validateAllMsg : Msg
-validateAllMsg =
+validateAllFieldsMsg : Msg
+validateAllFieldsMsg =
     Form.State.ValidateAll
 
 
-{-| Initialize form state
+{-| Initialize form state.
+
+Supplying anything other than [`defaultOptions`](#defaultOptions) into the `init` function
+causes the resulting form to differ from json-forms.io specification. These differences
+should be documented.
+
 -}
 init : UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
 init options id schema uiSchema =
@@ -57,7 +62,7 @@ init options id schema uiSchema =
     }
 
 
-{-| Default element options
+{-| Default element options.
 -}
 defaultOptions : UI.DefOptions
 defaultOptions =
@@ -66,10 +71,10 @@ defaultOptions =
 
 {-| Render the form into an abstract view representation.
 
-This representation can be rendered into HTML by [`viewWidget`](#viewWidget),
-or by your custom function.
+This representation can in turn be rendered into HTML by [`viewWidget`](#viewWidget),
+or by a custom function.
 
-Widget type is defined in [`Form.Widget`](Form-Widget).
+Widget type is documented in the [`Form.Widget`](Form-Widget) module.
 
 -}
 widget : Form -> Form.Widget.Widget
@@ -77,9 +82,11 @@ widget =
     Form.Widget.Generate.widget
 
 
-{-| View a widget
+{-| View a widget.
 
 This function can be used as a template for your own view function.
+
+Widget type is documented in the [`Form.Widget`](Form-Widget) module.
 
 -}
 viewWidget : Form.Widget.Widget -> Html Msg
@@ -91,13 +98,15 @@ viewWidget =
 
 This function can be used as a template for your own error messages.
 
+Error value is documented in the [`Form.Error`](Form-Error) module.
+
 -}
 errorString : Error.ErrorValue -> String
 errorString =
     Form.Widget.View.errorString
 
 
-{-| Swap the Schema of an existing form
+{-| Swap the Schema of an existing form.
 
 Form data is reset. UI Schema is re-generated if it was auto-generated in the first place.
 
@@ -116,7 +125,7 @@ setSchema schema form =
     }
 
 
-{-| Swap the UI Schema of an existing form
+{-| Swap the UI Schema of an existing form.
 
 Form data is preserved.
 
@@ -156,7 +165,7 @@ getRawValue form =
 
 {-| Get the current form value.
 
-The value is present only if form validation passes.
+The value is present only if form validation passes with no errors.
 
 -}
 getSubmitValue : Form -> Maybe Value

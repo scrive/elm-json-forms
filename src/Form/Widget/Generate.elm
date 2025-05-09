@@ -220,8 +220,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
     if subSchema.enum /= Nothing then
         if defOptions.format == Just UI.Radio then
             CRadioGroup
-                { value = FieldValue.asString fieldValue
-                , valueList =
+                { valueList =
                     Maybe.toList subSchema.enum
                         |> List.concat
                         |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
@@ -229,6 +228,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
                             (\label ->
                                 { id = elementId ++ "-" ++ label
                                 , label = label
+                                , checked = FieldValue.asString fieldValue == label
                                 , onClick = Input pointer <| fromFieldInput fieldType label
                                 }
                             )
@@ -243,6 +243,12 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
                         |> List.concat
                         |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
                         |> List.append [ "" ]
+                        |> List.map
+                            (\label ->
+                                { label = label
+                                , selected = FieldValue.asString fieldValue == label
+                                }
+                            )
                 , onChange = Input pointer << fromFieldInput fieldType
                 }
 
@@ -293,7 +299,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
     else if defOptions.multi && isStringField fieldType then
         CTextArea
             { value = FieldValue.asString fieldValue
-            , restrict =
+            , maxLength =
                 if defOptions.restrict then
                     subSchema.maxLength
 
@@ -307,7 +313,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
             { value = FieldValue.asString fieldValue
             , onInput = Input pointer << fromFieldInput fieldType
             , fieldType = fieldType
-            , restrict =
+            , maxLength =
                 if defOptions.restrict then
                     subSchema.maxLength
 

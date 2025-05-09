@@ -15,7 +15,7 @@ import Form.State exposing (Msg)
 
 {-| Root of the form representation.
 
-Widgets can be nested to create more complex forms.
+Widgets can be nested to create complex forms.
 
 -}
 type Widget
@@ -33,7 +33,7 @@ type alias Label =
     String
 
 
-{-| Types that may be produced by a HTML field
+{-| Type of a text-like input field
 -}
 type FieldType
     = NumberField
@@ -67,7 +67,8 @@ type alias Group =
 A categorization element consists of a list of category buttons,
 and a list of elements from the chosen category.
 
-Categorization element contains only the active category elements.
+`elements` list contains the active category elements,
+which should be rendered vertically below category buttons.
 
 -}
 type alias Categorization =
@@ -94,8 +95,14 @@ type alias CategoryButton =
 
 Controls should be rendered in accordance with these options.
 
+  - `id` - Unique identifier for the control, to be used as the "id" attribute.
+  - `required` - Whether the control should be marked as required, with an asterisk or similar.
+    Note that the control may or may not actually be required.
+  - `validation` - Validation state of the control, possibly containing an error value.
+  - `description` - Description of the control, to be shown below the control.
   - `onFocus` - Used only to show field descriptions on focus.
-    If this feature is not used, it does not need to be triggered.
+    If this feature is not used, the `onFocus` message does not need to be triggered.
+  - `trim` - Whether the control should be short
 
 -}
 type alias Options =
@@ -124,8 +131,8 @@ type Control
 {-| Validation state of a field.
 
 To avoid showing many validation errors for a freshly-displayed form,
-the validation state is not shown until the field is focused, or
-until the `validateAll` message is sent.
+the validation state is `NotValidated` until the field is focused, or
+until the `validateAllFieldsMsg` message is sent.
 
 -}
 type Validation
@@ -135,6 +142,9 @@ type Validation
 
 
 {-| Convenience function to check if a validation state is invalid.
+
+If so, the associated error value should be rendered.
+
 -}
 isInvalid : Validation -> Bool
 isInvalid validation =
@@ -146,7 +156,7 @@ isInvalid validation =
             False
 
 
-{-| Checkbox control.
+{-| Checkbox control
 -}
 type alias Checkbox =
     { value : Bool
@@ -154,21 +164,27 @@ type alias Checkbox =
     }
 
 
-{-| Text input control.
+{-| Text input control
+
+`maxLength` should inform the "maxlength" attribute of the input field.
+
 -}
 type alias TextInput =
     { value : String
     , fieldType : FieldType
-    , restrict : Maybe Int
+    , maxLength : Maybe Int
     , onInput : String -> Msg
     }
 
 
-{-| Text area control.
+{-| Text area control
+
+`maxLength` should inform the "maxlength" attribute of the input field.
+
 -}
 type alias TextArea =
     { value : String
-    , restrict : Maybe Int
+    , maxLength : Maybe Int
     , onInput : String -> Msg
     }
 
@@ -190,8 +206,7 @@ type alias Slider =
 {-| Radio group control.
 -}
 type alias RadioGroup =
-    { value : String
-    , valueList : List { id : String, label : String, onClick : Msg }
+    { valueList : List { id : String, label : String, checked : Bool, onClick : Msg }
     , vertical : Bool
     }
 
@@ -200,6 +215,6 @@ type alias RadioGroup =
 -}
 type alias Select =
     { value : String
-    , valueList : List String
+    , valueList : List { label : String, selected : Bool }
     , onChange : String -> Msg
     }

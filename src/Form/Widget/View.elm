@@ -121,7 +121,7 @@ viewTextInput options textInput =
         , Attrs.disabled options.disabled
         , Events.onInput textInput.onInput
         , Events.onFocus options.onFocus
-        , Maybe.unwrap Attrs.empty Attrs.maxlength textInput.restrict
+        , Maybe.unwrap Attrs.empty Attrs.maxlength textInput.maxLength
         ]
         []
     , viewDescription options.description
@@ -143,7 +143,7 @@ viewTextArea options textArea =
         , Events.onInput textArea.onInput
         , Events.onFocus options.onFocus
         , Attrs.attribute "rows" "4"
-        , Maybe.unwrap Attrs.empty Attrs.maxlength textArea.restrict
+        , Maybe.unwrap Attrs.empty Attrs.maxlength textArea.maxLength
         ]
         []
     , viewDescription options.description
@@ -184,7 +184,7 @@ viewSlider options sliderInput =
 viewRadioGroup : Options -> RadioGroup -> List (Html Msg)
 viewRadioGroup options radioGroup =
     let
-        radio { id, label, onClick } =
+        radio { id, label, checked, onClick } =
             Html.label
                 [ Attrs.for id
                 , Attrs.classList
@@ -197,7 +197,7 @@ viewRadioGroup options radioGroup =
                     , Attrs.id id
                     , Attrs.class "mr-3"
                     , Attrs.classList [ ( "border-red-600", isInvalid options.validation ) ]
-                    , Attrs.checked <| label == radioGroup.value
+                    , Attrs.checked checked
                     , Attrs.disabled options.disabled
                     , Events.onClick onClick
                     , Events.onFocus options.onFocus
@@ -217,8 +217,8 @@ viewRadioGroup options radioGroup =
 viewSelect : Options -> Select -> List (Html Msg)
 viewSelect options select =
     let
-        buildOption v =
-            Html.option [ Attrs.value v, Attrs.selected (select.value == v) ] [ Html.text v ]
+        buildOption { label, selected } =
+            Html.option [ Attrs.value label, Attrs.selected selected ] [ Html.text label ]
     in
     [ viewLabel options.label options.required
     , Html.select
