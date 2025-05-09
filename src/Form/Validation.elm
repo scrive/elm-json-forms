@@ -3,7 +3,7 @@ module Form.Validation exposing (validate)
 import Form.Error as Error exposing (ErrorValue(..))
 import Form.Normalization exposing (normalizeValue)
 import Form.Regex
-import Json.Decode as Decode exposing (Value, value)
+import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
     exposing
@@ -15,7 +15,6 @@ import Json.Schema.Definitions
         )
 import Json.Util as Util
 import Regex
-import Result.Extra as Result
 import Set
 import Validation exposing (Validation, error)
 

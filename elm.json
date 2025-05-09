@@ -6,8 +6,8 @@
     "version": "1.0.0",
     "exposed-modules": [
         "Form",
+        "Form.Widget",
         "Form.Error",
-        "Form.Theme",
         "Json.Pointer",
         "UiSchema"
     ],

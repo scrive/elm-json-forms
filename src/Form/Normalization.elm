@@ -1,9 +1,7 @@
 module Form.Normalization exposing (normalizeValue)
 
-import Form.Error exposing (ErrorValue(..))
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
-import Result.Extra as Result
 
 
 {-| If decoder succeeds, return its value. Otherwise, return a default value.

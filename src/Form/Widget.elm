@@ -1,88 +1,87 @@
 module Form.Widget exposing
-    ( Checkbox
+    ( Widget(..)
+    , Label
+    , Group
+    , Categorization
+    , CategoryButton
+    , Validation(..)
+    , isInvalid
     , Control(..)
-    , ControlOptions
+    , Options
+    , Checkbox
+    , TextInput
+    , TextArea
+    , Slider
     , RadioGroup
     , Select
-    , Slider
-    , TextArea
-    , TextInput
-    , Validation(..)
-    , Widget(..)
-    , isInvalid
-    , widget
     )
 
-import Dict
+
+{-| Abstract form view representation.
+
+@docs Widget, Label, Group, Categorization, CategoryButton, Control, Options, Validation, isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select
+
+-}
+
 import Form.Error exposing (ErrorValue)
-import Form.FieldValue as FieldValue exposing (FieldType(..), FieldValue(..), formatFromSchema, isStringField)
-import Form.State as F exposing (Form, FormState, Msg(..), validateWidget)
-import Form.View.Input exposing (Input)
-import Html.Events exposing (..)
-import Json.Decode as Decode
-import Json.Encode as Encode
-import Json.Pointer as Pointer exposing (Pointer)
-import Json.Schema.Definitions as Schema exposing (Schema(..), SingleType(..), SubSchema, Type(..))
-import Json.Schema.Validation exposing (ValidationError(..))
-import List.Extra as List
-import Maybe.Extra as Maybe
-import UiSchema.Internal as UI exposing (UiSchema)
-import UiSchema.Rule as Rule
+import Form.FieldValue exposing (FieldType)
+import Form.State exposing (Msg)
 
 
-type alias UiState =
-    { disabled : Bool
-    , uiPath : List Int
-    , uiSchema : UiSchema
-    }
+{-| Root of the form representation.
 
-
+Widgets can be nested to create more complex forms.
+-}
 type Widget
     = WHorizontalLayout (List Widget)
     | WVerticalLayout (List Widget)
     | WGroup Group
     | WCategorization Categorization
     | WLabel Label
-    | WControl ControlOptions Control
+    | WControl Options Control
 
 
+{-| Label element.
+
+-}
 type alias Label =
     String
 
 
+{-| Labeled group of elements.
+
+Elements in a group are rendered vertically, below the group label.
+-}
 type alias Group =
     { label : Maybe String
     , elements : List Widget
     }
 
 
+{-| Categorization element.
+
+A categorization element consists of a list of category buttons,
+and a list of elements from the chosen category.
+
+Categorization element contains only the active category elements.
+-}
 type alias Categorization =
     { buttons : List CategoryButton
     , elements : List Widget
     }
 
 
+{-| Category button.
+
+A category button is a button that can be clicked to select the active category.
+
+Active category is marked with the `focus` attribute.
+-}
 type alias CategoryButton =
     { label : String
     , focus : Bool
     , onClick : Msg
     }
-
-
-type Validation
-    = NotValidated
-    | Valid
-    | Invalid ErrorValue
-
-
-isInvalid : Validation -> Bool
-isInvalid validation =
-    case validation of
-        Invalid _ ->
-            True
-
-        _ ->
-            False
 
 
 {-| Control options
@@ -93,7 +92,7 @@ Controls should be rendered in accordance with these options.
     If this feature is not used, it does not need to be triggered.
 
 -}
-type alias ControlOptions =
+type alias Options =
     { label : Maybe String
     , id : String
     , disabled : Bool
@@ -105,6 +104,9 @@ type alias ControlOptions =
     }
 
 
+{-| Specific kind of a control element with associated options.
+
+-}
 type Control
     = CCheckbox Checkbox
     | CTextInput TextInput
@@ -114,21 +116,56 @@ type Control
     | CSelect Select
 
 
+
+{-| Validation state of a field.
+
+To avoid showing many validation errors for a freshly-displayed form,
+the validation state is not shown until the field is focused, or
+until the `validateAll` message is sent.
+-}
+type Validation
+    = NotValidated
+    | Valid
+    | Invalid ErrorValue
+
+
+{-| Convenience function to check if a validation state is invalid.
+
+-}
+isInvalid : Validation -> Bool
+isInvalid validation =
+    case validation of
+        Invalid _ ->
+            True
+
+        _ ->
+            False
+
+
+
+{-| Checkbox control.
+
+-}
 type alias Checkbox =
     { value : Bool
     , onCheck : Bool -> Msg
     }
 
 
+{-| Text input control.
+
+-}
 type alias TextInput =
     { value : String
     , fieldType : FieldType
-    , format : Maybe String
     , restrict : Maybe Int
     , onInput : String -> Msg
     }
 
 
+{-| Text area control.
+
+-}
 type alias TextArea =
     { value : String
     , restrict : Maybe Int
@@ -136,6 +173,10 @@ type alias TextArea =
     }
 
 
+{-| Slider control.
+
+This element is implemented for completeness, but there are probably not many use-cases for it.
+-}
 type alias Slider =
     { value : String
     , min : String
@@ -145,6 +186,9 @@ type alias Slider =
     }
 
 
+{-| Radio group control.
+
+-}
 type alias RadioGroup =
     { value : String
     , valueList : List { id : String, label : String, onClick : Msg }
@@ -152,361 +196,11 @@ type alias RadioGroup =
     }
 
 
+{-| Select control.
+
+-}
 type alias Select =
     { value : String
     , valueList : List String
     , onChange : String -> Msg
     }
-
-
-walkState : Int -> UiSchema -> UiState -> UiState
-walkState i uiSchema st =
-    { st | uiPath = List.append st.uiPath [ i ], uiSchema = uiSchema }
-
-
-widget : Form -> Widget
-widget form =
-    Maybe.withDefault
-        (WVerticalLayout [])
-        (goWidget form { uiPath = [], disabled = False, uiSchema = form.uiSchema })
-
-
-goWidget : Form -> UiState -> Maybe Widget
-goWidget form uiState =
-    let
-        ruleEffect : Maybe Rule.AppliedEffect
-        ruleEffect =
-            Rule.computeRule form.state.value (UI.getRule uiState.uiSchema)
-
-        newUiState =
-            { uiState | disabled = ruleEffect == Just Rule.Disabled }
-    in
-    Maybe.andThen (maybeHide ruleEffect) <|
-        case uiState.uiSchema of
-            UI.UiHorizontalLayout hl ->
-                Just <| horizontalLayoutWidget form newUiState hl
-
-            UI.UiVerticalLayout vl ->
-                Just <| verticalLayoutWidget form newUiState vl
-
-            UI.UiGroup g ->
-                Just <| groupWidget form newUiState g
-
-            UI.UiControl c ->
-                controlWidget form.defaultOptions newUiState form.schema c form.state
-
-            UI.UiCategorization c ->
-                Just <| categorizationWidget form newUiState c
-
-            UI.UiLabel l ->
-                Just <| labelWidget l
-
-
-maybeHide : Maybe Rule.AppliedEffect -> Widget -> Maybe Widget
-maybeHide effect x =
-    case effect of
-        Just Rule.Hidden ->
-            Nothing
-
-        Just Rule.Disabled ->
-            Just x
-
-        Nothing ->
-            Just x
-
-
-horizontalLayoutWidget : Form -> UiState -> UI.HorizontalLayout -> Widget
-horizontalLayoutWidget form uiState hl =
-    WHorizontalLayout <| widgetList form uiState hl.elements
-
-
-verticalLayoutWidget : Form -> UiState -> UI.VerticalLayout -> Widget
-verticalLayoutWidget form uiState hl =
-    WVerticalLayout <| widgetList form uiState hl.elements
-
-
-groupWidget : Form -> UiState -> UI.Group -> Widget
-groupWidget form uiState group =
-    WGroup
-        { label = group.label
-        , elements = widgetList form uiState group.elements
-        }
-
-
-widgetList : Form -> UiState -> List UI.UiSchema -> List Widget
-widgetList form uiState =
-    List.filterMap identity
-        << List.indexedMap
-            (\ix us ->
-                goWidget form (walkState ix us uiState)
-            )
-
-
-categorizationWidget : Form -> UiState -> UI.Categorization -> Widget
-categorizationWidget form uiState categorization =
-    let
-        focusedCategoryIx =
-            Maybe.withDefault 0 <| Dict.get uiState.uiPath form.state.categoryFocus
-
-        categoryButton ix cat =
-            if Rule.computeRule form.state.value cat.rule == Just Rule.Hidden then
-                Nothing
-
-            else
-                Just <|
-                    { label = cat.label
-                    , focus = focusedCategoryIx == ix
-                    , onClick = FocusCategory uiState.uiPath ix
-                    }
-
-        categoryUiState cat =
-            walkState focusedCategoryIx (UI.UiVerticalLayout { elements = cat.elements, rule = cat.rule }) uiState
-    in
-    WCategorization
-        { buttons = Maybe.values <| List.indexedMap categoryButton categorization.elements
-        , elements =
-            Maybe.unwrap
-                []
-                (\cat -> widgetList form (categoryUiState cat) cat.elements)
-                (List.getAt focusedCategoryIx categorization.elements)
-        }
-
-
-labelWidget : UI.Label -> Widget
-labelWidget l =
-    WLabel l.text
-
-
-controlWidget : UI.DefOptions -> UiState -> Schema -> UI.Control -> FormState -> Maybe Widget
-controlWidget defaultOptions uiState wholeSchema control form =
-    let
-        defOptions =
-            UI.applyDefaults defaultOptions control.options
-
-        disabled =
-            defOptions.readonly == True || uiState.disabled
-
-        dispRequired =
-            isRequired wholeSchema control.scope && not defOptions.hideRequiredAsterisk
-
-        validation =
-            if validateWidget control.scope form.validateWidgets then
-                case F.getErrorAt control.scope form.errors of
-                    Just e ->
-                        Invalid e
-
-                    Nothing ->
-                        Valid
-
-            else
-                NotValidated
-
-        showDescription subSchema =
-            if defOptions.showUnfocusedDescription || form.focus == Just control.scope then
-                subSchema.description
-
-            else
-                Nothing
-
-        pointedValue =
-            Maybe.withDefault (String "") <|
-                FieldValue.pointedFieldValue control.scope form.value
-
-        elementId =
-            inputElementId form.formId control.scope
-
-        controlBody : SubSchema -> Maybe Widget
-        controlBody subSchema =
-            Maybe.map
-                (WControl
-                    { id = elementId
-                    , label = fieldLabel control.label subSchema control.scope
-                    , disabled = disabled
-                    , validation = validation
-                    , required = dispRequired
-                    , description = showDescription subSchema
-                    , onFocus = Focus control.scope
-                    , trim = defOptions.trim
-                    }
-                )
-            <|
-                case subSchema.type_ of
-                    SingleType IntegerType ->
-                        Just <| textLikeControl IntField pointedValue control.scope elementId defOptions subSchema
-
-                    SingleType NumberType ->
-                        Just <| textLikeControl NumberField pointedValue control.scope elementId defOptions subSchema
-
-                    SingleType StringType ->
-                        Just <| textLikeControl (StringField <| formatFromSchema subSchema.format) pointedValue control.scope elementId defOptions subSchema
-
-                    SingleType BooleanType ->
-                        Just <|
-                            CCheckbox
-                                { value = FieldValue.asBool pointedValue
-                                , onCheck = Input control.scope << FieldValue.Bool
-                                }
-
-                    _ ->
-                        Nothing
-    in
-    Maybe.andThen controlBody <| UI.pointToSubSchema wholeSchema control.scope
-
-
-textLikeControl : FieldType -> FieldValue -> Pointer -> String -> UI.DefOptions -> SubSchema -> Control
-textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
-    if subSchema.enum /= Nothing then
-        if defOptions.format == Just UI.Radio then
-            CRadioGroup
-                { value = FieldValue.asString fieldValue
-                , valueList =
-                    Maybe.toList subSchema.enum
-                        |> List.concat
-                        |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
-                        |> List.map
-                            (\label ->
-                                { id = elementId ++ "-" ++ label
-                                , label = label
-                                , onClick = Input pointer <| FieldValue.fromFieldInput fieldType label
-                                }
-                            )
-                , vertical = defOptions.orientation == UI.Vertical
-                }
-
-        else
-            CSelect
-                { value = FieldValue.asString fieldValue
-                , valueList =
-                    Maybe.toList subSchema.enum
-                        |> List.concat
-                        |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
-                        |> List.append [ "" ]
-                , onChange = Input pointer << FieldValue.fromFieldInput fieldType
-                }
-
-    else if defOptions.slider == True then
-        let
-            step =
-                Maybe.withDefault 1.0 subSchema.multipleOf
-
-            minimum =
-                Maybe.withDefault 1.0 subSchema.minimum
-
-            maximum =
-                Maybe.withDefault 10.0 subSchema.maximum
-
-            minLimit =
-                case subSchema.exclusiveMinimum of
-                    Just (Schema.BoolBoundary False) ->
-                        minimum
-
-                    Just (Schema.BoolBoundary True) ->
-                        minimum + step
-
-                    Just (Schema.NumberBoundary x) ->
-                        x + step
-
-                    _ ->
-                        minimum
-
-            maxLimit =
-                case subSchema.exclusiveMaximum of
-                    Just (Schema.BoolBoundary True) ->
-                        maximum - step
-
-                    Just (Schema.NumberBoundary x) ->
-                        x - step
-
-                    _ ->
-                        maximum
-        in
-        CSlider
-            { value = FieldValue.asString fieldValue
-            , onInput = Input pointer << FieldValue.fromFieldInput fieldType
-            , min = String.fromFloat minLimit
-            , max = String.fromFloat maxLimit
-            , step = String.fromFloat step
-            }
-
-    else if defOptions.multi && isStringField fieldType then
-        CTextArea
-            { value = FieldValue.asString fieldValue
-            , restrict =
-                if defOptions.restrict then
-                    subSchema.maxLength
-
-                else
-                    Nothing
-            , onInput = Input pointer << FieldValue.fromFieldInput fieldType
-            }
-
-    else
-        CTextInput
-            { value = FieldValue.asString fieldValue
-            , onInput = Input pointer << FieldValue.fromFieldInput fieldType
-            , fieldType = fieldType
-            , format = subSchema.format
-            , restrict =
-                if defOptions.restrict then
-                    subSchema.maxLength
-
-                else
-                    Nothing
-            }
-
-
-{-| Approximate whether a control is required to display asterix in the label
--}
-isRequired : Schema -> Pointer -> Bool
-isRequired wholeSchema pointer =
-    let
-        elementSchema =
-            UI.pointToSubSchema wholeSchema pointer
-
-        isCheckboxRequired =
-            case elementSchema of
-                Just schema ->
-                    schema.type_ == SingleType BooleanType && schema.const == Just (Encode.bool True)
-
-                Nothing ->
-                    False
-
-        parentSchema =
-            UI.pointToSubSchema wholeSchema (List.take (List.length pointer - 2) pointer)
-
-        isPropertyRequired =
-            case ( parentSchema, List.last pointer ) of
-                ( Just schema, Just prop ) ->
-                    List.any ((==) prop) (Maybe.withDefault [] schema.required)
-
-                _ ->
-                    False
-    in
-    isCheckboxRequired || isPropertyRequired
-
-
-fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe String
-fieldLabel label schema scope =
-    let
-        fallback =
-            schema.title
-                |> Maybe.orElse (List.last scope |> Maybe.map UI.fieldNameToTitle)
-                |> Maybe.withDefault ""
-    in
-    case label of
-        Just (UI.StringLabel s) ->
-            Just s
-
-        Just (UI.BoolLabel False) ->
-            Nothing
-
-        Just (UI.BoolLabel True) ->
-            Just fallback
-
-        Nothing ->
-            Just fallback
-
-
-inputElementId : String -> Pointer -> String
-inputElementId formId pointer =
-    formId ++ "-" ++ Pointer.toString pointer ++ "-input"

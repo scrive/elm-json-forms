@@ -25,7 +25,6 @@ module UiSchema.Internal exposing
     , fieldNameToTitle
     , generateUiSchema
     , getRule
-    , pointToSchema
     , pointToSubSchema
     )
 

@@ -1,8 +1,8 @@
-module Form.ViewWidget exposing (viewWidget)
+module Form.Widget.View exposing (viewWidget, errorString)
 
 import Form.Error exposing (ErrorValue(..))
 import Form.FieldValue exposing (FieldFormat(..), FieldType(..))
-import Form.State exposing (Msg(..))
+import Form.State exposing (Msg)
 import Form.Widget exposing (..)
 import Html exposing (Html, div)
 import Html.Attributes as Attrs exposing (class)
@@ -56,7 +56,7 @@ viewWidget widget =
             viewControl options control
 
 
-viewControl : ControlOptions -> Control -> Html Msg
+viewControl : Options -> Control -> Html Msg
 viewControl options control =
     controlWrapper options <|
         case control of
@@ -79,12 +79,12 @@ viewControl options control =
                 viewSelect options select
 
 
-controlWrapper : ControlOptions -> List (Html Msg) -> Html Msg
+controlWrapper : Options -> List (Html Msg) -> Html Msg
 controlWrapper options =
     div [ class "my-4", Attrs.classList [ ( "opacity-50", options.disabled ) ] ]
 
 
-viewCheckbox : ControlOptions -> Checkbox -> List (Html Msg)
+viewCheckbox : Options -> Checkbox -> List (Html Msg)
 viewCheckbox options checkbox =
     [ Html.label
         [ Attrs.for options.id
@@ -100,7 +100,7 @@ viewCheckbox options checkbox =
             , Events.onFocus options.onFocus
             ]
             []
-        , viewLabel options.label <| options.required
+        , viewLabel options.label options.required
         ]
 
     -- TODO: show description as tooltip
@@ -108,7 +108,7 @@ viewCheckbox options checkbox =
     ]
 
 
-viewTextInput : ControlOptions -> TextInput -> List (Html Msg)
+viewTextInput : Options -> TextInput -> List (Html Msg)
 viewTextInput options textInput =
     [ viewLabel options.label options.required
     , Html.input
@@ -130,7 +130,7 @@ viewTextInput options textInput =
     ]
 
 
-viewTextArea : ControlOptions -> TextArea -> List (Html Msg)
+viewTextArea : Options -> TextArea -> List (Html Msg)
 viewTextArea options textArea =
     [ viewLabel options.label options.required
     , Html.textarea
@@ -152,7 +152,7 @@ viewTextArea options textArea =
     ]
 
 
-viewSlider : ControlOptions -> Slider -> List (Html Msg)
+viewSlider : Options -> Slider -> List (Html Msg)
 viewSlider options sliderInput =
     [ viewLabel options.label options.required
     , div [ Attrs.style "display" "flex", Attrs.class "text-sm" ]
@@ -182,7 +182,7 @@ viewSlider options sliderInput =
     ]
 
 
-viewRadioGroup : ControlOptions -> RadioGroup -> List (Html Msg)
+viewRadioGroup : Options -> RadioGroup -> List (Html Msg)
 viewRadioGroup options radioGroup =
     let
         radio { id, label, onClick } =
@@ -215,7 +215,7 @@ viewRadioGroup options radioGroup =
     ]
 
 
-viewSelect : ControlOptions -> Select -> List (Html Msg)
+viewSelect : Options -> Select -> List (Html Msg)
 viewSelect options select =
     let
         buildOption v =
@@ -298,7 +298,7 @@ viewErrorMessage validation =
             Html.div [ class "text-red-600 text-sm" ] [ Html.text (errorString e) ]
 
         _ ->
-            Html.text ""
+            Html.nothing
 
 
 errorString : ErrorValue -> String

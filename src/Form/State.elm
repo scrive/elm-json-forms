@@ -1,10 +1,8 @@
 module Form.State exposing
-    ( FieldState
-    , Form
+    ( Form
     , FormState
     , Msg(..)
     , ValidateWidgets(..)
-    , fieldState
     , getErrorAt
     , initState
     , updateState
@@ -13,8 +11,7 @@ module Form.State exposing
 
 import Dict exposing (Dict)
 import Form.Error exposing (ErrorValue, Errors)
-import Form.FieldValue as FieldValue exposing (FieldValue(..))
-import Form.Settings exposing (Settings)
+import Form.FieldValue as FieldValue exposing (FieldValue)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
@@ -25,8 +22,7 @@ import Validation exposing (Validation)
 
 
 type alias Form =
-    { settings : Settings
-    , schema : Schema
+    { schema : Schema
     , uiSchema : UiSchema
     , uiSchemaIsGenerated : Bool
     , state : FormState
@@ -47,17 +43,6 @@ type alias FormState =
 type ValidateWidgets
     = All
     | Listed (Set Pointer)
-
-
-type alias FieldState =
-    { formId : String
-    , pointer : Pointer
-    , value : FieldValue
-    , error : Maybe ErrorValue
-    , hasFocus : Bool
-    , disabled : Bool
-    , required : Bool
-    }
 
 
 type Msg
@@ -100,18 +85,6 @@ initState formId initialValue validation =
             }
     in
     updateValidations validation model
-
-
-fieldState : Bool -> Bool -> Pointer -> FormState -> FieldState
-fieldState disabled required pointer form =
-    { formId = form.formId
-    , pointer = pointer
-    , value = Maybe.withDefault (String "") <| FieldValue.pointedFieldValue pointer form.value
-    , error = getErrorAt pointer form.errors
-    , hasFocus = form.focus == Just pointer
-    , disabled = disabled
-    , required = required
-    }
 
 
 updateState : (Value -> Validation output) -> Msg -> FormState -> FormState

@@ -5,7 +5,6 @@ import Browser.Navigation as Nav
 import Form exposing (Form)
 import Json.Schema
 import Result.Extra as Result
-import Settings
 import UiSchema
 import Url
 
@@ -57,11 +56,13 @@ makeForm title stringSchema stringUiSchema =
 
         uiSchema =
             Maybe.map UiSchema.fromString stringUiSchema
+
+        options = Form.defaultOptions
     in
     case ( schema, uiSchema ) of
         ( Ok s, Nothing ) ->
             { title = title
-            , form = Just <| Settings.initForm title s Nothing
+            , form = Just <| Form.init options title s Nothing
             , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = Nothing
@@ -71,7 +72,7 @@ makeForm title stringSchema stringUiSchema =
 
         ( Ok s, Just (Ok us) ) ->
             { title = title
-            , form = Just <| Settings.initForm title s (Just us)
+            , form = Just <| Form.init options title s (Just us)
             , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema

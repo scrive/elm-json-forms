@@ -1,24 +1,20 @@
-module Form exposing
-    ( Form, Msg, init, update, view, widget, viewWidget, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
-    , Control, Widget, validateAllMsg
-    )
+module Form exposing (Form, Msg, Widget, Control, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, widget, viewWidget, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
+@docs Form, Msg, Widget, Control, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllMsg
 
 -}
 
 import Form.Error as Error
-import Form.Settings exposing (Settings)
 import Form.State
 import Form.Validation exposing (validate)
-import Form.View
-import Form.ViewWidget
+import Form.Widget.View
 import Form.Widget
-import Html exposing (Html, div)
+import Form.Widget.Generate
+import Html exposing (Html)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
@@ -39,14 +35,23 @@ type alias Msg =
     Form.State.Msg
 
 
+{-| Form widget type
+-}
 type alias Widget =
     Form.Widget.Widget
 
 
+{-| Form control type
+-}
 type alias Control =
     Form.Widget.Control
 
 
+{-| Enable form validations for all fields.
+
+Normally, this message is triggered on form submit.
+
+-}
 validateAllMsg : Msg
 validateAllMsg =
     Form.State.ValidateAll
@@ -54,37 +59,51 @@ validateAllMsg =
 
 {-| Initialize form state
 -}
-init : Settings -> UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
-init settings defaultOptions id schema uiSchema =
-    { settings = settings
-    , schema = schema
+init : UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
+init options id schema uiSchema =
+    { schema = schema
     , uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema schema) uiSchema
     , uiSchemaIsGenerated = uiSchema == Nothing
     , state = Form.State.initState id (defaultValue schema) (validate schema)
-    , defaultOptions = defaultOptions
+    , defaultOptions = options
     }
 
 
-widget : Form -> Widget
-widget =
-    Form.Widget.widget
+{-| Default element options
+-}
+defaultOptions : UI.DefOptions
+defaultOptions =
+    UI.defaultOptions
 
 
-viewWidget : Widget -> Html Msg
-viewWidget =
-    Form.ViewWidget.viewWidget
+{-| Render the form into an abstract view representation.
 
-
-{-| Swap the Settings of an existing form
-
-Form data is not affected, only the view may change.
+This representation can be rendered into HTML by `viewWidget`,
+or by your custom function.
 
 -}
-setSettings : Settings -> Form -> Form
-setSettings settings form =
-    { form
-        | settings = settings
-    }
+widget : Form -> Widget
+widget =
+    Form.Widget.Generate.widget
+
+
+{-| View a widget
+
+This function can be used as a template for your own view function.
+
+-}
+viewWidget : Widget -> Html Msg
+viewWidget =
+    Form.Widget.View.viewWidget
+
+
+{-| Convert an error value to a string.
+
+This function can be used as a template for your own error messages.
+-}
+errorString : Error.ErrorValue -> String
+errorString =
+    Form.Widget.View.errorString
 
 
 {-| Swap the Schema of an existing form
@@ -117,13 +136,6 @@ setUiSchema uiSchema form =
         | uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema form.schema) uiSchema
         , uiSchemaIsGenerated = uiSchema == Nothing
     }
-
-
-{-| View the form
--}
-view : Form -> Html Msg
-view form =
-    div [] <| Form.View.view form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
 
 
 {-| Update the form

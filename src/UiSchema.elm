@@ -1,13 +1,10 @@
-module UiSchema exposing
-    ( UiSchema, fromString, decode, generate, defaultOptions
-    , DefOptions
-    )
+module UiSchema exposing (UiSchema, DefOptions, fromString, decode, generate, defaultOptions)
 
 {-| UI Schema definition and deserialization.
 
 Documentation can be found here: <https://jsonforms.io/docs/uischema/>
 
-@docs UiSchema, fromString, decode, generate, defaultOptions
+@docs UiSchema, DefOptions, fromString, decode, generate, defaultOptions
 
 -}
 

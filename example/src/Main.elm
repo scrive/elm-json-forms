@@ -16,7 +16,6 @@ import Json.Schema
 import List.Extra as List
 import Maybe.Extra as Maybe
 import Model exposing (..)
-import Settings
 import UiSchema
 import Url
 import Url.Parser
@@ -201,14 +200,6 @@ viewExample fs =
                                     ]
                                     [ text "Validate" ]
                                 ]
-                    , h2 "Form Legacy"
-                    , case fs.form of
-                        Nothing ->
-                            empty
-
-                        Just form ->
-                            div [ class "border shadow rounded p-3 bg-white" ]
-                                [ Html.map FormMsg (Form.view form) ]
                     ]
                 ]
             , div [ class "w-full lg:w-1/2 px-2" ]
@@ -325,7 +316,7 @@ viewData : Form -> String -> Html a
 viewData form dataText =
     let
         errorsText =
-            String.join "\n" (List.map (\( pointer, err ) -> Pointer.toString pointer ++ ": " ++ Settings.errorString err) <| Form.getErrors form)
+            String.join "\n" (List.map (\( pointer, err ) -> Pointer.toString pointer ++ ": " ++ Form.errorString err) <| Form.getErrors form)
     in
     div []
         [ textarea [ Attrs.id "Data", Attrs.readonly True, Attrs.rows 15 ] dataText
