@@ -1,11 +1,11 @@
-module Form.Widget exposing (Widget(..), Label, Group, Categorization, CategoryButton, Control(..), Options, Validation(..), isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select, FieldFormat(..), FieldType(..))
+module Form.Widget exposing (Widget(..), Group, Categorization, CategoryButton, Label, Options, Validation(..), isInvalid, Control(..), TextInput, FieldFormat(..), FieldType(..), TextArea, Select, RadioGroup, Checkbox, Slider)
 
 {-| Abstract form view representation.
 
 This representation is meant to be rendered into HTML. For inspiration, see the
 [`Form.Widget.View`](https://github.com/scrive/elm-json-forms/blob/main/src/Form/Widget/View.elm) module.
 
-@docs Widget, Label, Group, Categorization, CategoryButton, Control, Options, Validation, isInvalid, Checkbox, TextInput, TextArea, Slider, RadioGroup, Select, FieldFormat, FieldType
+@docs Widget, Group, Categorization, CategoryButton, Label, Options, Validation, isInvalid, Control, TextInput, FieldFormat, FieldType, TextArea, Select, RadioGroup, Checkbox, Slider
 
 -}
 
@@ -31,24 +31,6 @@ type Widget
 -}
 type alias Label =
     String
-
-
-{-| Type of a text-like input field
--}
-type FieldType
-    = NumberField
-    | IntField
-    | StringField FieldFormat
-
-
-{-| Format of a string field
--}
-type FieldFormat
-    = Text
-    | Email
-    | Date
-    | Time
-    | DateTime
 
 
 {-| Labeled group of elements.
@@ -117,17 +99,6 @@ type alias Options =
     }
 
 
-{-| Specific kind of a control element with associated options.
--}
-type Control
-    = CCheckbox Checkbox
-    | CTextInput TextInput
-    | CTextArea TextArea
-    | CSlider Slider
-    | CRadioGroup RadioGroup
-    | CSelect Select
-
-
 {-| Validation state of a field.
 
 To avoid showing many validation errors for a freshly-displayed form,
@@ -156,12 +127,15 @@ isInvalid validation =
             False
 
 
-{-| Checkbox control
+{-| Specific kind of a control element with associated options.
 -}
-type alias Checkbox =
-    { value : Bool
-    , onCheck : Bool -> Msg
-    }
+type Control
+    = CTextInput TextInput
+    | CTextArea TextArea
+    | CSelect Select
+    | CRadioGroup RadioGroup
+    | CCheckbox Checkbox
+    | CSlider Slider
 
 
 {-| Text input control
@@ -177,6 +151,24 @@ type alias TextInput =
     }
 
 
+{-| Type of a text-like input field
+-}
+type FieldType
+    = NumberField
+    | IntField
+    | StringField FieldFormat
+
+
+{-| Format of a string field
+-}
+type FieldFormat
+    = Text
+    | Email
+    | Date
+    | Time
+    | DateTime
+
+
 {-| Text area control
 
 `maxLength` should inform the "maxlength" attribute of the input field.
@@ -186,6 +178,31 @@ type alias TextArea =
     { value : String
     , maxLength : Maybe Int
     , onInput : String -> Msg
+    }
+
+
+{-| Select control.
+-}
+type alias Select =
+    { value : String
+    , valueList : List { label : String, selected : Bool }
+    , onChange : String -> Msg
+    }
+
+
+{-| Radio group control.
+-}
+type alias RadioGroup =
+    { valueList : List { id : String, label : String, checked : Bool, onClick : Msg }
+    , vertical : Bool
+    }
+
+
+{-| Checkbox control
+-}
+type alias Checkbox =
+    { value : Bool
+    , onCheck : Bool -> Msg
     }
 
 
@@ -200,21 +217,4 @@ type alias Slider =
     , max : String
     , step : String
     , onInput : String -> Msg
-    }
-
-
-{-| Radio group control.
--}
-type alias RadioGroup =
-    { valueList : List { id : String, label : String, checked : Bool, onClick : Msg }
-    , vertical : Bool
-    }
-
-
-{-| Select control.
--}
-type alias Select =
-    { value : String
-    , valueList : List { label : String, selected : Bool }
-    , onChange : String -> Msg
     }

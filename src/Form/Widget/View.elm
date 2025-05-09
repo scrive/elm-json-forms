@@ -59,52 +59,28 @@ viewControl : Options -> Control -> Html Msg
 viewControl options control =
     controlWrapper options <|
         case control of
-            CCheckbox checkbox ->
-                viewCheckbox options checkbox
-
             CTextInput textInput ->
                 viewTextInput options textInput
 
             CTextArea textArea ->
                 viewTextArea options textArea
 
-            CSlider sliderInput ->
-                viewSlider options sliderInput
+            CSelect select ->
+                viewSelect options select
 
             CRadioGroup radioGroup ->
                 viewRadioGroup options radioGroup
 
-            CSelect select ->
-                viewSelect options select
+            CCheckbox checkbox ->
+                viewCheckbox options checkbox
+
+            CSlider sliderInput ->
+                viewSlider options sliderInput
 
 
 controlWrapper : Options -> List (Html Msg) -> Html Msg
 controlWrapper options =
     div [ class "my-4", Attrs.classList [ ( "opacity-50", options.disabled ) ] ]
-
-
-viewCheckbox : Options -> Checkbox -> List (Html Msg)
-viewCheckbox options checkbox =
-    [ Html.label
-        [ Attrs.for options.id
-        , class "flex items-center space-x-4"
-        ]
-        [ Html.input
-            [ Attrs.type_ "checkbox"
-            , Attrs.id options.id
-            , Attrs.classList [ ( "border-red-600", isInvalid options.validation ) ]
-            , Attrs.checked checkbox.value
-            , Attrs.disabled options.disabled
-            , Events.onCheck checkbox.onCheck
-            , Events.onFocus options.onFocus
-            ]
-            []
-        , viewLabel options.label options.required
-        ]
-
-    -- TODO: show description as tooltip
-    , viewErrorMessage options.validation
-    ]
 
 
 viewTextInput : Options -> TextInput -> List (Html Msg)
@@ -144,36 +120,6 @@ viewTextArea options textArea =
         , Events.onFocus options.onFocus
         , Attrs.attribute "rows" "4"
         , Maybe.unwrap Attrs.empty Attrs.maxlength textArea.maxLength
-        ]
-        []
-    , viewDescription options.description
-    , viewErrorMessage options.validation
-    ]
-
-
-viewSlider : Options -> Slider -> List (Html Msg)
-viewSlider options sliderInput =
-    [ viewLabel options.label options.required
-    , div [ Attrs.style "display" "flex", Attrs.class "text-sm" ]
-        [ Html.span [ Attrs.style "flex-grow" "1", Attrs.class "text-left" ] [ Html.text sliderInput.min ]
-        , Html.span [ Attrs.style "flex-grow" "1", Attrs.class "text-right" ] [ Html.text sliderInput.max ]
-        ]
-    , Html.input
-        [ Attrs.id options.id
-        , Attrs.classList
-            [ ( "border-red-600", isInvalid options.validation )
-            , ( "w-full", not options.trim )
-            , ( "w-52", options.trim )
-            ]
-        , Attrs.value sliderInput.value
-        , Attrs.disabled options.disabled
-        , Events.onInput sliderInput.onInput
-        , Events.onFocus options.onFocus
-        , Attrs.attribute "rows" "4"
-        , Attrs.type_ "range"
-        , Attrs.attribute "min" sliderInput.min
-        , Attrs.attribute "max" sliderInput.max
-        , Attrs.attribute "step" sliderInput.step
         ]
         []
     , viewDescription options.description
@@ -233,6 +179,60 @@ viewSelect options select =
         , Attrs.attribute "rows" "4"
         ]
         (List.map buildOption select.valueList)
+    , viewDescription options.description
+    , viewErrorMessage options.validation
+    ]
+
+
+viewCheckbox : Options -> Checkbox -> List (Html Msg)
+viewCheckbox options checkbox =
+    [ Html.label
+        [ Attrs.for options.id
+        , class "flex items-center space-x-4"
+        ]
+        [ Html.input
+            [ Attrs.type_ "checkbox"
+            , Attrs.id options.id
+            , Attrs.classList [ ( "border-red-600", isInvalid options.validation ) ]
+            , Attrs.checked checkbox.value
+            , Attrs.disabled options.disabled
+            , Events.onCheck checkbox.onCheck
+            , Events.onFocus options.onFocus
+            ]
+            []
+        , viewLabel options.label options.required
+        ]
+
+    -- TODO: show description as tooltip
+    , viewErrorMessage options.validation
+    ]
+
+
+viewSlider : Options -> Slider -> List (Html Msg)
+viewSlider options sliderInput =
+    [ viewLabel options.label options.required
+    , div [ Attrs.style "display" "flex", Attrs.class "text-sm" ]
+        [ Html.span [ Attrs.style "flex-grow" "1", Attrs.class "text-left" ] [ Html.text sliderInput.min ]
+        , Html.span [ Attrs.style "flex-grow" "1", Attrs.class "text-right" ] [ Html.text sliderInput.max ]
+        ]
+    , Html.input
+        [ Attrs.id options.id
+        , Attrs.classList
+            [ ( "border-red-600", isInvalid options.validation )
+            , ( "w-full", not options.trim )
+            , ( "w-52", options.trim )
+            ]
+        , Attrs.value sliderInput.value
+        , Attrs.disabled options.disabled
+        , Events.onInput sliderInput.onInput
+        , Events.onFocus options.onFocus
+        , Attrs.attribute "rows" "4"
+        , Attrs.type_ "range"
+        , Attrs.attribute "min" sliderInput.min
+        , Attrs.attribute "max" sliderInput.max
+        , Attrs.attribute "step" sliderInput.step
+        ]
+        []
     , viewDescription options.description
     , viewErrorMessage options.validation
     ]
