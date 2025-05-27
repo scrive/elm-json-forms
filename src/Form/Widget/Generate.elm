@@ -145,74 +145,81 @@ controlWidget defaultOptions uiState wholeSchema control form =
         defOptions =
             UI.applyDefaults defaultOptions control.options
 
-        disabled =
-            defOptions.readonly == True || uiState.disabled
+        elementId =
+            inputElementId form.formId control.scope
 
-        dispRequired =
-            isRequired wholeSchema control.scope && not defOptions.hideRequiredAsterisk
+        controlOptions subSchema =
+            let
+                disabled =
+                    defOptions.readonly == True || uiState.disabled
 
-        validation =
-            if validateWidget control.scope form.validateWidgets then
-                case F.getErrorAt control.scope form.errors of
-                    Just e ->
-                        Invalid e
+                dispRequired =
+                    isRequired wholeSchema control.scope && not defOptions.hideRequiredAsterisk
 
-                    Nothing ->
-                        Valid
+                validation =
+                    if validateWidget control.scope form.validateWidgets then
+                        case F.getErrorAt control.scope form.errors of
+                            Just e ->
+                                Invalid e
 
-            else
-                NotValidated
+                            Nothing ->
+                                Valid
 
-        showDescription subSchema =
-            if defOptions.showUnfocusedDescription || form.focus == Just control.scope then
-                subSchema.description
+                    else
+                        NotValidated
 
-            else
-                Nothing
+                label =
+                    fieldLabel control.label subSchema control.scope
+
+                showDescription =
+                    if defOptions.showUnfocusedDescription || form.focus == Just control.scope then
+                        subSchema.description
+
+                    else
+                        Nothing
+            in
+            { id = elementId
+            , label = label.label
+            , ariaLabel = label.ariaLabel
+            , disabled = disabled
+            , validation = validation
+            , required = dispRequired
+            , description = showDescription
+            , onFocus = Focus control.scope
+            , trim = defOptions.trim
+            }
 
         pointedValue =
             Maybe.withDefault (FieldValue.String "") <|
                 FieldValue.pointedFieldValue control.scope form.value
 
-        elementId =
-            inputElementId form.formId control.scope
-
-        controlBody : SubSchema -> Maybe Widget
+        controlBody : SubSchema -> Maybe Control
         controlBody subSchema =
-            Maybe.map
-                (WControl
-                    { id = elementId
-                    , label = fieldLabel control.label subSchema control.scope
-                    , disabled = disabled
-                    , validation = validation
-                    , required = dispRequired
-                    , description = showDescription subSchema
-                    , onFocus = Focus control.scope
-                    , trim = defOptions.trim
-                    }
-                )
-            <|
-                case subSchema.type_ of
-                    SingleType IntegerType ->
-                        Just <| textLikeControl IntField pointedValue control.scope elementId defOptions subSchema
+            case subSchema.type_ of
+                SingleType IntegerType ->
+                    Just <| textLikeControl IntField pointedValue control.scope elementId defOptions subSchema
 
-                    SingleType NumberType ->
-                        Just <| textLikeControl NumberField pointedValue control.scope elementId defOptions subSchema
+                SingleType NumberType ->
+                    Just <| textLikeControl NumberField pointedValue control.scope elementId defOptions subSchema
 
-                    SingleType StringType ->
-                        Just <| textLikeControl (StringField <| formatFromSchema subSchema.format) pointedValue control.scope elementId defOptions subSchema
+                SingleType StringType ->
+                    Just <| textLikeControl (StringField <| formatFromSchema subSchema.format) pointedValue control.scope elementId defOptions subSchema
 
-                    SingleType BooleanType ->
-                        Just <|
-                            CCheckbox
-                                { value = FieldValue.asBool pointedValue
-                                , onCheck = Input control.scope << FieldValue.Bool
-                                }
+                SingleType BooleanType ->
+                    Just <|
+                        CCheckbox
+                            { value = FieldValue.asBool pointedValue
+                            , onCheck = Input control.scope << FieldValue.Bool
+                            }
 
-                    _ ->
-                        Nothing
+                _ ->
+                    Nothing
+
+        subSchemaWidget : SubSchema -> Maybe Widget
+        subSchemaWidget subSchema =
+            Maybe.map (WControl <| controlOptions subSchema) <| controlBody subSchema
     in
-    Maybe.andThen controlBody <| UI.pointToSubSchema wholeSchema control.scope
+    Maybe.andThen subSchemaWidget <| UI.pointToSubSchema wholeSchema control.scope
 
 
 textLikeControl : FieldType -> FieldValue -> Pointer -> String -> UI.DefOptions -> SubSchema -> Control
@@ -237,8 +244,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
 
         else
             CSelect
-                { value = FieldValue.asString fieldValue
-                , valueList =
+                { valueList =
                     Maybe.toList subSchema.enum
                         |> List.concat
                         |> List.map (Decode.decodeValue UI.decodeStringLike >> Result.withDefault "")
@@ -352,26 +358,26 @@ isRequired wholeSchema pointer =
     isCheckboxRequired || isPropertyRequired
 
 
-fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe String
+fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> { label : Maybe String, ariaLabel : String }
 fieldLabel label schema scope =
     let
         fallback =
             schema.title
                 |> Maybe.orElse (List.last scope |> Maybe.map UI.fieldNameToTitle)
-                |> Maybe.withDefault ""
+                |> Maybe.withDefault "unreachable"
     in
     case label of
         Just (UI.StringLabel s) ->
-            Just s
+            { label = Just s, ariaLabel = s }
 
         Just (UI.BoolLabel False) ->
-            Nothing
+            { label = Nothing, ariaLabel = fallback }
 
         Just (UI.BoolLabel True) ->
-            Just fallback
+            { label = Just fallback, ariaLabel = fallback }
 
         Nothing ->
-            Just fallback
+            { label = Just fallback, ariaLabel = fallback }
 
 
 inputElementId : String -> Pointer -> String
@@ -409,6 +415,9 @@ formatFromSchema =
 
                     "date-time" ->
                         DateTime
+
+                    "phone" ->
+                        Phone
 
                     _ ->
                         Text

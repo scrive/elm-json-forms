@@ -77,9 +77,10 @@ type alias CategoryButton =
 
 Controls should be rendered in accordance with these options.
 
+  - `label` - Label of the control, to be shown above the control.
   - `id` - Unique identifier for the control, to be used as the "id" attribute.
   - `required` - Whether the control should be marked as required, with an asterisk or similar.
-    Note that the control may or may not actually be required.
+    Note that the control may or may not _actually_ be required.
   - `validation` - Validation state of the control, possibly containing an error value.
   - `description` - Description of the control, to be shown below the control.
   - `onFocus` - Used only to show field descriptions on focus.
@@ -89,6 +90,7 @@ Controls should be rendered in accordance with these options.
 -}
 type alias Options =
     { label : Maybe String
+    , ariaLabel : String
     , id : String
     , disabled : Bool
     , required : Bool
@@ -167,6 +169,7 @@ type FieldFormat
     | Date
     | Time
     | DateTime
+    | Phone
 
 
 {-| Text area control
@@ -184,8 +187,7 @@ type alias TextArea =
 {-| Select control.
 -}
 type alias Select =
-    { value : String
-    , valueList : List { label : String, selected : Bool }
+    { valueList : List { label : String, selected : Bool }
     , onChange : String -> Msg
     }
 

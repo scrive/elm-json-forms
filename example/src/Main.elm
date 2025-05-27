@@ -111,7 +111,7 @@ updateExample msg fs =
                     )
 
         Submit ->
-            ( fs, Cmd.batch [ Cmd.perform (FormMsg Form.validateAllFieldsMsg) ] )
+            ( fs, Cmd.perform (FormMsg Form.validateAllFieldsMsg) )
 
         EditUiSchema s ->
             case UiSchema.fromString s of

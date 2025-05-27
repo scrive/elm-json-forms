@@ -203,7 +203,7 @@ viewCheckbox options checkbox =
         , viewLabel options.label options.required
         ]
 
-    -- TODO: show description as tooltip
+    -- NOTE: description for checkboxes should be shown as a tooltip, but this is not implemented for now.
     , viewErrorMessage options.validation
     ]
 
@@ -257,6 +257,9 @@ inputType fieldType =
 
                 DateTime ->
                     "datetime-local"
+
+                Phone ->
+                    "tel"
 
         NumberField ->
             "number"

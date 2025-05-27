@@ -40,6 +40,14 @@ type alias FormState =
     }
 
 
+{-| Controls which widgets should show validation errors.
+
+All - all widgets should show validation errors. Used after a form submission attempt.
+
+Listed - only widgets in the set should show validation errors.
+Widgets are added to the set when their value is updated.
+
+-}
 type ValidateWidgets
     = All
     | Listed (Set Pointer)
