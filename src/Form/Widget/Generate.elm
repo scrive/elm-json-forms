@@ -55,7 +55,12 @@ goWidget form uiState =
                 Just <| groupWidget form newUiState g
 
             UI.UiControl c ->
-                controlWidget form.defaultOptions newUiState form.schema c form.state
+                Maybe.andThen
+                    (\subSchema ->
+                        controlWidget form.defaultOptions newUiState form.schema subSchema c form.state
+                    )
+                <|
+                    UI.pointToSubSchema form.schema c.scope
 
             UI.UiCategorization c ->
                 Just <| categorizationWidget form newUiState c
@@ -139,8 +144,8 @@ labelWidget l =
     WLabel l.text
 
 
-controlWidget : UI.DefOptions -> UiState -> Schema -> UI.Control -> FormState -> Maybe Widget
-controlWidget defaultOptions uiState wholeSchema control form =
+controlWidget : UI.DefOptions -> UiState -> Schema -> SubSchema -> UI.Control -> FormState -> Maybe Widget
+controlWidget defaultOptions uiState wholeSchema subSchema control form =
     let
         defOptions =
             UI.applyDefaults defaultOptions control.options
@@ -148,7 +153,7 @@ controlWidget defaultOptions uiState wholeSchema control form =
         elementId =
             inputElementId form.formId control.scope
 
-        controlOptions subSchema =
+        controlOptions =
             let
                 disabled =
                     defOptions.readonly == True || uiState.disabled
@@ -171,8 +176,16 @@ controlWidget defaultOptions uiState wholeSchema control form =
                 label =
                     fieldLabel control.label subSchema control.scope
 
+                isCheckbox =
+                    case controlBody of
+                        Just (CCheckbox _) ->
+                            True
+
+                        _ ->
+                            False
+
                 showDescription =
-                    if defOptions.showUnfocusedDescription || form.focus == Just control.scope then
+                    if isCheckbox || defOptions.showUnfocusedDescription || form.focus == Just control.scope then
                         subSchema.description
 
                     else
@@ -193,8 +206,8 @@ controlWidget defaultOptions uiState wholeSchema control form =
             Maybe.withDefault (FieldValue.String "") <|
                 FieldValue.pointedFieldValue control.scope form.value
 
-        controlBody : SubSchema -> Maybe Control
-        controlBody subSchema =
+        controlBody : Maybe Control
+        controlBody =
             case subSchema.type_ of
                 SingleType IntegerType ->
                     Just <| textLikeControl IntField pointedValue control.scope elementId defOptions subSchema
@@ -214,12 +227,8 @@ controlWidget defaultOptions uiState wholeSchema control form =
 
                 _ ->
                     Nothing
-
-        subSchemaWidget : SubSchema -> Maybe Widget
-        subSchemaWidget subSchema =
-            Maybe.map (WControl <| controlOptions subSchema) <| controlBody subSchema
     in
-    Maybe.andThen subSchemaWidget <| UI.pointToSubSchema wholeSchema control.scope
+    Maybe.map (WControl controlOptions) controlBody
 
 
 textLikeControl : FieldType -> FieldValue -> Pointer -> String -> UI.DefOptions -> SubSchema -> Control

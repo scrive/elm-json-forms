@@ -189,6 +189,7 @@ viewCheckbox options checkbox =
     [ Html.label
         [ Attrs.for options.id
         , class "flex items-center space-x-4"
+        , Maybe.unwrap Attrs.empty Attrs.title options.description
         ]
         [ Html.input
             [ Attrs.type_ "checkbox"
@@ -202,8 +203,6 @@ viewCheckbox options checkbox =
             []
         , viewLabel options.label options.required
         ]
-
-    -- NOTE: description for checkboxes should be shown as a tooltip, but this is not implemented for now.
     , viewErrorMessage options.validation
     ]
 
