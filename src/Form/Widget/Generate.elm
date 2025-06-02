@@ -193,7 +193,7 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
             in
             { id = elementId
             , label = label.label
-            , ariaLabel = label.ariaLabel
+            , hideLabel = label.hideLabel
             , disabled = disabled
             , validation = validation
             , required = dispRequired
@@ -367,9 +367,10 @@ isRequired wholeSchema pointer =
     isCheckboxRequired || isPropertyRequired
 
 
-fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> { label : Maybe String, ariaLabel : String }
+fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> { label : String, hideLabel : Bool }
 fieldLabel label schema scope =
     let
+        -- `scope` is a non-empty list, so `fallback` is never "unreachable".
         fallback =
             schema.title
                 |> Maybe.orElse (List.last scope |> Maybe.map UI.fieldNameToTitle)
@@ -377,16 +378,16 @@ fieldLabel label schema scope =
     in
     case label of
         Just (UI.StringLabel s) ->
-            { label = Just s, ariaLabel = s }
+            { label = s, hideLabel = False }
 
         Just (UI.BoolLabel False) ->
-            { label = Nothing, ariaLabel = fallback }
+            { label = fallback, hideLabel = True }
 
         Just (UI.BoolLabel True) ->
-            { label = Just fallback, ariaLabel = fallback }
+            { label = fallback, hideLabel = False }
 
         Nothing ->
-            { label = Just fallback, ariaLabel = fallback }
+            { label = fallback, hideLabel = False }
 
 
 inputElementId : String -> Pointer -> String

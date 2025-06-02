@@ -78,6 +78,8 @@ type alias CategoryButton =
 Controls should be rendered in accordance with these options.
 
   - `label` - Label of the control, to be shown above the control.
+  - `hideLabel` - Whether the label should be hidden.
+    If `True`, the `aria-label` attribute should be filled with the `label` value.
   - `id` - Unique identifier for the control, to be used as the "id" attribute.
   - `required` - Whether the control should be marked as required, with an asterisk or similar.
     Note that the control may or may not _actually_ be required.
@@ -89,8 +91,8 @@ Controls should be rendered in accordance with these options.
 
 -}
 type alias Options =
-    { label : Maybe String
-    , ariaLabel : String
+    { label : String
+    , hideLabel : Bool
     , id : String
     , disabled : Bool
     , required : Bool

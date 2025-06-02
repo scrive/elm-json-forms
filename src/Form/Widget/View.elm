@@ -85,7 +85,7 @@ controlWrapper options =
 
 viewTextInput : Options -> TextInput -> List (Html Msg)
 viewTextInput options textInput =
-    [ viewLabel options.label options.required
+    [ viewLabel options.label options.hideLabel options.required
     , Html.input
         [ Attrs.type_ <| inputType textInput.fieldType
         , Attrs.id options.id
@@ -107,7 +107,7 @@ viewTextInput options textInput =
 
 viewTextArea : Options -> TextArea -> List (Html Msg)
 viewTextArea options textArea =
-    [ viewLabel options.label options.required
+    [ viewLabel options.label options.hideLabel options.required
     , Html.textarea
         [ Attrs.id options.id
         , Attrs.classList
@@ -149,10 +149,10 @@ viewRadioGroup options radioGroup =
                     , Events.onFocus options.onFocus
                     ]
                     []
-                , viewLabel (Just label) options.required
+                , Html.span [ class "text-sm my-0.5" ] [ Html.text label ]
                 ]
     in
-    [ viewLabel options.label options.required
+    [ viewLabel options.label options.hideLabel options.required
     , div [] <|
         List.map radio radioGroup.valueList
     , viewDescription options.description
@@ -166,7 +166,7 @@ viewSelect options select =
         buildOption { label, selected } =
             Html.option [ Attrs.value label, Attrs.selected selected ] [ Html.text label ]
     in
-    [ viewLabel options.label options.required
+    [ viewLabel options.label options.hideLabel options.required
     , Html.select
         [ Attrs.id options.id
         , Attrs.classList
@@ -201,7 +201,7 @@ viewCheckbox options checkbox =
             , Events.onFocus options.onFocus
             ]
             []
-        , viewLabel options.label options.required
+        , viewLabel options.label options.hideLabel options.required
         ]
     , viewErrorMessage options.validation
     ]
@@ -209,7 +209,7 @@ viewCheckbox options checkbox =
 
 viewSlider : Options -> Slider -> List (Html Msg)
 viewSlider options sliderInput =
-    [ viewLabel options.label options.required
+    [ viewLabel options.label options.hideLabel options.required
     , div [ Attrs.style "display" "flex", Attrs.class "text-sm" ]
         [ Html.span [ Attrs.style "flex-grow" "1", Attrs.class "text-left" ] [ Html.text sliderInput.min ]
         , Html.span [ Attrs.style "flex-grow" "1", Attrs.class "text-right" ] [ Html.text sliderInput.max ]
@@ -267,24 +267,21 @@ inputType fieldType =
             "number"
 
 
-viewLabel : Maybe String -> Bool -> Html Msg
-viewLabel label required =
-    Html.viewMaybe
-        (\l ->
-            Html.span
-                [ class "block text-sm my-1"
-                ]
-                [ Html.text <|
-                    l
-                        ++ (if required then
-                                " *"
+viewLabel : String -> Bool -> Bool -> Html Msg
+viewLabel label hideLabel required =
+    Html.viewIf (not hideLabel) <|
+        Html.span
+            [ class "block text-sm my-1"
+            ]
+            [ Html.text <|
+                label
+                    ++ (if required then
+                            " *"
 
-                            else
-                                ""
-                           )
-                ]
-        )
-        label
+                        else
+                            ""
+                       )
+            ]
 
 
 viewDescription : Maybe String -> Html Msg
