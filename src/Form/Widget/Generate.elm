@@ -156,7 +156,7 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
         controlOptions =
             let
                 disabled =
-                    defOptions.readonly == True || uiState.disabled
+                    defOptions.readonly || uiState.disabled
 
                 dispRequired =
                     isRequired wholeSchema control.scope && not defOptions.hideRequiredAsterisk
@@ -271,7 +271,7 @@ textLikeControl fieldType fieldValue pointer elementId defOptions subSchema =
                 , onChange = Input pointer << fromFieldInput fieldType
                 }
 
-    else if defOptions.slider == True then
+    else if defOptions.slider then
         let
             step =
                 Maybe.withDefault 1.0 subSchema.multipleOf
@@ -363,7 +363,7 @@ isRequired wholeSchema pointer =
         isPropertyRequired =
             case ( parentSchema, List.last pointer ) of
                 ( Just schema, Just prop ) ->
-                    List.any ((==) prop) (Maybe.withDefault [] schema.required)
+                    List.member prop (Maybe.withDefault [] schema.required)
 
                 _ ->
                     False
