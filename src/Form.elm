@@ -195,4 +195,4 @@ Empty list is returned if the form contains no errors.
 -}
 getErrors : Form -> List ( Pointer, Error.ErrorValue )
 getErrors form =
-    List.map (\( p, e ) -> ( p, e )) form.state.errors
+    form.state.errors
