@@ -191,16 +191,20 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
                     else
                         Nothing
             in
-            { id = elementId
-            , label = label.label
-            , hideLabel = label.hideLabel
-            , disabled = disabled
-            , validation = validation
-            , required = dispRequired
-            , description = showDescription
-            , onFocus = Focus control.scope
-            , trim = defOptions.trim
-            }
+            Maybe.map
+                (\lbl ->
+                    { id = elementId
+                    , label = lbl.label
+                    , hideLabel = lbl.hideLabel
+                    , disabled = disabled
+                    , validation = validation
+                    , required = dispRequired
+                    , description = showDescription
+                    , onFocus = Focus control.scope
+                    , trim = defOptions.trim
+                    }
+                )
+                label
 
         pointedValue =
             Maybe.withDefault (FieldValue.String "") <|
@@ -228,7 +232,7 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
                 _ ->
                     Nothing
     in
-    Maybe.map (WControl controlOptions) controlBody
+    Maybe.map2 WControl controlOptions controlBody
 
 
 textLikeControl : FieldType -> FieldValue -> Pointer -> String -> UI.DefOptions -> SubSchema -> Control
@@ -367,27 +371,29 @@ isRequired wholeSchema pointer =
     isCheckboxRequired || isPropertyRequired
 
 
-fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> { label : String, hideLabel : Bool }
+fieldLabel : Maybe UI.ControlLabel -> SubSchema -> Pointer -> Maybe { label : String, hideLabel : Bool }
 fieldLabel label schema scope =
     let
-        -- `scope` is a non-empty list, so `fallback` is never "unreachable".
-        fallback =
+        fallbackLabel =
             schema.title
                 |> Maybe.orElse (List.last scope |> Maybe.map UI.fieldNameToTitle)
-                |> Maybe.withDefault "unreachable"
     in
-    case label of
-        Just (UI.StringLabel s) ->
-            { label = s, hideLabel = False }
+    Maybe.map
+        (\fallback ->
+            case label of
+                Just (UI.StringLabel s) ->
+                    { label = s, hideLabel = False }
 
-        Just (UI.BoolLabel False) ->
-            { label = fallback, hideLabel = True }
+                Just (UI.BoolLabel False) ->
+                    { label = fallback, hideLabel = True }
 
-        Just (UI.BoolLabel True) ->
-            { label = fallback, hideLabel = False }
+                Just (UI.BoolLabel True) ->
+                    { label = fallback, hideLabel = False }
 
-        Nothing ->
-            { label = fallback, hideLabel = False }
+                Nothing ->
+                    { label = fallback, hideLabel = False }
+        )
+        fallbackLabel
 
 
 inputElementId : String -> Pointer -> String
