@@ -87,4 +87,5 @@ config =
         ]
         |> NoInconsistentAliases.noMissingAliases
         |> NoInconsistentAliases.rule
+    , Simplify.rule Simplify.defaults
     ]

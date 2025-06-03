@@ -1,10 +1,8 @@
 module Validation exposing
     ( Validation
-    , andMap
     , error
     , fail
     , isOk
-    , map
     , mapErrorPointers
     , oneOf
     , succeed
