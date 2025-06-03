@@ -1,23 +1,25 @@
-module Form exposing (Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema)
+module Form exposing (Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, update, view, getValue, getSchema, getUiSchema, getErrors, setSettings, setSchema, setUiSchema
+@docs Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg
 
 -}
 
 import Form.Error as Error
-import Form.Settings exposing (Settings)
 import Form.State
-import Form.Validation exposing (validation)
-import Form.View
-import Html exposing (Html, div)
+import Form.Validation exposing (validate)
+import Form.Widget
+import Form.Widget.Generate
+import Form.Widget.View
+import Html exposing (Html)
 import Json.Decode exposing (Value)
 import Json.Pointer exposing (Pointer)
 import Json.Schema.Definitions exposing (Schema)
 import Maybe.Extra as Maybe
+import UiSchema as UI
 import UiSchema.Internal exposing (UiSchema, defaultValue, generateUiSchema)
 
 
@@ -33,31 +35,78 @@ type alias Msg =
     Form.State.Msg
 
 
-{-| Initialize form state
+{-| Enable form validations for all fields.
+
+Until this message is triggered, fields are validated only after input.
+
 -}
-init : Settings -> String -> Schema -> Maybe UiSchema -> Form
-init settings id schema uiSchema =
-    { settings = settings
-    , schema = schema
+validateAllFieldsMsg : Msg
+validateAllFieldsMsg =
+    Form.State.ValidateAll
+
+
+{-| Initialize form state.
+
+Supplying anything other than [`defaultOptions`](#defaultOptions) into the `init` function
+causes the resulting form to differ from json-forms.io specification. These differences
+should be documented.
+
+-}
+init : UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
+init options id schema uiSchema =
+    { schema = schema
     , uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema schema) uiSchema
     , uiSchemaIsGenerated = uiSchema == Nothing
-    , state = Form.State.initState id (defaultValue schema) (validation schema)
+    , state = Form.State.initState id (defaultValue schema) (validate schema)
+    , defaultOptions = options
     }
 
 
-{-| Swap the Settings of an existing form
+{-| Default element options.
+-}
+defaultOptions : UI.DefOptions
+defaultOptions =
+    UI.defaultOptions
 
-Form data is not affected, only the view may change.
+
+{-| Render the form into an abstract view representation.
+
+This representation can in turn be rendered into HTML by [`viewWidget`](#viewWidget),
+or by a custom function.
+
+Widget type is documented in the [`Form.Widget`](Form-Widget) module.
 
 -}
-setSettings : Settings -> Form -> Form
-setSettings settings form =
-    { form
-        | settings = settings
-    }
+widget : Form -> Form.Widget.Widget
+widget =
+    Form.Widget.Generate.widget
 
 
-{-| Swap the Schema of an existing form
+{-| View a widget.
+
+This function can be used as a template for your own view function.
+
+Widget type is documented in the [`Form.Widget`](Form-Widget) module.
+
+-}
+viewWidget : Form.Widget.Widget -> Html Msg
+viewWidget =
+    Form.Widget.View.viewWidget
+
+
+{-| Convert an error value to a string.
+
+This function can be used as a template for your own error messages.
+
+Error value is documented in the [`Form.Error`](Form-Error) module.
+
+-}
+errorString : Error.ErrorValue -> String
+errorString =
+    Form.Widget.View.errorString
+
+
+{-| Swap the Schema of an existing form.
 
 Form data is reset. UI Schema is re-generated if it was auto-generated in the first place.
 
@@ -72,11 +121,11 @@ setSchema schema form =
 
             else
                 form.uiSchema
-        , state = Form.State.initState form.state.formId (defaultValue schema) (validation schema)
+        , state = Form.State.initState form.state.formId (defaultValue schema) (validate schema)
     }
 
 
-{-| Swap the UI Schema of an existing form
+{-| Swap the UI Schema of an existing form.
 
 Form data is preserved.
 
@@ -89,13 +138,6 @@ setUiSchema uiSchema form =
     }
 
 
-{-| View the form
--}
-view : Form -> Html Msg
-view form =
-    div [] <| Form.View.view form { uiPath = [], disabled = False, uiSchema = form.uiSchema }
-
-
 {-| Update the form
 -}
 update : Msg -> Form -> Form
@@ -103,7 +145,7 @@ update msg form =
     { form
         | state =
             Form.State.updateState
-                (validation form.schema)
+                (validate form.schema)
                 msg
                 form.state
     }
@@ -111,13 +153,25 @@ update msg form =
 
 {-| Get the current form value.
 
-The returned value may not be conforming to the JSON Schema if the
-list of validation errors returned by `getErrors` is non-empty.
+The returned value reflects the current form contents.
+It is not normalized, and may not be conforming to the JSON Schema.
+To get a normalized value conforming to the JSON Schema, use [`getSubmitValue`](#getSubmitValue).
 
 -}
-getValue : Form -> Value
-getValue form =
+getRawValue : Form -> Value
+getRawValue form =
     form.state.value
+
+
+{-| Get the current form value.
+
+The value is present only if form validation passes with no errors.
+
+-}
+getSubmitValue : Form -> Maybe Value
+getSubmitValue form =
+    validate form.schema form.state.value
+        |> Result.toMaybe
 
 
 {-| Get the current Schema

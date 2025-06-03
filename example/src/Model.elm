@@ -5,7 +5,6 @@ import Browser.Navigation as Nav
 import Form exposing (Form)
 import Json.Schema
 import Result.Extra as Result
-import Settings
 import UiSchema
 import Url
 
@@ -22,7 +21,8 @@ type alias FormState =
 
 
 type Tab
-    = DataTab
+    = RawDataTab
+    | SubmitDataTab
     | JsonSchemaTab
     | UiSchemaTab
 
@@ -42,6 +42,7 @@ type Msg
 
 type ExampleMsg
     = FormMsg Form.Msg
+    | Submit
     | EditSchema String
     | EditUiSchema String
     | SwitchTab Tab
@@ -55,12 +56,15 @@ makeForm title stringSchema stringUiSchema =
 
         uiSchema =
             Maybe.map UiSchema.fromString stringUiSchema
+
+        options =
+            Form.defaultOptions
     in
     case ( schema, uiSchema ) of
         ( Ok s, Nothing ) ->
             { title = title
-            , form = Just <| Settings.initForm title s Nothing
-            , tab = DataTab
+            , form = Just <| Form.init options title s Nothing
+            , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = Nothing
             , schemaError = Nothing
@@ -69,8 +73,8 @@ makeForm title stringSchema stringUiSchema =
 
         ( Ok s, Just (Ok us) ) ->
             { title = title
-            , form = Just <| Settings.initForm title s (Just us)
-            , tab = DataTab
+            , form = Just <| Form.init options title s (Just us)
+            , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
             , schemaError = Nothing
@@ -80,7 +84,7 @@ makeForm title stringSchema stringUiSchema =
         ( s, us ) ->
             { title = title
             , form = Nothing
-            , tab = DataTab
+            , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
             , schemaError = Result.error s

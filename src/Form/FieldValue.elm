@@ -1,9 +1,10 @@
 module Form.FieldValue exposing
-    ( FieldType(..)
-    , FieldValue(..)
+    ( FieldValue(..)
     , asBool
     , asString
-    , fromFieldInput
+    , fromFloatInput
+    , fromIntInput
+    , fromStringInput
     , pointedFieldValue
     , updateValue
     )
@@ -20,15 +21,6 @@ type FieldValue
     | Int Int
     | Number Float
     | Bool Bool
-    | Empty
-
-
-{-| Types that may be produced by a HTML field
--}
-type FieldType
-    = NumberField
-    | IntField
-    | StringField
 
 
 asString : FieldValue -> String
@@ -49,37 +41,31 @@ asString fv =
         Bool False ->
             "False"
 
-        Empty ->
-            ""
 
-
-asValue : FieldValue -> Maybe Value
+asValue : FieldValue -> Value
 asValue fv =
     case fv of
         String s ->
-            Just <| Encode.string s
+            Encode.string s
 
         Int i ->
-            Just <| Encode.int i
+            Encode.int i
 
         Number n ->
-            Just <| Encode.float n
+            Encode.float n
 
         Bool b ->
-            Just <| Encode.bool b
-
-        Empty ->
-            Nothing
+            Encode.bool b
 
 
-asBool : FieldValue -> Maybe Bool
+asBool : FieldValue -> Bool
 asBool fv =
     case fv of
         Bool b ->
-            Just b
+            b
 
         _ ->
-            Nothing
+            False
 
 
 toFieldValue : Value -> Maybe FieldValue
@@ -112,18 +98,12 @@ updateValue pointer new value =
     case pointer of
         "properties" :: key :: [] ->
             Encode.dict identity identity <|
-                case ( Decode.decodeValue (Decode.dict Decode.value) value, asValue new ) of
-                    ( Ok o, Nothing ) ->
-                        Dict.remove key o
+                case Decode.decodeValue (Decode.dict Decode.value) value of
+                    Ok o ->
+                        Dict.insert key (asValue new) o
 
-                    ( Ok o, Just v ) ->
-                        Dict.insert key v o
-
-                    ( Err _, Nothing ) ->
-                        Dict.empty
-
-                    ( Err _, Just v ) ->
-                        Dict.singleton key v
+                    Err _ ->
+                        Dict.singleton key (asValue new)
 
         "properties" :: key :: ps ->
             case Decode.decodeValue (Decode.dict Decode.value) value of
@@ -135,7 +115,7 @@ updateValue pointer new value =
                     Encode.dict identity identity <| Dict.singleton key (updateValue ps new Encode.null)
 
         [] ->
-            Maybe.withDefault Encode.null <| asValue new
+            asValue new
 
         _ ->
             value
@@ -143,39 +123,14 @@ updateValue pointer new value =
 
 fromIntInput : String -> FieldValue
 fromIntInput s =
-    if String.isEmpty s then
-        Empty
-
-    else
-        Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
+    Maybe.withDefault (String s) <| Maybe.map Int <| String.toInt s
 
 
 fromFloatInput : String -> FieldValue
 fromFloatInput s =
-    if String.isEmpty s then
-        Empty
-
-    else
-        Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
+    Maybe.withDefault (String s) <| Maybe.map Number <| String.toFloat s
 
 
 fromStringInput : String -> FieldValue
 fromStringInput s =
-    if String.isEmpty s then
-        Empty
-
-    else
-        String s
-
-
-fromFieldInput : FieldType -> String -> FieldValue
-fromFieldInput fieldType =
-    case fieldType of
-        StringField ->
-            fromStringInput
-
-        IntField ->
-            fromIntInput
-
-        NumberField ->
-            fromFloatInput
+    String s

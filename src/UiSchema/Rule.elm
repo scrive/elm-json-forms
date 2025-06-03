@@ -1,6 +1,6 @@
 module UiSchema.Rule exposing (AppliedEffect(..), computeRule)
 
-import Form.Validation exposing (validation)
+import Form.Validation exposing (validate)
 import Json.Decode exposing (Value)
 import Json.Pointer as Pointer
 import UiSchema.Internal as UI exposing (Effect(..))
@@ -21,7 +21,7 @@ computeRule formValue mRule =
                     False
 
                 Just v ->
-                    Validation.isOk <| validation rule.condition.schema v
+                    Validation.isOk <| validate rule.condition.schema v
 
         go rule =
             case ( rule.effect, condition rule ) of
