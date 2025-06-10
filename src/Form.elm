@@ -55,7 +55,7 @@ should be documented.
 init : UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
 init options id schema uiSchema =
     { schema = schema
-    , uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema schema) uiSchema
+    , uiSchema = Maybe.withDefaultLazy (\() -> generateUiSchema schema) uiSchema
     , uiSchemaIsGenerated = uiSchema == Nothing
     , state = Form.State.initState id (defaultValue schema) (validate schema)
     , defaultOptions = options
@@ -133,7 +133,7 @@ Form data is preserved.
 setUiSchema : Maybe UiSchema -> Form -> Form
 setUiSchema uiSchema form =
     { form
-        | uiSchema = Maybe.withDefaultLazy (always <| generateUiSchema form.schema) uiSchema
+        | uiSchema = Maybe.withDefaultLazy (\() -> generateUiSchema form.schema) uiSchema
         , uiSchemaIsGenerated = uiSchema == Nothing
     }
 
@@ -195,4 +195,4 @@ Empty list is returned if the form contains no errors.
 -}
 getErrors : Form -> List ( Pointer, Error.ErrorValue )
 getErrors form =
-    List.map (\( p, e ) -> ( p, e )) form.state.errors
+    form.state.errors
