@@ -114,10 +114,10 @@ updateState validation msg model =
                 }
 
         FocusCategory uiState ix ->
-            updateValidations validation { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
+            { model | categoryFocus = Dict.insert uiState ix model.categoryFocus }
 
 
-updateValidations : (Value -> Validation o) -> FormState -> FormState
+updateValidations : (Value -> Validation output) -> FormState -> FormState
 updateValidations validation model =
     case validation model.value of
         Ok _ ->
