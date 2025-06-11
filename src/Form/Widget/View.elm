@@ -142,7 +142,6 @@ viewRadioGroup options radioGroup =
                     [ Attrs.type_ "radio"
                     , Attrs.id id
                     , Attrs.class "mr-3"
-                    , Attrs.classList [ ( "border-red-600", isInvalid options.validation ) ]
                     , Attrs.checked checked
                     , Attrs.disabled options.disabled
                     , Events.onClick onClick
