@@ -176,7 +176,6 @@ viewSelect options select =
         , Attrs.disabled options.disabled
         , Events.on "change" (Events.targetValue |> Decode.map select.onChange)
         , Events.onFocus options.onFocus
-        , Attrs.attribute "rows" "4"
         ]
         (List.map buildOption select.valueList)
     , viewDescription options.description
@@ -225,7 +224,6 @@ viewSlider options sliderInput =
         , Attrs.disabled options.disabled
         , Events.onInput sliderInput.onInput
         , Events.onFocus options.onFocus
-        , Attrs.attribute "rows" "4"
         , Attrs.type_ "range"
         , Attrs.attribute "min" sliderInput.min
         , Attrs.attribute "max" sliderInput.max
