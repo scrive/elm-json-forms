@@ -227,6 +227,7 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
                         CCheckbox
                             { value = FieldValue.asBool pointedValue
                             , onCheck = Input control.scope << FieldValue.Bool
+                            , toggle = defOptions.toggle
                             }
 
                 _ ->

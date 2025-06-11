@@ -203,10 +203,13 @@ type alias RadioGroup =
 
 
 {-| Checkbox control
+
+- `toggle` - Whether the checkbox should be rendered as a toggle button.
 -}
 type alias Checkbox =
     { value : Bool
     , onCheck : Bool -> Msg
+    , toggle : Bool
     }
 
 
