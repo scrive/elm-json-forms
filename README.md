@@ -32,6 +32,12 @@ Generate validating forms from JSON schemas.
 
 # Changelog
 
+## 3.0.0
+
+* Validate fields only when `onblur` is triggered on an non-empty field
+* Add `toggle` property for checkboxes
+* Optimization: Generate UI Schema only when necessary
+
 ## 2.0.0
 
 * Produce an intermediate representation instead of the HTML view. This allows much richer view customization.

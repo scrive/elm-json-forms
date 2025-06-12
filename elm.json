@@ -3,7 +3,7 @@
     "name": "scrive/elm-json-forms",
     "summary": "JSON Forms Implementation in Elm.",
     "license": "MIT",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "exposed-modules": [
         "Form",
         "Form.Widget",
