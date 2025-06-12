@@ -1,11 +1,11 @@
-module Form.Widget exposing (Widget(..), Group, Categorization, CategoryButton, Label, Options, Validation(..), isInvalid, Control(..), TextInput, FieldFormat(..), FieldType(..), TextArea, Select, RadioGroup, Checkbox, Slider)
+module Form.Widget exposing (Widget(..), Group, Categorization, CategoryButton, Label, Options, Validation(..), isInvalid, isValid, Control(..), TextInput, FieldFormat(..), FieldType(..), TextArea, Select, RadioGroup, Checkbox, Slider)
 
 {-| Abstract form view representation.
 
 This representation is meant to be rendered into HTML. For inspiration, see the
 [`Form.Widget.View`](https://github.com/scrive/elm-json-forms/blob/main/src/Form/Widget/View.elm) module.
 
-@docs Widget, Group, Categorization, CategoryButton, Label, Options, Validation, isInvalid, Control, TextInput, FieldFormat, FieldType, TextArea, Select, RadioGroup, Checkbox, Slider
+@docs Widget, Group, Categorization, CategoryButton, Label, Options, Validation, isInvalid, isValid, Control, TextInput, FieldFormat, FieldType, TextArea, Select, RadioGroup, Checkbox, Slider
 
 -}
 
@@ -87,6 +87,7 @@ Controls should be rendered in accordance with these options.
   - `description` - Description of the control, to be shown below the control.
   - `onFocus` - Used only to show field descriptions on focus.
     If this feature is not used, the `onFocus` message does not need to be triggered.
+  - `onBlur` - Used to show field validation for the first time.
   - `trim` - Whether the control should be short
 
 -}
@@ -99,6 +100,7 @@ type alias Options =
     , validation : Validation
     , description : Maybe String
     , onFocus : Msg
+    , onBlur : Msg
     , trim : Bool
     }
 
@@ -106,7 +108,7 @@ type alias Options =
 {-| Validation state of a field.
 
 To avoid showing many validation errors for a freshly-displayed form,
-the validation state is `NotValidated` until the field is focused, or
+the validation state is `NotValidated` until the field is blurred, or
 until the `validateAllFieldsMsg` message is sent.
 
 -}
@@ -125,6 +127,18 @@ isInvalid : Validation -> Bool
 isInvalid validation =
     case validation of
         Invalid _ ->
+            True
+
+        _ ->
+            False
+
+
+{-| Convenience function to check if a validation state is valid.
+-}
+isValid : Validation -> Bool
+isValid validation =
+    case validation of
+        Valid ->
             True
 
         _ ->
@@ -203,10 +217,14 @@ type alias RadioGroup =
 
 
 {-| Checkbox control
+
+  - `toggle` - Whether the checkbox should be rendered as a toggle button.
+
 -}
 type alias Checkbox =
     { value : Bool
     , onCheck : Bool -> Msg
+    , toggle : Bool
     }
 
 

@@ -201,6 +201,7 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
                     , required = dispRequired
                     , description = showDescription
                     , onFocus = Focus control.scope
+                    , onBlur = Blur control.scope
                     , trim = defOptions.trim
                     }
                 )
@@ -227,6 +228,7 @@ controlWidget defaultOptions uiState wholeSchema subSchema control form =
                         CCheckbox
                             { value = FieldValue.asBool pointedValue
                             , onCheck = Input control.scope << FieldValue.Bool
+                            , toggle = defOptions.toggle
                             }
 
                 _ ->
