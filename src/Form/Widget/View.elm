@@ -91,12 +91,14 @@ viewTextInput options textInput =
         , Attrs.id options.id
         , Attrs.classList
             [ ( "border-red-600", isInvalid options.validation )
+            , ( "border-blue-600", isValid options.validation )
             , ( "w-full", not options.trim )
             ]
         , Attrs.value textInput.value
         , Attrs.disabled options.disabled
         , Events.onInput textInput.onInput
         , Events.onFocus options.onFocus
+        , Events.onBlur options.onBlur
         , Maybe.unwrap Attrs.empty Attrs.maxlength textInput.maxLength
         ]
         []
@@ -112,12 +114,14 @@ viewTextArea options textArea =
         [ Attrs.id options.id
         , Attrs.classList
             [ ( "border-red-600", isInvalid options.validation )
+            , ( "border-blue-600", isValid options.validation )
             , ( "w-full", not options.trim )
             ]
         , Attrs.value textArea.value
         , Attrs.disabled options.disabled
         , Events.onInput textArea.onInput
         , Events.onFocus options.onFocus
+        , Events.onBlur options.onBlur
         , Attrs.attribute "rows" "4"
         , Maybe.unwrap Attrs.empty Attrs.maxlength textArea.maxLength
         ]
@@ -146,6 +150,7 @@ viewRadioGroup options radioGroup =
                     , Attrs.disabled options.disabled
                     , Events.onClick onClick
                     , Events.onFocus options.onFocus
+                    , Events.onBlur options.onBlur
                     ]
                     []
                 , Html.span [ class "text-sm my-0.5" ] [ Html.text label ]
@@ -170,11 +175,13 @@ viewSelect options select =
         [ Attrs.id options.id
         , Attrs.classList
             [ ( "border-red-600", isInvalid options.validation )
+            , ( "border-blue-600", isValid options.validation )
             , ( "w-full", not options.trim )
             ]
         , Attrs.disabled options.disabled
         , Events.on "change" (Events.targetValue |> Decode.map select.onChange)
         , Events.onFocus options.onFocus
+        , Events.onBlur options.onBlur
         ]
         (List.map buildOption select.valueList)
     , viewDescription options.description
@@ -192,11 +199,15 @@ viewCheckbox options checkbox =
         [ Html.input
             [ Attrs.type_ "checkbox"
             , Attrs.id options.id
-            , Attrs.classList [ ( "border-red-600", isInvalid options.validation ) ]
+            , Attrs.classList
+                [ ( "border-red-600", isInvalid options.validation )
+                , ( "border-blue-600", isValid options.validation )
+                ]
             , Attrs.checked checkbox.value
             , Attrs.disabled options.disabled
             , Events.onCheck checkbox.onCheck
             , Events.onFocus options.onFocus
+            , Events.onBlur options.onBlur
             ]
             []
         , viewLabel options.label options.hideLabel options.required
@@ -216,6 +227,7 @@ viewSlider options sliderInput =
         [ Attrs.id options.id
         , Attrs.classList
             [ ( "border-red-600", isInvalid options.validation )
+            , ( "border-blue-600", isValid options.validation )
             , ( "w-full", not options.trim )
             , ( "w-52", options.trim )
             ]
@@ -223,6 +235,7 @@ viewSlider options sliderInput =
         , Attrs.disabled options.disabled
         , Events.onInput sliderInput.onInput
         , Events.onFocus options.onFocus
+        , Events.onBlur options.onBlur
         , Attrs.type_ "range"
         , Attrs.attribute "min" sliderInput.min
         , Attrs.attribute "max" sliderInput.max

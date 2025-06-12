@@ -55,6 +55,7 @@ type ValidateWidgets
 
 type Msg
     = Focus Pointer
+    | Blur Pointer
     | Input Pointer FieldValue
     | FocusCategory (List Int) Int
     | ValidateAll
@@ -103,6 +104,20 @@ updateState validation msg model =
                 | focus = Just pointer
             }
 
+        Blur pointer ->
+            -- validate only if the field is left non-empty
+            case FieldValue.pointedFieldValue pointer model.value of
+                Just (FieldValue.Bool False) ->
+                    model
+
+                Nothing ->
+                    model
+
+                Just _ ->
+                    { model
+                        | validateWidgets = validateWidgetsMap (Set.insert pointer) model.validateWidgets
+                    }
+
         ValidateAll ->
             { model | validateWidgets = All }
 
@@ -110,7 +125,6 @@ updateState validation msg model =
             updateValidations validation
                 { model
                     | value = FieldValue.updateValue pointer fieldValue model.value
-                    , validateWidgets = validateWidgetsMap (Set.insert pointer) model.validateWidgets
                 }
 
         FocusCategory uiState ix ->
