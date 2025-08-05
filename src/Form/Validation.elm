@@ -1,8 +1,10 @@
 module Form.Validation exposing (validate)
 
-import Form.Error as Error exposing (ErrorValue(..))
+import Dict
+import Form.Error as Error exposing (ErrorValue(..), TextFormat(..))
 import Form.Normalization exposing (normalizeValue)
 import Form.Regex
+import Form.State exposing (Settings)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Json.Schema.Definitions
@@ -19,17 +21,17 @@ import Set
 import Validation exposing (Validation, error)
 
 
-validate : Schema -> Value -> Validation Value
-validate schema rawValue =
+validate : Settings -> Schema -> Value -> Validation Value
+validate settings schema rawValue =
     let
         value =
             normalizeValue rawValue
     in
-    Validation.voidRight value <| validateSchema schema value
+    Validation.voidRight value <| validateSchema settings schema value
 
 
-validateSchema : Schema -> Value -> Validation Value
-validateSchema schema rawValue =
+validateSchema : Settings -> Schema -> Value -> Validation Value
+validateSchema settings schema rawValue =
     let
         value =
             normalizeValue rawValue
@@ -44,17 +46,17 @@ validateSchema schema rawValue =
                     Validation.fail (error <| Unimplemented "Boolean schemas are not implemented.")
 
             ObjectSchema objectSchema ->
-                validateSubSchema objectSchema value
+                validateSubSchema settings objectSchema value
 
 
-validateSubSchema : SubSchema -> Value -> Validation Value
-validateSubSchema schema =
+validateSubSchema : Settings -> SubSchema -> Value -> Validation Value
+validateSubSchema settings schema =
     let
         typeValidations : Value -> Validation Value
         typeValidations =
             case schema.type_ of
                 SingleType type_ ->
-                    validateSingleType schema type_
+                    validateSingleType settings schema type_
 
                 AnyType ->
                     Validation.succeed
@@ -62,11 +64,11 @@ validateSubSchema schema =
                 NullableType type_ ->
                     Validation.oneOf
                         [ \v -> Result.map (always Encode.null) <| validateNull v
-                        , validateSingleType schema type_
+                        , validateSingleType settings schema type_
                         ]
 
                 UnionType types ->
-                    Validation.oneOf <| List.map (\type_ -> validateSingleType schema type_) types
+                    Validation.oneOf <| List.map (\type_ -> validateSingleType settings schema type_) types
     in
     Validation.validateAll
         [ Validation.whenJust schema.const validateConst
@@ -75,8 +77,8 @@ validateSubSchema schema =
         ]
 
 
-validateSingleType : SubSchema -> SingleType -> Value -> Validation Value
-validateSingleType schema type_ value =
+validateSingleType : Settings -> SubSchema -> SingleType -> Value -> Validation Value
+validateSingleType settings schema type_ value =
     case type_ of
         ObjectType ->
             let
@@ -99,7 +101,7 @@ validateSingleType schema type_ value =
                                 Ok Encode.null
 
                             ( Just val, _ ) ->
-                                validateSchema propSchema val
+                                validateSchema settings propSchema val
             in
             Validation.validateAll (List.map (\( key, propSchema ) _ -> validateKey key propSchema) propList) value
 
@@ -113,7 +115,7 @@ validateSingleType schema type_ value =
             Result.map Encode.bool <| validateBool value
 
         StringType ->
-            Result.map Encode.string <| validateString schema value
+            Result.map Encode.string <| validateString settings schema value
 
         NullType ->
             Result.map (always Encode.null) <| validateNull value
@@ -122,8 +124,8 @@ validateSingleType schema type_ value =
             Err <| error (Error.Unimplemented "array")
 
 
-validateString : SubSchema -> Value -> Validation String
-validateString schema v =
+validateString : Settings -> SubSchema -> Value -> Validation String
+validateString settings schema v =
     case Decode.decodeValue Decode.string v of
         Err _ ->
             Err <| error Error.InvalidString
@@ -133,31 +135,37 @@ validateString schema v =
                 [ Validation.whenJust schema.minLength validateMinLength
                 , Validation.whenJust schema.maxLength validateMaxLength
                 , Validation.whenJust schema.pattern validatePattern -- TODO: check specs if this is correct
-                , Validation.whenJust schema.format validateFormat -- TODO: check specs if this is correct
+                , Validation.whenJust schema.format (validateFormat settings) -- TODO: check specs if this is correct
                 ]
                 s
 
 
-validateFormat : String -> String -> Validation String
-validateFormat format v =
+validateFormat : Settings -> String -> String -> Validation String
+validateFormat settings format value =
     case format of
         "date-time" ->
-            validateRegex Form.Regex.dateTime Error.DateTime v
+            validateRegex Form.Regex.dateTime Error.DateTime value
 
         "date" ->
-            validateRegex Form.Regex.date Error.Date v
+            validateRegex Form.Regex.date Error.Date value
 
         "time" ->
-            validateRegex Form.Regex.time Error.Time v
+            validateRegex Form.Regex.time Error.Time value
 
         "email" ->
-            validateRegex Form.Regex.email Error.Email v
+            validateRegex Form.Regex.email Error.Email value
 
         "phone" ->
-            validateRegex Form.Regex.phone Error.Phone v
+            validateRegex Form.Regex.phone Error.Phone value
 
-        _ ->
-            Validation.succeed v
+        customFormat ->
+            let
+                customValidation =
+                    Dict.get customFormat settings.customFormats
+                        |> Maybe.map (\validation -> validation value)
+                        |> Maybe.withDefault (Result.Ok value)
+            in
+            Result.mapError (\err -> error (Error.InvalidCustomFormat err)) customValidation
 
 
 validatePattern : String -> String -> Validation String

@@ -1,5 +1,6 @@
 module UiSchema.Rule exposing (AppliedEffect(..), computeRule)
 
+import Form.State exposing (Settings)
 import Form.Validation exposing (validate)
 import Json.Decode exposing (Value)
 import Json.Pointer as Pointer
@@ -12,8 +13,8 @@ type AppliedEffect
     | Disabled
 
 
-computeRule : Value -> Maybe UI.Rule -> Maybe AppliedEffect
-computeRule formValue mRule =
+computeRule : Settings -> Value -> Maybe UI.Rule -> Maybe AppliedEffect
+computeRule settings formValue mRule =
     let
         condition rule =
             case Pointer.pointedValue rule.condition.scope formValue of
@@ -21,7 +22,7 @@ computeRule formValue mRule =
                     False
 
                 Just v ->
-                    Validation.isOk <| validate rule.condition.schema v
+                    Validation.isOk <| validate settings rule.condition.schema v
 
         go rule =
             case ( rule.effect, condition rule ) of
