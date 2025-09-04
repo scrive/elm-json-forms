@@ -44,11 +44,12 @@ type alias FormState =
 
 {-| Settings for forms initialization:
 
-  - `customFormats` where keys are the accepted custom formats (e.g., personal-number-se\_bank\_id) and values are validation functions for the formats.
+  - `customFormats` where keys are the accepted custom formats (e.g., personal-number-se, personal-number-no, personal-number-dk,
+    company-number-dk, personal-number-fi) and values are validation functions for the formats.
 
 -}
 type alias Settings =
-    { customFormats : Dict String (String -> Result String String)
+    { customFormats : Dict String (String -> Result () String)
     }
 
 

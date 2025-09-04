@@ -165,7 +165,7 @@ validateFormat settings format value =
                         |> Maybe.map (\validation -> validation value)
                         |> Maybe.withDefault (Result.Ok value)
             in
-            Result.mapError (\err -> error (Error.InvalidCustomFormat err)) customValidation
+            Result.mapError (\_ -> error (Error.InvalidCustomFormat customFormat)) customValidation
 
 
 validatePattern : String -> String -> Validation String
