@@ -32,6 +32,10 @@ Generate validating forms from JSON schemas.
 
 # Changelog
 
+## 4.0.0
+
+* Add settings parameter for custom formats validation.
+
 ## 3.0.0
 
 * Validate fields only when `onblur` is triggered, and the field is non-empty
