@@ -22,6 +22,7 @@ type ErrorValue
     = Empty
     | InvalidString
     | InvalidFormat TextFormat
+    | InvalidCustomFormat String
     | InvalidInt
     | InvalidFloat
     | InvalidBool

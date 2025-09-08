@@ -9,7 +9,7 @@ Documentation for the original TypeScript library can be found here: <https://js
 -}
 
 import Form.Error as Error
-import Form.State
+import Form.State exposing (Settings)
 import Form.Validation exposing (validate)
 import Form.Widget
 import Form.Widget.Generate
@@ -52,13 +52,14 @@ causes the resulting form to differ from json-forms.io specification. These diff
 should be documented.
 
 -}
-init : UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
-init options id schema uiSchema =
+init : Settings -> UI.DefOptions -> String -> Schema -> Maybe UiSchema -> Form
+init settings options id schema uiSchema =
     { schema = schema
     , uiSchema = Maybe.withDefaultLazy (\() -> generateUiSchema schema) uiSchema
     , uiSchemaIsGenerated = uiSchema == Nothing
-    , state = Form.State.initState id (defaultValue schema) (validate schema)
+    , state = Form.State.initState id (defaultValue schema) (validate settings schema)
     , defaultOptions = options
+    , settings = settings
     }
 
 
@@ -121,7 +122,7 @@ setSchema schema form =
 
             else
                 form.uiSchema
-        , state = Form.State.initState form.state.formId (defaultValue schema) (validate schema)
+        , state = Form.State.initState form.state.formId (defaultValue schema) (validate form.settings schema)
     }
 
 
@@ -145,7 +146,7 @@ update msg form =
     { form
         | state =
             Form.State.updateState
-                (validate form.schema)
+                (validate form.settings form.schema)
                 msg
                 form.state
     }
@@ -170,7 +171,7 @@ The value is present only if form validation passes with no errors.
 -}
 getSubmitValue : Form -> Maybe Value
 getSubmitValue form =
-    validate form.schema form.state.value
+    validate form.settings form.schema form.state.value
         |> Result.toMaybe
 
 

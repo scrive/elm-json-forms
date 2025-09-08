@@ -38,7 +38,7 @@ goWidget form uiState =
     let
         ruleEffect : Maybe Rule.AppliedEffect
         ruleEffect =
-            Rule.computeRule form.state.value (UI.getRule uiState.uiSchema)
+            Rule.computeRule form.settings form.state.value (UI.getRule uiState.uiSchema)
 
         newUiState =
             { uiState | disabled = ruleEffect == Just Rule.Disabled }
@@ -116,7 +116,7 @@ categorizationWidget form uiState categorization =
             Maybe.withDefault 0 <| Dict.get uiState.uiPath form.state.categoryFocus
 
         categoryButton ix cat =
-            if Rule.computeRule form.state.value cat.rule == Just Rule.Hidden then
+            if Rule.computeRule form.settings form.state.value cat.rule == Just Rule.Hidden then
                 Nothing
 
             else

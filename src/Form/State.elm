@@ -2,6 +2,7 @@ module Form.State exposing
     ( Form
     , FormState
     , Msg(..)
+    , Settings
     , ValidateWidgets(..)
     , getErrorAt
     , initState
@@ -27,6 +28,7 @@ type alias Form =
     , uiSchemaIsGenerated : Bool
     , state : FormState
     , defaultOptions : UI.DefOptions
+    , settings : Settings
     }
 
 
@@ -37,6 +39,17 @@ type alias FormState =
     , errors : Errors
     , categoryFocus : Dict (List Int) Int
     , validateWidgets : ValidateWidgets
+    }
+
+
+{-| Settings for forms initialization:
+
+  - `customFormats` where keys are the accepted custom formats (e.g., personal-number-se, personal-number-no, personal-number-dk,
+    company-number-dk, personal-number-fi) and values are validation functions for the formats.
+
+-}
+type alias Settings =
+    { customFormats : Dict String (String -> Result () String)
     }
 
 

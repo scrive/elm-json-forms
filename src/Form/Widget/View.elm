@@ -332,6 +332,9 @@ errorString error =
         InvalidFormat _ ->
             "not the correct format"
 
+        InvalidCustomFormat _ ->
+            "not the correct format"
+
         InvalidInt ->
             "not a valid integer"
 
