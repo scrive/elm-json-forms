@@ -32,6 +32,10 @@ Generate validating forms from JSON schemas.
 
 # Changelog
 
+## 4.1.0
+
+* Parse both `#/` and `/` prefixed pointers. Before, only `#/` prefixed pointers were supported.
+
 ## 4.0.0
 
 * Add settings parameter for custom formats validation.
