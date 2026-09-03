@@ -17,8 +17,10 @@ jobs:
       - name: Install Elm
         run: npm install -g elm@0.19.2-0
       - name: Compile Elm
+        # Building the docs compiles every exposed module
         run: elm make --docs=docs.json
       - name: Compile Elm Example
+        # Building src/Main.elm compiles every imported module as well
         run: cd example; elm make src/Main.elm --output=/dev/null
       - name: Run elm-format
         run: npx elm-format@0.8.8 --validate .
