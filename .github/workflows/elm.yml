@@ -22,6 +22,6 @@ jobs:
       - name: Compile Elm Example
         run: cd example; elm make src/**/*.elm
       - name: Run elm-format
-        run: npx elm-format --validate .
+        run: npx elm-format@0.8.8 --validate .
       - name: Run elm-tests
-        run: npx elm-test
+        run: npx elm-test@0.19.1-revision17
