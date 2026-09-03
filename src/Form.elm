@@ -1,15 +1,15 @@
-module Form exposing (Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg)
+module Form exposing (Form, Msg, Settings, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg)
 
 {-| JSON Forms implementation with validations.
 
 Documentation for the original TypeScript library can be found here: <https://jsonforms.io/>
 
-@docs Form, Msg, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg
+@docs Form, Msg, Settings, init, defaultOptions, update, widget, viewWidget, errorString, getRawValue, getSubmitValue, getSchema, getUiSchema, getErrors, setSchema, setUiSchema, validateAllFieldsMsg
 
 -}
 
 import Form.Error as Error
-import Form.State exposing (Settings)
+import Form.State
 import Form.Validation exposing (validate)
 import Form.Widget
 import Form.Widget.Generate
@@ -33,6 +33,21 @@ type alias Form =
 -}
 type alias Msg =
     Form.State.Msg
+
+
+{-| Settings for form initialization:
+
+    { customFormats : Dict String (String -> Result () String) }
+
+  - `customFormats` where keys are the accepted custom formats (e.g., personal-number-se, personal-number-no, personal-number-dk,
+    company-number-dk, personal-number-fi) and values are validation functions for the formats.
+
+Use `{ customFormats = Dict.empty }` to validate only the formats defined by the
+JSON Schema specification.
+
+-}
+type alias Settings =
+    Form.State.Settings
 
 
 {-| Enable form validations for all fields.

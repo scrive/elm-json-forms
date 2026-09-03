@@ -35,6 +35,7 @@ Generate validating forms from JSON schemas.
 ## 4.1.0
 
 * Parse both `#/` and `/` prefixed pointers. Before, only `#/` prefixed pointers were supported.
+* Expose `Form.Settings`, which is required to call `Form.init`.
 
 ## 4.0.0
 

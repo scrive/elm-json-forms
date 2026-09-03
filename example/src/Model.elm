@@ -2,6 +2,7 @@ module Model exposing (ExampleMsg(..), FormState, Model, Msg(..), Tab(..), makeF
 
 import Browser
 import Browser.Navigation as Nav
+import Dict
 import Form exposing (Form)
 import Json.Schema
 import Result.Extra as Result
@@ -59,11 +60,15 @@ makeForm title stringSchema stringUiSchema =
 
         options =
             Form.defaultOptions
+
+        settings : Form.Settings
+        settings =
+            { customFormats = Dict.empty }
     in
     case ( schema, uiSchema ) of
         ( Ok s, Nothing ) ->
             { title = title
-            , form = Just <| Form.init options title s Nothing
+            , form = Just <| Form.init settings options title s Nothing
             , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = Nothing
@@ -73,7 +78,7 @@ makeForm title stringSchema stringUiSchema =
 
         ( Ok s, Just (Ok us) ) ->
             { title = title
-            , form = Just <| Form.init options title s (Just us)
+            , form = Just <| Form.init settings options title s (Just us)
             , tab = RawDataTab
             , stringSchema = stringSchema
             , stringUiSchema = stringUiSchema
