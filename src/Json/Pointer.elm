@@ -40,6 +40,7 @@ decode =
     #/foo/0/bar
 
 URL decoding is not performed by this function.
+
 -}
 fromString : String -> Result String Pointer
 fromString string =
@@ -73,6 +74,7 @@ unescape string =
     #/foo/0/bar
 
 URL encoding is not performed by this function.
+
 -}
 toString : Pointer -> String
 toString =
