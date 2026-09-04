@@ -9,19 +9,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: jorelali/setup-elm@v5
-        with:
-          elm-version: 0.19.1
       - name: Read .nvmrc
         run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.NVMRC }}
+      - name: Install Elm
+        run: npm install -g elm@0.19.1-6
       - name: Compile Elm
-        run: elm make src/**/*.elm
+        # Building the docs compiles every exposed module
+        run: elm make --docs=docs.json
       - name: Compile Elm Example
-        run: cd example; elm make src/**/*.elm
+        # Building src/Main.elm compiles every imported module as well
+        run: cd example; elm make src/Main.elm --output=/dev/null
       - name: Run elm-format
-        run: npx elm-format --validate .
+        run: npx elm-format@0.8.8 --validate .
       - name: Run elm-tests
-        run: npx elm-test
+        run: npx elm-test@0.19.1-revision17

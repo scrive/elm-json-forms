@@ -13,11 +13,6 @@ import String
 
 
 {-| Pointer path, represented as `List String`.
-
-Pointers have a standardized text format. For example:
-
-    "#/customers/0/name"
-
 -}
 type alias Pointer =
     List String
@@ -39,7 +34,13 @@ decode =
             )
 
 
-{-| Construct a pointer from a `String`.
+{-| Construct a pointer from the standardized text format. Either of the following formats is valid:
+
+    /foo/0/bar
+    #/foo/0/bar
+
+URL decoding is not performed by this function.
+
 -}
 fromString : String -> Result String Pointer
 fromString string =
@@ -47,8 +48,11 @@ fromString string =
         "#" :: pointer ->
             Ok pointer
 
+        "" :: pointer ->
+            Ok pointer
+
         _ ->
-            Err "A JSON Pointer must start with #"
+            Err "Must be a valid JSON Pointer, such as #/foo/bar or /foo/bar"
 
 
 splitAndUnescape : String -> List String
@@ -65,7 +69,12 @@ unescape string =
         |> String.join "~"
 
 
-{-| Convert a pointer to a `String`.
+{-| Convert a pointer to the standardized text format:
+
+    #/foo/0/bar
+
+URL encoding is not performed by this function.
+
 -}
 toString : Pointer -> String
 toString =

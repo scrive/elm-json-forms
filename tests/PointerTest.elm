@@ -25,15 +25,24 @@ suite =
         , describe "fromString"
             [ test "empty" <|
                 \_ ->
+                    Expect.equal (Pointer.fromString "") (Ok [])
+            , test "hash" <|
+                \_ ->
                     Expect.equal (Pointer.fromString "#") (Ok [])
-            , test "nearly empty" <|
+            , test "slash" <|
+                \_ ->
+                    Expect.equal (Pointer.fromString "/") (Ok [ "" ])
+            , test "hash slash" <|
                 \_ ->
                     Expect.equal (Pointer.fromString "#/") (Ok [ "" ])
             , test "simple" <|
                 \_ ->
+                    Expect.equal (Pointer.fromString "/abc/def") (Ok [ "abc", "def" ])
+            , test "simple hash" <|
+                \_ ->
                     Expect.equal (Pointer.fromString "#/abc/def") (Ok [ "abc", "def" ])
             , test "escaping" <|
                 \_ ->
-                    Expect.equal (Pointer.fromString "#/~01/~1") (Ok [ "~1", "/" ])
+                    Expect.equal (Pointer.fromString "/~01/~1") (Ok [ "~1", "/" ])
             ]
         ]
