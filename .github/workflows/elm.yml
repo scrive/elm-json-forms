@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
       - name: Install Elm
-        run: npm install -g elm@0.19.2-0
+        run: npm install -g elm@0.19.1-6
       - name: Compile Elm
         # Building the docs compiles every exposed module
         run: elm make --docs=docs.json
@@ -25,4 +25,4 @@ jobs:
       - name: Run elm-format
         run: npx elm-format@0.8.8 --validate .
       - name: Run elm-tests
-        run: npx elm-test@0.19.2-1
+        run: npx elm-test@0.19.1-revision17

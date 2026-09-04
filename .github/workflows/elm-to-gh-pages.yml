@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
       - name: Install Elm
-        run: npm install -g elm@0.19.2-0
+        run: npm install -g elm@0.19.1-6
 
       - name: Build Elm artifact
         run: cd example; elm make src/Main.elm --output=main.js --optimize
