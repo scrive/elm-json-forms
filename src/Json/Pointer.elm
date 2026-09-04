@@ -52,7 +52,7 @@ fromString string =
             Ok pointer
 
         _ ->
-            Err "Pointer must start with #/ or /"
+            Err "Must be a valid JSON Pointer, such as #/foo/bar or /foo/bar"
 
 
 splitAndUnescape : String -> List String
