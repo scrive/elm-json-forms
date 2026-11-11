@@ -32,6 +32,11 @@ Generate validating forms from JSON schemas.
 
 # Changelog
 
+## 5.0.0
+
+* Add an `emphasis` option to UI schema `Label` elements: `"options": { "emphasis": "normal" }` renders the label as body text, `"bold"` (the default) as today. Unknown values fall back to the default.
+* Breaking: `Form.Widget.Label` is now a record `{ text : String, emphasis : Emphasis }` instead of a `String`. Custom views must read `label.text` and can style by `label.emphasis`.
+
 ## 4.1.0
 
 * Parse both `#/` and `/` prefixed pointers. Before, only `#/` prefixed pointers were supported.

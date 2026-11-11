@@ -12,6 +12,8 @@ module UiSchema.Internal exposing
     , Group
     , HorizontalLayout
     , Label
+    , LabelEmphasis(..)
+    , LabelOptions
     , Options
     , Orientation(..)
     , Rule
@@ -75,9 +77,19 @@ type alias Group =
 
 
 type alias Label =
-    -- TODO: determine remaining props here
     { text : String
+    , options : Maybe LabelOptions
     }
+
+
+type alias LabelOptions =
+    { emphasis : Maybe LabelEmphasis
+    }
+
+
+type LabelEmphasis
+    = EmphasisBold
+    | EmphasisNormal
 
 
 type alias Categorization =
@@ -286,8 +298,34 @@ decodeGroup =
 
 decodeLabel : Decoder Label
 decodeLabel =
-    Decode.map Label
+    Decode.map2 Label
         (Decode.field "text" Decode.string)
+        (Decode.maybe <| Decode.field "options" decodeLabelOptions)
+
+
+decodeLabelOptions : Decoder LabelOptions
+decodeLabelOptions =
+    Decode.map LabelOptions
+        -- Unknown emphasis values decode as Nothing, so a value added later
+        -- falls back to the default instead of failing the whole UI schema.
+        (Decode.maybe <| Decode.field "emphasis" decodeLabelEmphasis)
+
+
+decodeLabelEmphasis : Decoder LabelEmphasis
+decodeLabelEmphasis =
+    Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "bold" ->
+                        Decode.succeed EmphasisBold
+
+                    "normal" ->
+                        Decode.succeed EmphasisNormal
+
+                    _ ->
+                        Decode.fail "Unable to decode label emphasis"
+            )
 
 
 decodeCategorization : Decoder Categorization
