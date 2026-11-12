@@ -49,7 +49,12 @@ viewWidget widget =
             div [] [ menu, body ]
 
         WLabel label ->
-            div [ class "font-bold mt-4" ] [ Html.text label ]
+            case label.emphasis of
+                Bold ->
+                    div [ class "font-bold mt-4" ] [ Html.text label.text ]
+
+                Normal ->
+                    div [ class "mt-4" ] [ Html.text label.text ]
 
         WControl options control ->
             viewControl options control

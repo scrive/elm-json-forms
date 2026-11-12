@@ -141,7 +141,19 @@ categorizationWidget form uiState categorization =
 
 labelWidget : UI.Label -> Widget
 labelWidget l =
-    WLabel l.text
+    WLabel
+        { text = l.text
+        , emphasis =
+            case Maybe.andThen .emphasis l.options of
+                Just UI.EmphasisNormal ->
+                    Normal
+
+                Just UI.EmphasisBold ->
+                    Bold
+
+                Nothing ->
+                    Bold
+        }
 
 
 controlWidget : UI.DefOptions -> UiState -> Schema -> SubSchema -> UI.Control -> FormState -> Maybe Widget

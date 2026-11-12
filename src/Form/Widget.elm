@@ -1,11 +1,11 @@
-module Form.Widget exposing (Widget(..), Group, Categorization, CategoryButton, Label, Options, Validation(..), isInvalid, isValid, Control(..), TextInput, FieldFormat(..), FieldType(..), TextArea, Select, RadioGroup, Checkbox, Slider)
+module Form.Widget exposing (Widget(..), Group, Categorization, CategoryButton, Label, Emphasis(..), Options, Validation(..), isInvalid, isValid, Control(..), TextInput, FieldFormat(..), FieldType(..), TextArea, Select, RadioGroup, Checkbox, Slider)
 
 {-| Abstract form view representation.
 
 This representation is meant to be rendered into HTML. For inspiration, see the
 [`Form.Widget.View`](https://github.com/scrive/elm-json-forms/blob/main/src/Form/Widget/View.elm) module.
 
-@docs Widget, Group, Categorization, CategoryButton, Label, Options, Validation, isInvalid, isValid, Control, TextInput, FieldFormat, FieldType, TextArea, Select, RadioGroup, Checkbox, Slider
+@docs Widget, Group, Categorization, CategoryButton, Label, Emphasis, Options, Validation, isInvalid, isValid, Control, TextInput, FieldFormat, FieldType, TextArea, Select, RadioGroup, Checkbox, Slider
 
 -}
 
@@ -28,9 +28,27 @@ type Widget
 
 
 {-| Label element.
+
+  - `text` - Text of the label.
+  - `emphasis` - How strongly the text should be rendered. Set with the
+    `emphasis` option on a UI schema `Label` (`"bold"` or `"normal"`).
+    Defaults to `Bold`.
+
 -}
 type alias Label =
-    String
+    { text : String
+    , emphasis : Emphasis
+    }
+
+
+{-| Text emphasis of a label.
+
+`Bold` suits headings, `Normal` suits body text.
+
+-}
+type Emphasis
+    = Bold
+    | Normal
 
 
 {-| Labeled group of elements.
